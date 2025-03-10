@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build Collector
-        uses: mkelly/otel-builder@v1
+        uses: observiq/otel-builder@v1
         with:
           manifest: collector/manifest.yml
           output-dir: ./dist

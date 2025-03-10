@@ -31,7 +31,7 @@ The builder creates OpenTelemetry Collector distributions with custom components
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v3
-         - uses: mkelly/otel-builder@v1
+         - uses: observiq/otel-builder@v1
            with:
              manifest: "./manifest.yaml"
    ```
@@ -62,7 +62,7 @@ The builder creates OpenTelemetry Collector distributions with custom components
 ### Example: Multi-Platform Build with Container Publishing
 
 ```yaml
-- uses: mkelly/otel-builder@v1
+- uses: observiq/otel-builder@v1
   with:
     manifest: collector/manifest.yml
     output-dir: ./dist
@@ -75,8 +75,8 @@ The builder creates OpenTelemetry Collector distributions with custom components
     platforms: linux/amd64,linux/arm64
     push: true
     tags: |
-      ghcr.io/mkelly/collector:latest
-      ghcr.io/mkelly/collector:1.0.0
+      ghcr.io/observiq/collector:latest
+      ghcr.io/observiq/collector:1.0.0
 ```
 
 See `.github/workflows/examples/` for more example workflows.
@@ -87,7 +87,7 @@ We follow semantic versioning. The builder is available in several forms:
 
 - GitHub Action: Use `@v1` for latest 1.x version, or `@v1.2.3` for specific versions
 - Docker Image: Use `main` for latest, or version tags like `v1.2.3`
-- Container Registry: `ghcr.io/mkelly/otel-builder:main` or `ghcr.io/mkelly/otel-builder:v1.2.3`
+- Container Registry: `ghcr.io/observiq/otel-builder:main` or `ghcr.io/observiq/otel-builder:v1.2.3`
 
 ## Docker Usage
 
@@ -95,13 +95,13 @@ The builder is available as a container image from GitHub Container Registry:
 
 ```bash
 # Pull latest version
-docker pull ghcr.io/mkelly/otel-builder:main
+docker pull ghcr.io/observiq/otel-builder:main
 
 # Pull specific version
-docker pull ghcr.io/mkelly/otel-builder:v1.2.3
+docker pull ghcr.io/observiq/otel-builder:v1.2.3
 
 # Run a build
-docker run --rm -v $(pwd):/workspace ghcr.io/mkelly/otel-builder:main \
+docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
   --manifest /workspace/manifest.yml \
   --output /workspace/dist
 ```
