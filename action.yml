@@ -1,6 +1,5 @@
 name: "OpenTelemetry Collector Builder"
 description: "Build custom OpenTelemetry Collectors using your manifest"
-version: "1.0.4"
 
 inputs:
   manifest:
