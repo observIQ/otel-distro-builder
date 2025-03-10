@@ -35,24 +35,22 @@ fi
 
 # Update version in files
 echo "$VERSION" > VERSION
-sed -i.bak "s/version: \".*\"/version: \"$VERSION\"/" action.yml
-rm action.yml.bak
 
 # Show changes
 echo -e "\n${BLUE}Changes to be committed:${NC}"
-git diff VERSION action.yml
+git diff VERSION
 
 # Confirm changes
 read -p "Commit these changes? [y/N] " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    git checkout VERSION action.yml
+    git checkout VERSION
     echo "Changes reverted"
     exit 1
 fi
 
 # Commit and tag
-git add VERSION action.yml
+git add VERSION
 git commit -m "Release version $VERSION"
 git tag -a "v$VERSION" -m "Release version $VERSION"
 

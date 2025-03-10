@@ -1,4 +1,4 @@
-# OpenTelemetry Collector Builder
+# OpenTelemetry Collector Build Utilities
 
 This directory contains the source code for the OpenTelemetry Builder Node, which builds custom OpenTelemetry Collector distributions based on a manifest file.
 
