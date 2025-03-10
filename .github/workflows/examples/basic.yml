@@ -1,0 +1,24 @@
+name: Build Collector
+
+on:
+  push:
+    paths:
+      - "collector/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Collector
+        uses: mkelly/otel-builder@v1
+        with:
+          manifest: collector/manifest.yml
+          output-dir: ./dist
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-packages
+          path: ./dist/**/*

@@ -1,0 +1,32 @@
+steps:
+  # Download manifest from GCS
+  - name: "gcr.io/cloud-builders/gsutil"
+    args: ["cp", "${_MANIFEST_PATH}", "/workspace/manifest.yaml"]
+
+  # Run the builder
+  - name: $_BUILDER_IMAGE
+    args:
+      [
+        "--manifest",
+        "/workspace/manifest.yaml",
+        "--artifacts",
+        "/workspace/artifacts",
+      ]
+
+timeout: 2400s
+options:
+  machineType: "E2_HIGHCPU_8" # Use high-CPU machine for faster builds
+  logging: CLOUD_LOGGING_ONLY
+
+artifacts:
+  objects:
+    location: "gs://${_ARTIFACT_BUCKET}/${_BUILD_ID}/"
+    paths: ["/workspace/artifacts/**"]
+
+tags: ["otel", "collector-build"]
+
+substitutions:
+  _MANIFEST_PATH: "" # GCS path to manifest (gs://bucket/path/manifest.yaml)
+  _BUILDER_IMAGE: "" # Will be provided at build time
+  _ARTIFACT_BUCKET: "" # Will be provided at build time
+  _BUILD_ID: "" # Will be provided at build time

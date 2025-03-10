@@ -1,0 +1,48 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+*.log
+
+# test coverage reports
+cover.*
+
+build/
+dist/
+tls/
+cosign*
+gpg.*
+
+# vs code workspace files (but allow settings)
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# misc
+.env
+.venv
+.DS_Store
+
+# Project specific
+__pycache__
+distributions
+ocb
+*credentials*
+output
+artifacts
+
+.pytest_cache
+
+
+
+

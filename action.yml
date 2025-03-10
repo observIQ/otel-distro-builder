@@ -1,0 +1,52 @@
+name: "OpenTelemetry Collector Builder"
+description: "Build custom OpenTelemetry Collectors using your manifest"
+version: "1.0.4"
+
+inputs:
+  manifest:
+    description: "Path to the collector manifest file"
+    required: true
+    default: "./manifest.yaml"
+  output-dir:
+    description: "Directory to store build artifacts"
+    required: false
+    default: "./artifacts"
+  create_release:
+    description: "Create a GitHub release with the built artifacts"
+    required: false
+    default: "true"
+  upload_artifacts:
+    description: "Upload artifacts to GitHub Actions"
+    required: false
+    default: "true"
+  platforms:
+    description: "Target platforms (comma-separated: linux/amd64,linux/arm64)"
+    required: false
+    default: "linux/amd64"
+  debug:
+    description: "Enable debug logging"
+    required: false
+    default: "false"
+
+outputs:
+  name:
+    description: "Name of the built collector"
+  version:
+    description: "Version of the built collector"
+  artifacts_path:
+    description: "Path to the built artifacts"
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/observiq/otel-builder:v1"
+  env:
+    INPUT_MANIFEST: ${{ inputs.manifest }}
+    INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
+    INPUT_CREATE_RELEASE: ${{ inputs.create_release }}
+    INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
+    INPUT_PLATFORMS: ${{ inputs.platforms }}
+    INPUT_DEBUG: ${{ inputs.debug }}
+
+branding:
+  icon: "package"
+  color: "blue"

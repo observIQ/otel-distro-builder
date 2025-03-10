@@ -1,0 +1,60 @@
+# Version Control
+.git/
+.gitignore
+.github/
+
+# Docker
+.docker/
+.dockerignore
+Dockerfile
+cloudbuild.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Virtual Environments
+venv/
+ENV/
+env/
+builder-env/
+.python-version
+
+# Build and Output
+artifacts/
+test-artifacts/
+output/
+build/
+dist/
+
+# IDE and Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.vim
+
+# Documentation
+*.md
+LICENSE
+docs/
+
+# Testing
+tests/
+test_*.py
+pytest.ini
+
+# Logs and Temporary
+*.log
+*.tmp
+*.temp
+.DS_Store 
