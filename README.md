@@ -64,7 +64,7 @@ The builder creates OpenTelemetry Collector distributions with custom components
 ```yaml
 - uses: observiq/otel-builder@v1
   with:
-    manifest: collector/manifest.yml
+    manifest: collector/manifest.yaml
     output-dir: ./dist
     platforms: linux/amd64,linux/arm64
 
@@ -102,7 +102,7 @@ docker pull ghcr.io/observiq/otel-builder:v1.2.3
 
 # Run a build
 docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
-  --manifest /workspace/manifest.yml \
+  --manifest /workspace/manifest.yaml \
   --output /workspace/dist
 ```
 

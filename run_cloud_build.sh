@@ -20,7 +20,7 @@ usage() {
     echo "  -h                    Show this help message"
     echo
     echo "Example:"
-    echo "  $0 -m manifest.yml -p my-project -b my-bucket"
+    echo "  $0 -m manifest.yaml -p my-project -b my-bucket"
     exit 1
 }
 

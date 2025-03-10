@@ -14,7 +14,7 @@ jobs:
       - name: Build Multi-Platform Collector
         uses: observiq/otel-builder@v1
         with:
-          manifest: collector/manifest.yml
+          manifest: collector/manifest.yaml
           output-dir: ./dist
           platforms: linux/amd64,linux/arm64
 

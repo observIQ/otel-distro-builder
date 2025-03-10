@@ -19,7 +19,7 @@ usage() {
     echo "  -h                    Show this help message"
     echo
     echo "Example:"
-    echo "  $0 -m manifest.yml -i 9ae45f -o /tmp/artifacts"
+    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts"
     exit 1
 }
 

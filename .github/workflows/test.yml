@@ -55,9 +55,9 @@ jobs:
 
       - name: Test example manifests
         run: |
-          for manifest in tests/manifests/*.yml; do
+          for manifest in tests/manifests/*.yaml; do
             echo "Testing manifest: $manifest"
-            ./run_local_build.sh -m "$manifest" -o "./artifacts/$(basename "$manifest" .yml)"
+            ./run_local_build.sh -m "$manifest" -o "./artifacts/$(basename "$manifest" .yaml)"
             # Clean up after each build to save space
             docker system prune -af
           done
