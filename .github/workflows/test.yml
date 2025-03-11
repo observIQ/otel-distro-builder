@@ -56,8 +56,10 @@ jobs:
       - name: Test example manifests
         run: |
           for manifest in builder/tests/manifests/*.yaml; do
-            echo "Testing manifest: $manifest"
-            ./scripts/run_local_build.sh -m "$manifest" -o "./artifacts/$(basename "$manifest" .yaml)" -v "0.121.0" -g "1.24.1"
-            # Clean up after each build to save space
-            docker system prune -af
+            if [[ "$manifest" != *".meta.yaml" ]]; then
+              echo "Testing manifest: $manifest"
+              ./scripts/run_local_build.sh -m "$manifest" -o "./artifacts/$(basename "$manifest" .yaml)" -v "0.121.0" -g "1.24.1"
+              # Clean up after each build to save space
+              docker system prune -af
+            fi
           done
