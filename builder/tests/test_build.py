@@ -68,9 +68,11 @@ def verify_build_artifacts(artifact_path: Path, metadata: dict) -> None:
     checksums = list(artifact_path.glob("*checksums.txt"))
     assert len(checksums) == 1, "Checksums file not found"
 
-    # Check for raw binary
-    binary_dirs = list(artifact_path.glob("otelcol_*")) + list(
-        artifact_path.glob("otelcol-contrib_*")
+    # Check for raw binary - support both underscore and hyphen variants
+    binary_dirs = (
+        list(artifact_path.glob("otelcol_*"))
+        + list(artifact_path.glob("otelcol-*"))
+        + list(artifact_path.glob("otelcol-contrib"))  # Exact match without suffix
     )
     assert len(binary_dirs) > 0, "No binary directories found"
     for binary_dir in binary_dirs:

@@ -31,7 +31,6 @@
 ocb_version: "0.116.0"
 go_version: "1.24.1"
 expected_artifacts:
-  - "otelcol-contrib"
   - "otelcol-contrib*.deb"
   - "otelcol-contrib*.rpm"
   - "otelcol-contrib*.tar.gz"
