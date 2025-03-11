@@ -83,7 +83,7 @@ def test_build_distribution(manifest_path: Path):
 
     try:
         # Run the build using run_local_build.sh
-        script_path = Path(__file__).parent.parent / "run_local_build.sh"
+        script_path = Path(__file__).parent.parent / "scripts" / "run_local_build.sh"
         cmd = [str(script_path), "-m", str(manifest_path), "-o", str(artifact_dir)]
 
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)

@@ -5,6 +5,6 @@ from pathlib import Path
 
 # Add the src directory to Python path
 ROOT_DIR = Path(__file__).parent.parent
-BUILDER_DIR = str(ROOT_DIR / "src")
+BUILDER_DIR = str(ROOT_DIR / "builder" / "src")
 sys.path.insert(0, BUILDER_DIR)
 sys.path.insert(0, str(ROOT_DIR))

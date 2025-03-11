@@ -122,11 +122,13 @@ class BuildContext:
         ocb_version = "0.116.0"
 
         # Set up build paths
-        working_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        working_dir = os.path.abspath(
+            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        )
         source_dir = os.path.join(BUILD_DIR, "_build")
         artifact_dir = os.path.join(BUILD_DIR, "dist")
         ocb_dir = os.path.join(working_dir, "ocb")
-        templates_dir = os.path.join(working_dir, "templates")
+        templates_dir = os.path.join(working_dir, "builder", "templates")
         manifest_path = os.path.join(BUILD_DIR, "manifest.yaml")
 
         # Update manifest output_path to point to source_dir

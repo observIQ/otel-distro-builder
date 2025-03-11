@@ -30,18 +30,18 @@ gpg.*
 
 # misc
 .env
-.venv
+builder/.venv
 .DS_Store
 
 # Project specific
-__pycache__
+builder/__pycache__
+builder/**/__pycache__
+builder/.pytest_cache
 distributions
 ocb
 *credentials*
 output
 artifacts
-
-.pytest_cache
 
 
 

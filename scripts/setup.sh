@@ -10,10 +10,10 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 # Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
+python3 -m venv builder/.venv
+source builder/.venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -r builder/requirements.txt
 
 echo "✅ Setup complete! Run 'make test' to test the action"

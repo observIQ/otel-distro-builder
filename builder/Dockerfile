@@ -74,14 +74,14 @@ RUN for OCB_VERSION in $OCB_VERSIONS; do \
 RUN mkdir -p /build && \
     mkdir -p /artifacts
 
-# Copy the application
-COPY . /app
+# Copy only the builder directory contents
+COPY builder/ /app/builder/
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r /app/builder/requirements.txt
 
 # Set the entrypoint to make the container behave like a command
-ENTRYPOINT ["python", "/app/src/main.py"]
+ENTRYPOINT ["python", "/app/builder/src/main.py"]
 
 # Default to showing help
 CMD ["--help"]

@@ -110,18 +110,24 @@ docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
 
 ```
 otel-builder/
-├── src/    # Core builder code
-│   ├── main.py             # Main entry point
-│   ├── build.py            # Build process implementation
-│   ├── ocb_downloader.py   # OCB binary management
-│   └── logger.py           # Logging utilities
-├── tests/                  # Test suite
-│   ├── test_build.py       # Build process tests
-│   └── conftest.py         # Test configuration
-├── cloudbuild.yaml         # Cloud Build configuration
-├── Dockerfile              # Builder image definition
-├── Makefile               # Development commands
-└── run_local_build.sh     # Local build script
+├── builder/                # Builder application
+│   ├── src/               # Core builder code
+│   │   ├── main.py           # Main entry point
+│   │   ├── build.py          # Build process implementation
+│   │   ├── ocb_downloader.py # OCB binary management
+│   │   └── logger.py         # Logging utilities
+│   ├── templates/         # Build templates
+│   ├── tests/            # Test suite
+│   │   ├── test_build.py     # Build process tests
+│   │   └── conftest.py       # Test configuration
+│   ├── Dockerfile        # Builder image definition
+│   ├── requirements.txt  # Python dependencies
+│   ├── pylintrc         # Python linting configuration
+│   └── .dockerignore    # Docker build exclusions
+├── action/                # GitHub Action
+│   └── action.yml        # Action definition
+├── scripts/              # Scripts
+└── Makefile              # Development commands
 ```
 
 ## Development
@@ -159,7 +165,7 @@ make release v=2.0.0 # Specific version
 Triggers a build using Google Cloud Build:
 
 ```bash
-./run_cloud_build.sh -m manifest.yaml [-p project_id] [-b artifact_bucket] [-i build_id]
+./scripts/run_cloud_build.sh -m manifest.yaml -p project_id -b artifact_bucket [-i build_id]
 ```
 
 Options:
@@ -171,10 +177,10 @@ Options:
 
 #### run_local_build.sh
 
-Runs a build locally using Docker:
+This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
 
 ```bash
-./run_local_build.sh -m manifest.yaml
+./builder/scripts/run_local_build.sh -m manifest.yaml
 ```
 
 The artifacts will be saved to the `./artifacts` directory.

@@ -58,7 +58,7 @@ echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
 # Build and run the builder container
-docker build -t otel-builder . || {
+docker build -t otel-builder -f "$(dirname "$0")/../builder/Dockerfile" "$(dirname "$0")/.." || {
     echo "Failed to build builder image"
     exit 1
 }

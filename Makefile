@@ -1,10 +1,10 @@
 .PHONY: help setup test release clean venv deps lint lint-check build-local build-example
 
 # Variables
-VENV_DIR := .venv
+VENV_DIR := builder/.venv
 PYTHON := python3
 VENV_BIN := $(VENV_DIR)/bin
-PYTHON_FILES := src tests
+PYTHON_FILES := builder/src builder/tests
 
 # Colors for output
 BLUE := \033[0;34m
@@ -27,7 +27,7 @@ venv: $(VENV_DIR) ## Create/update virtual environment
 
 deps: venv ## Install project dependencies
 	@echo "$(BLUE)Installing dependencies...$(NC)"
-	$(VENV_BIN)/pip install -r requirements.txt
+	$(VENV_BIN)/pip install -r builder/requirements.txt
 
 setup: deps ## Setup development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
@@ -37,16 +37,16 @@ setup: deps ## Setup development environment
 lint: deps ## Run linting and attempt to fix common issues
 	@echo "$(BLUE)Running linter...$(NC)"
 	$(VENV_BIN)/pip install pylint
-	$(VENV_BIN)/pylint $(PYTHON_FILES)
+	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc $(PYTHON_FILES)
 
 lint-check: deps ## Check linting without fixing
 	@echo "$(BLUE)Checking linting...$(NC)"
 	$(VENV_BIN)/pip install pylint
-	$(VENV_BIN)/pylint --score=y $(PYTHON_FILES)
+	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc --score=y $(PYTHON_FILES)
 
 test: setup lint-check ## Run tests
 	@echo "$(BLUE)Running tests...$(NC)"
-	@./scripts/test.sh
+	@./builder/scripts/test.sh
 
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"
@@ -57,10 +57,10 @@ build-local: ## Run a local build (requires manifest.yaml in current directory)
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./run_local_build.sh -m manifest.yaml
+	./scripts/run_local_build.sh -m manifest.yaml
 
 build-example: ## Build using the example manifest
-	./run_local_build.sh -m manifests/example.yaml
+	./scripts/run_local_build.sh -m manifest.yaml
 
 clean: ## Remove generated files
 	@echo "$(BLUE)Cleaning up...$(NC)"
@@ -68,7 +68,12 @@ clean: ## Remove generated files
 	rm -rf build/
 	rm -rf dist/
 	rm -rf $(VENV_DIR)
-	find . -type d -name "__pycache__" -exec rm -rf {} +
-	find . -type d -name ".pytest_cache" -exec rm -rf {} +
-	find . -type f -name "*.pyc" -delete
-	find . -type f -name ".coverage" -delete 
+	find builder -type d -name "__pycache__" -exec rm -rf {} +
+	find builder -type d -name ".pytest_cache" -exec rm -rf {} +
+	find builder -type f -name "*.pyc" -delete
+	find builder -type f -name ".coverage" -delete
+
+.PHONY: build
+build:
+	./builder/scripts/run_local_build.sh -m manifest.yaml
+ 

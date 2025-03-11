@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 
-# Default values
-PROJECT_ID=my-project-id
-ARTIFACT_BUCKET="my-artifact-bucket"
-
 # Help message
 usage() {
     echo "Usage: $0 -m <manifest_path> [-p <project_id>] [-b <artifact_bucket>]"
@@ -13,10 +9,10 @@ usage() {
     echo
     echo "Required arguments:"
     echo "  -m <manifest_path>    Path to manifest.yaml/yml file"
+    echo "  -p <project_id>       Google Cloud project ID"
+    echo "  -b <artifact_bucket>  Artifact bucket name"
     echo
     echo "Optional arguments:"
-    echo "  -p <project_id>       Google Cloud project ID (default: my-project-id)"
-    echo "  -b <artifact_bucket>  Artifact bucket name (default: my-artifact-bucket)"
     echo "  -h                    Show this help message"
     echo
     echo "Example:"
@@ -60,6 +56,16 @@ if [ ! -f "$MANIFEST_PATH" ]; then
     exit 1
 fi
 
+if [ -z "$PROJECT_ID" ]; then
+    echo "Error: Project ID is required. Use -p <project_id>"
+    usage
+fi
+
+if [ -z "$ARTIFACT_BUCKET" ]; then
+    echo "Error: Artifact bucket is required. Use -b <bucket>"
+    usage
+fi
+
 # Check requirements
 check_requirements
 
@@ -88,7 +94,7 @@ echo
 # Build and push the builder image
 echo "Step 1: Building and pushing builder image..."
 BUILDER_IMAGE="gcr.io/${PROJECT_ID}/otel-builder"
-if ! docker build -t "$BUILDER_IMAGE" --platform linux/amd64 .; then
+if ! docker build -t "$BUILDER_IMAGE" --platform linux/amd64 "$(dirname "$0")/.."; then
     echo "Docker build failed"
     exit 1
 fi
@@ -113,7 +119,7 @@ echo
 # Run the build using cloudbuild.yaml
 echo "Step 3: Triggering Cloud Build..."
 if ! CLOUD_BUILD_ID=$(gcloud builds submit \
-    --config=cloudbuild.yaml \
+    --config="$(dirname "$0")/cloudbuild.yaml" \
     --substitutions=_MANIFEST_PATH="$MANIFEST_GCS_PATH",_BUILDER_IMAGE="$BUILDER_IMAGE",_ARTIFACT_BUCKET="$ARTIFACT_BUCKET",_BUILD_ID="$BUILD_ID" \
     --no-source \
     --format='get(id)'); then
