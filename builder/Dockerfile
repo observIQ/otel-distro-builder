@@ -5,7 +5,7 @@ FROM python:3.9-slim
 ENV GORELEASER_VERSION=1.26.2
 ENV SYFT_VERSION=1.15.0
 ENV OCB_VERSIONS="0.119.0 0.120.0 0.121.0"
-ENV GO_VERSIONS="1.23.4"
+ENV GO_VERSIONS="1.23.4 1.24.1"
 ENV DEFAULT_GO_VERSION="1.23.4"
 
 # Install essential libraries for Go, glibc compatibility, and ARM support

@@ -99,14 +99,18 @@ class BuildContext:
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
     ocb_version: str  # Version of OCB to use
+    go_version: str  # Version of Go to use
     manifest_path: str  # Path to the manifest file
 
     @classmethod
+    # pylint: disable=too-many-positional-arguments
     def create(
         cls,
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
+        ocb_version: Optional[str] = "0.121.0",
+        go_version: Optional[str] = "1.24.1",
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -119,7 +123,6 @@ class BuildContext:
         # Format as YAML array
         goos_yaml = "[" + ", ".join(goos) + "]"
         goarch_yaml = "[" + ", ".join(goarch) + "]"
-        ocb_version = "0.116.0"
 
         # Set up build paths
         working_dir = os.path.abspath(
@@ -152,6 +155,7 @@ class BuildContext:
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
             ocb_version=ocb_version,
+            go_version=go_version,
             manifest_path=manifest_path,
         )
 
@@ -313,11 +317,14 @@ def copy_artifacts(ctx: BuildContext, artifact_dir: str) -> None:
     logger.success(f"Artifacts copied to: {artifact_dir}")
 
 
+# pylint: disable=too-many-positional-arguments
 def build(
     manifest_content: str,
     artifact_dir: Optional[str] = None,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
+    ocb_version: Optional[str] = "0.121.0",
+    go_version: Optional[str] = "1.24.1",
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -326,6 +333,8 @@ def build(
         artifact_dir: Optional directory to copy artifacts to after build
         goos: Comma-separated list of target operating systems
         goarch: Comma-separated list of target architectures
+        ocb_version: Version of OpenTelemetry Collector Builder to use
+        go_version: Version of Go to use for building
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -337,7 +346,7 @@ def build(
     logger.section("Build Configuration")
 
     # Create build context
-    ctx = BuildContext.create(manifest_content, goos, goarch)
+    ctx = BuildContext.create(manifest_content, goos, goarch, ocb_version, go_version)
 
     # Log build information
     logger.info("Build Details:", indent=1)
@@ -349,6 +358,7 @@ def build(
         logger.info(f"Final Artifacts Will Be Copied To: {artifact_dir}", indent=2)
     logger.info(f"OCB Directory: {ctx.ocb_dir}", indent=2)
     logger.info(f"OCB Version: {ctx.ocb_version}", indent=2)
+    logger.info(f"Go Version: {ctx.go_version}", indent=2)
 
     metrics.end_phase("setup")
 

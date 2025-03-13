@@ -180,10 +180,18 @@ Options:
 This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
 
 ```bash
-./builder/scripts/run_local_build.sh -m manifest.yaml
+./builder/scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
 ```
 
-The artifacts will be saved to the `./artifacts` directory.
+Options:
+
+- `-m`: Path to manifest file (required)
+- `-o`: Directory to store build artifacts (default: ./artifacts)
+- `-v`: OpenTelemetry Collector Builder version (default: 0.121.0)
+- `-g`: Go version to use for building (default: 1.24.1)
+- `-i`: Build ID for artifact storage (default: auto-generated)
+
+The artifacts will be saved to the specified output directory (default: `./artifacts`).
 
 ## Build Process
 

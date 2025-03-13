@@ -1,0 +1,11 @@
+# Include runtime dependencies
+-r requirements.txt
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-timeout>=2.1.0
+pytest-cov>=4.1.0
+
+# Code quality tools
+black>=23.7.0
+pylint>=2.17.5

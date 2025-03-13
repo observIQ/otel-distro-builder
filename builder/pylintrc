@@ -5,13 +5,15 @@ load-plugins=
 
 [MESSAGES CONTROL]
 disable=
-    C0111,  # missing docstring
-    R0903,  # too few public methods
-    C0103,  # invalid name
-    R0902,  # too many instance attributes
-    C0301,  # line too long
-    R0913,  # too many arguments
-    R0914   # too many local variables
+    C0111,  # missing docstring - we have good docstrings where needed
+    R0903,  # too few public methods - some classes are simple by design
+    C0103,  # invalid name - we use standard Python naming
+    R0902,  # too many instance attributes - complex objects need many attributes
+    C0301,  # line too long - we use black for formatting
+    R0913,  # too many arguments - some functions need many parameters
+    R0914,  # too many local variables - complex functions need many variables
+    E0401,  # import error - false positives for installed packages
+    R0912   # too many branches - complex validation needs many branches
 
 [REPORTS]
 output-format=text

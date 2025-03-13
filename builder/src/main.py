@@ -35,6 +35,18 @@ def main():
         default="arm64",
         help="Comma-separated list of target architectures (overrides manifest)",
     )
+    parser.add_argument(
+        "--ocb-version",
+        type=str,
+        default="0.121.0",
+        help="Version of OpenTelemetry Collector Builder to use",
+    )
+    parser.add_argument(
+        "--go-version",
+        type=str,
+        default="1.24.1",
+        help="Version of Go to use for building",
+    )
     args = parser.parse_args()
 
     # Configure logging
@@ -57,6 +69,8 @@ def main():
             artifact_dir=args.artifacts,
             goos=args.goos.split(","),
             goarch=args.goarch.split(","),
+            ocb_version=args.ocb_version,
+            go_version=args.go_version,
         )
 
         sys.exit(0 if success else 1)
