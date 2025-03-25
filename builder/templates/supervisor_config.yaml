@@ -1,0 +1,19 @@
+server:
+  endpoint: wss://127.0.0.1:3000/v1/opamp
+
+capabilities:
+  accepts_remote_config: true
+  reports_remote_config: true
+
+agent:
+  executable: /opt/__DISTRIBUTION__/__DISTRIBUTION__
+  config_apply_timeout: 30s
+  bootstrap_timeout: 5s
+
+storage:
+  directory: "/opt/__DISTRIBUTION__/supervisor_storage"
+
+telemetry:
+  logs:
+    level: 0
+    output_paths: ["/opt/__DISTRIBUTION__/supervisor.log"]

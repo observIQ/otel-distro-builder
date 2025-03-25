@@ -1,6 +1,6 @@
 #partial:
 #  by: target
-project_name: otel-collector-releases
+project_name: __DISTRIBUTION__
 env:
   - COSIGN_YES=true
 builds:
@@ -31,22 +31,100 @@ builds:
       - -trimpath
     env:
       - CGO_ENABLED=0
+  - id: supervisor
+    goos: __GOOS__
+    goarch: __GOARCH__
+    goarm:
+      - "7"
+    ignore:
+      - goos: darwin
+        goarch: "386"
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: s390x
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: s390x
+    dir: _contrib/collector-contrib/cmd/opampsupervisor
+    binary: supervisor
+    ldflags:
+      - -s
+      - -w
+    flags:
+      - -trimpath
+    env:
+      - CGO_ENABLED=0
 archives:
   - id: __DISTRIBUTION__
     builds:
       - __DISTRIBUTION__
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+      - supervisor
+    name_template: "{{.ProjectName}}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    files:
+      - LICENSE
+      - VERSION
+      - src: __DISTRIBUTION__.service
+        dst: "service"
+      - src: __DISTRIBUTION__.conf
+        dst: "service"
+    format_overrides:
+      - goos: windows
+        format: zip
+
 nfpms:
   - package_name: __DISTRIBUTION__
+    bindir: /opt/__DISTRIBUTION__
     contents:
+      # systemd service files
       - src: __DISTRIBUTION__.service
         dst: /lib/systemd/system/__DISTRIBUTION__.service
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
       - src: __DISTRIBUTION__.conf
         dst: /etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
         type: config|noreplace
-      - src: config.yaml
-        dst: /etc/__DISTRIBUTION__/config.yaml
-        type: config
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+
+      # directory and files for the OpenTelemetry Collector distribution
+      - dst: /opt/__DISTRIBUTION__
+        type: dir
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: LICENSE
+        dst: /opt/__DISTRIBUTION__/LICENSE
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: VERSION
+        dst: /opt/__DISTRIBUTION__/VERSION
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: supervisor_config.yaml
+        dst: /opt/__DISTRIBUTION__/supervisor_config.yaml
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - dst: /opt/__DISTRIBUTION__/supervisor_storage
+        type: dir
+        file_info:
+          mode: 0750
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
     scripts:
       preinstall: preinstall.sh
       postinstall: postinstall.sh
@@ -58,11 +136,10 @@ nfpms:
       - apk
       - deb
       - rpm
-    #maintainer: The OpenTelemetry Collector maintainers <cncf-opentelemetry-maintainers@lists.cncf.io>
     description: OpenTelemetry Collector - __DISTRIBUTION__
     license: Apache 2.0
 checksum:
-  name_template: "{{ .ProjectName }}___DISTRIBUTION___checksums.txt"
+  name_template: "{{ .ProjectName }}_checksums.txt"
 # dockers:
 #   - goos: linux
 #     goarch: "386"

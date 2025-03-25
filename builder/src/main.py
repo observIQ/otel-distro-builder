@@ -42,6 +42,12 @@ def main():
         help="Version of OpenTelemetry Collector Builder to use",
     )
     parser.add_argument(
+        "--supervisor-version",
+        type=str,
+        default="0.121.0",
+        help="Version of OpenTelemetry Collector Supervisor to use",
+    )
+    parser.add_argument(
         "--go-version",
         type=str,
         default="1.24.1",
@@ -70,6 +76,7 @@ def main():
             goos=args.goos.split(","),
             goarch=args.goarch.split(","),
             ocb_version=args.ocb_version,
+            supervisor_version=args.supervisor_version,
             go_version=args.go_version,
         )
 

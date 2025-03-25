@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import yaml
 import psutil
 import ocb_downloader as ocb
+import supervisor_downloader as supervisor
 import logger
 
 
@@ -99,6 +100,7 @@ class BuildContext:
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
     ocb_version: str  # Version of OCB to use
+    supervisor_version: str  # Version of supervisor to use
     go_version: str  # Version of Go to use
     manifest_path: str  # Path to the manifest file
 
@@ -110,6 +112,7 @@ class BuildContext:
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
         ocb_version: Optional[str] = "0.121.0",
+        supervisor_version: Optional[str] = "0.121.0",
         go_version: Optional[str] = "1.24.1",
     ):
         """Create a BuildContext from manifest content."""
@@ -155,6 +158,7 @@ class BuildContext:
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
             ocb_version=ocb_version,
+            supervisor_version=supervisor_version,
             go_version=go_version,
             manifest_path=manifest_path,
         )
@@ -191,12 +195,12 @@ def write_file(path: str, content: str, mode="w"):
 
 
 def generate_sources(ctx: BuildContext) -> None:
-    """Generate source files using OCB."""
-    logger.section("Source Generation")
-
     # Download OCB
     ocb_path = ocb.download_ocb(ctx.ocb_version, ctx.ocb_dir)
     logger.success(f"OCB {ctx.ocb_version} ready")
+
+    """Generate source files using OCB."""
+    logger.section("Source Generation")
 
     # Run OCB
     cmd = f"{ocb_path} --skip-compilation=true --config {ctx.manifest_path}"
@@ -225,6 +229,12 @@ def generate_sources(ctx: BuildContext) -> None:
 
     logger.success(f"Source files generated for '{ctx.distribution}'")
 
+def retrieve_supervisor_source(ctx: BuildContext):
+    # Download contrib repository
+    supervisor.clone_repo(os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version)
+    logger.success(f"Supervisor source files retrieved for '{ctx.distribution}'")
+    
+
 
 def process_templates(ctx: BuildContext):
     """Process and copy template files."""
@@ -232,11 +242,11 @@ def process_templates(ctx: BuildContext):
 
     templates = [
         (".goreleaser.yaml", ".goreleaser.yaml"),
-        ("config.yaml", "config.yaml"),
         ("Dockerfile", "Dockerfile"),
         ("postinstall.sh", "postinstall.sh"),
         ("preinstall.sh", "preinstall.sh"),
         ("preremove.sh", "preremove.sh"),
+        ("supervisor_config.yaml", "supervisor_config.yaml"),
         ("template.conf", f"{ctx.distribution}.conf"),
         ("template.service", f"{ctx.distribution}.service"),
     ]
@@ -259,6 +269,21 @@ def process_templates(ctx: BuildContext):
         logger.info(f"Made executable: {script}", indent=1)
 
     logger.success("All templates processed")
+
+def move_files(ctx: BuildContext):
+    """Move files to the build directory."""
+    logger.section("Moving Files")
+
+    # Move additional files
+    files = [
+        "LICENSE",
+        "VERSION",
+    ]
+    for file in files:
+        src = os.path.join(ctx.working_dir, file)
+        dst = os.path.join(ctx.build_dir, file)
+        shutil.copy2(src, dst)
+        logger.info(f"Moved: {file}", indent=1)
 
 
 def build_release(ctx: BuildContext) -> bool:
@@ -324,6 +349,7 @@ def build(
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
     ocb_version: Optional[str] = "0.121.0",
+    supervisor_version: Optional[str] = "0.121.0",
     go_version: Optional[str] = "1.24.1",
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
@@ -334,6 +360,7 @@ def build(
         goos: Comma-separated list of target operating systems
         goarch: Comma-separated list of target architectures
         ocb_version: Version of OpenTelemetry Collector Builder to use
+        supervisor_version: Version of OpenTelemetry Collector Supervisor to use
         go_version: Version of Go to use for building
 
     Returns:
@@ -346,7 +373,7 @@ def build(
     logger.section("Build Configuration")
 
     # Create build context
-    ctx = BuildContext.create(manifest_content, goos, goarch, ocb_version, go_version)
+    ctx = BuildContext.create(manifest_content, goos, goarch, ocb_version, supervisor_version, go_version)
 
     # Log build information
     logger.info("Build Details:", indent=1)
@@ -358,6 +385,7 @@ def build(
         logger.info(f"Final Artifacts Will Be Copied To: {artifact_dir}", indent=2)
     logger.info(f"OCB Directory: {ctx.ocb_dir}", indent=2)
     logger.info(f"OCB Version: {ctx.ocb_version}", indent=2)
+    logger.info(f"Supervisor Version: {ctx.supervisor_version}", indent=2)
     logger.info(f"Go Version: {ctx.go_version}", indent=2)
 
     metrics.end_phase("setup")
@@ -379,11 +407,23 @@ def build(
         metrics.update_resource_usage()
         metrics.end_phase("generate_sources")
 
+        # Retrieve supervisor source
+        metrics.start_phase("retrieve_supervisor_source")
+        retrieve_supervisor_source(ctx)
+        metrics.update_resource_usage()
+        metrics.end_phase("retrieve_supervisor_source")
+
         # Process templates
         metrics.start_phase("process_templates")
         process_templates(ctx)
         metrics.update_resource_usage()
         metrics.end_phase("process_templates")
+
+        # Move additional files to build directory
+        metrics.start_phase("move_files")
+        move_files(ctx)
+        metrics.update_resource_usage()
+        metrics.end_phase("move_files")
 
         # Build release
         metrics.start_phase("build_release")

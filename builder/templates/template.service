@@ -1,15 +1,22 @@
 [Unit]
-Description=OpenTelemetry Collector Contrib
+Description=An OpenTelemetry Collector service named '__DISTRIBUTION__'.
 After=network.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
 
 [Service]
 EnvironmentFile=/etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
-ExecStart=/usr/bin/__DISTRIBUTION__ $OTELCOL_OPTIONS
-KillMode=mixed
+ExecStart=/opt/__DISTRIBUTION__/supervisor $OTELCOL_OPTIONS
+KillMode=control-group
 Restart=on-failure
 Type=simple
 User=__DISTRIBUTION__
 Group=__DISTRIBUTION__
+SuccessExitStatus=0
+TimeoutSec=20
+StandardOutput=journal
+Restart=on-failure
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
