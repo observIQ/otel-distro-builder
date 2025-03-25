@@ -112,7 +112,7 @@ class BuildContext:
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
         ocb_version: Optional[str] = "0.121.0",
-        supervisor_version: Optional[str] = "0.121.0",
+        supervisor_version: Optional[str] = "0.122.0",
         go_version: Optional[str] = "1.24.1",
     ):
         """Create a BuildContext from manifest content."""
@@ -182,7 +182,7 @@ def validate_environment():
 def create_directories(ctx: BuildContext):
     """Create all necessary directories for the build."""
     logger.section("Directory Setup")
-    for directory in [ctx.build_dir, ctx.source_dir, ctx.artifact_dir, ctx.ocb_dir]:
+    for directory in [ctx.build_dir, ctx.source_dir, ctx.artifact_dir, ctx.ocb_dir, os.path.join(ctx.build_dir, "_contrib")]:
         os.makedirs(directory, exist_ok=True)
         logger.info(f"Created directory: {directory}", indent=1)
     logger.success("All directories created")
@@ -230,10 +230,10 @@ def generate_sources(ctx: BuildContext) -> None:
 
     logger.success(f"Source files generated for '{ctx.distribution}'")
 
-def retrieve_supervisor_source(ctx: BuildContext):
-    # Download contrib repository
-    supervisor.clone_repo(os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version)
-    logger.success(f"Supervisor source files retrieved for '{ctx.distribution}'")
+def download_supervisor(ctx: BuildContext):
+    # Download supervisor
+    supervisor.download_supervisor(os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version)
+    logger.success("Supervisor binaries downloaded")
 
 def process_templates(ctx: BuildContext):
     """Process and copy template files."""
@@ -241,6 +241,7 @@ def process_templates(ctx: BuildContext):
 
     templates = [
         (".goreleaser.yaml", ".goreleaser.yaml"),
+        ("collector_config.yaml", "collector_config.yaml"),
         ("Dockerfile", "Dockerfile"),
         ("postinstall.sh", "postinstall.sh"),
         ("preinstall.sh", "preinstall.sh"),
@@ -248,6 +249,8 @@ def process_templates(ctx: BuildContext):
         ("supervisor_config.yaml", "supervisor_config.yaml"),
         ("template.conf", f"{ctx.distribution}.conf"),
         ("template.service", f"{ctx.distribution}.service"),
+        ("template_otelcol.conf", f"{ctx.distribution}_otelcol.conf"),
+        ("template_otelcol.service", f"{ctx.distribution}_otelcol.service"),
     ]
 
     # Copy and update template files
@@ -295,10 +298,10 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
     metrics.end_phase("generate_sources")
 
     # Retrieve supervisor source
-    metrics.start_phase("retrieve_supervisor_source")
-    retrieve_supervisor_source(ctx)
+    metrics.start_phase("download_supervisor")
+    download_supervisor(ctx)
     metrics.update_resource_usage()
-    metrics.end_phase("retrieve_supervisor_source")
+    metrics.end_phase("download_supervisor")
 
     # Process templates
     metrics.start_phase("process_templates")
@@ -375,7 +378,7 @@ def build(
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
     ocb_version: Optional[str] = "0.121.0",
-    supervisor_version: Optional[str] = "0.121.0",
+    supervisor_version: Optional[str] = "0.122.0",
     go_version: Optional[str] = "1.24.1",
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.

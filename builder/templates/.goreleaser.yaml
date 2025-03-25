@@ -31,50 +31,37 @@ builds:
       - -trimpath
     env:
       - CGO_ENABLED=0
-  - id: supervisor
-    goos: __GOOS__
-    goarch: __GOARCH__
-    goarm:
-      - "7"
-    ignore:
-      - goos: darwin
-        goarch: "386"
-      - goos: darwin
-        goarch: arm
-      - goos: darwin
-        goarch: s390x
-      - goos: windows
-        goarch: arm
-      - goos: windows
-        goarch: arm64
-      - goos: windows
-        goarch: s390x
-    dir: _contrib/collector-contrib/cmd/opampsupervisor
-    binary: supervisor
-    ldflags:
-      - -s
-      - -w
-    flags:
-      - -trimpath
-    env:
-      - CGO_ENABLED=0
 archives:
   - id: __DISTRIBUTION__
     builds:
       - __DISTRIBUTION__
-      - supervisor
-    name_template: "{{.ProjectName}}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
       - LICENSE
       - VERSION
       - supervisor_config.yaml
+      - src: _contrib/supervisor_{{ .Os }}_{{ .Arch }}{{ .ArtifactExt }}
+        dst: supervisor
       - src: __DISTRIBUTION__.service
-        dst: "service"
+        dst: "service/__DISTRIBUTION__.service"
       - src: __DISTRIBUTION__.conf
-        dst: "service"
+        dst: "service/__DISTRIBUTION__.conf"
     format_overrides:
       - goos: windows
         format: zip
+
+  - id: __DISTRIBUTION___otelcol
+    builds:
+      - __DISTRIBUTION__
+    name_template: "{{ .ProjectName }}_otelcol_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    files:
+      - LICENSE
+      - VERSION
+      - collector_config.yaml
+      - src: __DISTRIBUTION___otelcol.service
+        dst: "service/__DISTRIBUTION__.service"
+      - src: __DISTRIBUTION___otelcol.conf
+        dst: "service/__DISTRIBUTION__.conf"
 
 nfpms:
   - package_name: __DISTRIBUTION__
@@ -90,7 +77,7 @@ nfpms:
       - apk
       - deb
       - rpm
-    description: OpenTelemetry Collector - __DISTRIBUTION__
+    description: OpenTelemetry Collector with Supervisor - __DISTRIBUTION__
     license: Apache 2.0
     contents:
       # systemd service files
@@ -127,6 +114,12 @@ nfpms:
           mode: 0644
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
+      - src: _contrib/supervisor_{{.Os}}_{{.Arch}}{{ .ArtifactExt }}
+        dst: /opt/__DISTRIBUTION__/supervisor{{ .ArtifactExt }}
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
       - src: supervisor_config.yaml
         dst: /opt/__DISTRIBUTION__/supervisor_config.yaml
         file_info:
@@ -139,6 +132,64 @@ nfpms:
           mode: 0750
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
+
+  - package_name: __DISTRIBUTION___otelcol
+    bindir: /opt/__DISTRIBUTION__
+    scripts:
+      preinstall: preinstall.sh
+      postinstall: postinstall.sh
+      preremove: preremove.sh
+    id: __DISTRIBUTION___otelcol
+    builds:
+      - __DISTRIBUTION__
+    formats:
+      - apk
+      - deb
+      - rpm
+    description: OpenTelemetry Collector - __DISTRIBUTION__
+    license: Apache 2.0
+    contents:
+      # systemd service files
+      - src: __DISTRIBUTION___otelcol.service
+        dst: /lib/systemd/system/__DISTRIBUTION__.service
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+      - src: __DISTRIBUTION___otelcol.conf
+        dst: /etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
+        type: config|noreplace
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+
+      # directory and files for the OpenTelemetry Collector distribution
+      - dst: /opt/__DISTRIBUTION__
+        type: dir
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: LICENSE
+        dst: /opt/__DISTRIBUTION__/LICENSE
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: VERSION
+        dst: /opt/__DISTRIBUTION__/VERSION
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: collector_config.yaml
+        dst: /opt/__DISTRIBUTION__/collector_config.yaml
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
 # dockers:

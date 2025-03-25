@@ -7,7 +7,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OCB_VERSION="0.121.0"
-SUPERVISOR_VERSION="0.121.0"
+SUPERVISOR_VERSION="0.122.0"
 GO_VERSION="1.24.1"
 
 # Help message
@@ -28,7 +28,7 @@ usage() {
     echo "  -h                          Show this help message"
     echo
     echo "Example:"
-    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts -v 0.121.0 -s 0.121.0 -g 1.24.1"
+    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts -v 0.121.0 -s 0.122.0 -g 1.24.1"
     exit 1
 }
 

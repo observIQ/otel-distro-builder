@@ -44,7 +44,7 @@ def main():
     parser.add_argument(
         "--supervisor-version",
         type=str,
-        default="0.121.0",
+        default="0.122.0",
         help="Version of OpenTelemetry Collector Supervisor to use",
     )
     parser.add_argument(

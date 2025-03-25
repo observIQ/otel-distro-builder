@@ -64,7 +64,7 @@ build-local: ## Run a local build (requires manifest.yaml in current directory)
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.121.0 -g 1.24.1
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1
 
 clean: ## Remove generated files
 	@echo "$(BLUE)Cleaning up...$(NC)"
