@@ -195,14 +195,15 @@ def write_file(path: str, content: str, mode="w"):
 
 
 def generate_sources(ctx: BuildContext) -> None:
+    """Generate source files using OCB."""
+
     # Download OCB
     ocb_path = ocb.download_ocb(ctx.ocb_version, ctx.ocb_dir)
     logger.success(f"OCB {ctx.ocb_version} ready")
 
-    """Generate source files using OCB."""
+    # Run OCB
     logger.section("Source Generation")
 
-    # Run OCB
     cmd = f"{ocb_path} --skip-compilation=true --config {ctx.manifest_path}"
     logger.info("Running OCB builder:", indent=1)
     logger.command(cmd)
@@ -233,8 +234,6 @@ def retrieve_supervisor_source(ctx: BuildContext):
     # Download contrib repository
     supervisor.clone_repo(os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version)
     logger.success(f"Supervisor source files retrieved for '{ctx.distribution}'")
-    
-
 
 def process_templates(ctx: BuildContext):
     """Process and copy template files."""

@@ -67,6 +67,7 @@ archives:
     files:
       - LICENSE
       - VERSION
+      - supervisor_config.yaml
       - src: __DISTRIBUTION__.service
         dst: "service"
       - src: __DISTRIBUTION__.conf
@@ -78,6 +79,19 @@ archives:
 nfpms:
   - package_name: __DISTRIBUTION__
     bindir: /opt/__DISTRIBUTION__
+    scripts:
+      preinstall: preinstall.sh
+      postinstall: postinstall.sh
+      preremove: preremove.sh
+    id: __DISTRIBUTION__
+    builds:
+      - __DISTRIBUTION__
+    formats:
+      - apk
+      - deb
+      - rpm
+    description: OpenTelemetry Collector - __DISTRIBUTION__
+    license: Apache 2.0
     contents:
       # systemd service files
       - src: __DISTRIBUTION__.service
@@ -125,19 +139,6 @@ nfpms:
           mode: 0750
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
-    scripts:
-      preinstall: preinstall.sh
-      postinstall: postinstall.sh
-      preremove: preremove.sh
-    id: __DISTRIBUTION__
-    builds:
-      - __DISTRIBUTION__
-    formats:
-      - apk
-      - deb
-      - rpm
-    description: OpenTelemetry Collector - __DISTRIBUTION__
-    license: Apache 2.0
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
 # dockers:

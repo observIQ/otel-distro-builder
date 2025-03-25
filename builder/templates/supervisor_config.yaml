@@ -1,9 +1,10 @@
 server:
-  endpoint: wss://127.0.0.1:3000/v1/opamp
+  endpoint: wss://127.0.0.1:3001/v1/opamp
 
 capabilities:
   accepts_remote_config: true
   reports_remote_config: true
+  reports_available_components: true
 
 agent:
   executable: /opt/__DISTRIBUTION__/__DISTRIBUTION__
