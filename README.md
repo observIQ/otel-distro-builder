@@ -1,24 +1,38 @@
-# OpenTelemetry Collector Build Utilities
+# 🚀 OpenTelemetry Collector Builder
 
-This directory contains the source code for the OpenTelemetry Builder Node, which builds custom OpenTelemetry Collector distributions based on a manifest file.
+<div align="center">
 
-## Overview
+[![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-builder)](https://github.com/observIQ/otel-builder/releases)
+[![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-The builder creates OpenTelemetry Collector distributions with custom components. It supports:
+Build custom OpenTelemetry Collector distributions from manifest files. Use a binary, Docker, or a GitHub Action.
 
-- Multiple package formats (APK, DEB, RPM, TAR.GZ)
-- Platform-specific builds
-- Custom component selection
-- GitHub Actions integration
-- Multi-platform builds (amd64, arm64)
-- Automated releases and versioning
+[Quick Start](#quick-start) • [Documentation](#documentation) • [Examples](#examples)
 
-## Quick Start
+</div>
 
-1. Create a new repository
-2. Add your `manifest.yaml` defining your custom collector
-3. Create `.github/workflows/build.yml`:
+## ✨ Features
 
+- 🎯 **Custom Component Selection**: Build collectors with exactly the components you need
+- 🌐 **Multi-Platform Support**: Build for multiple architectures (amd64, arm64)
+- 📦 **Multiple Package Formats**: Generate APK, DEB, RPM, and TAR.GZ packages
+- 🔄 **GitHub Actions Integration**: Seamless CI/CD integration
+- 🚀 **Automated Releases**: Streamlined versioning and release process
+- 🔍 **Platform-Specific Builds**: Optimize for your target environment
+
+## 🚀 Quick Start
+
+1. **Create a new repository**
+2. **Add your manifest file** (`manifest.yaml`):
+   ```yaml
+   name: my-collector
+   version: 1.0.0
+   components:
+     - name: otelcol
+       version: 0.96.0
+   ```
+
+3. **Set up GitHub Actions** (`.github/workflows/build.yml`):
    ```yaml
    name: Build Collector
    on:
@@ -36,65 +50,38 @@ The builder creates OpenTelemetry Collector distributions with custom components
              manifest: "./manifest.yaml"
    ```
 
-4. Push a tag: `git tag v1.0.0 && git push --tags`
+4. **Trigger a build**:
+   ```bash
+   git tag v1.0.0 && git push --tags
+   ```
 
-## GitHub Action Usage
+## 📚 Documentation
 
-### Inputs
+### GitHub Action Configuration
 
-| Input              | Description                 | Default           |
-| ------------------ | --------------------------- | ----------------- |
-| `manifest`         | Path to manifest file       | `./manifest.yaml` |
-| `output-dir`       | Output directory            | `./artifacts`     |
-| `create_release`   | Create GitHub release       | `true`            |
-| `upload_artifacts` | Upload to Actions artifacts | `true`            |
-| `platforms`        | Target platforms            | `linux/amd64`     |
-| `debug`            | Enable debug logging        | `false`           |
+#### Inputs
 
-### Outputs
+| Input | Description | Default |
+|-------|-------------|---------|
+| `manifest` | Path to manifest file | `./manifest.yaml` |
+| `output-dir` | Output directory | `./artifacts` |
+| `create_release` | Create GitHub release | `true` |
+| `upload_artifacts` | Upload to Actions artifacts | `true` |
+| `platforms` | Target platforms | `linux/amd64` |
+| `debug` | Enable debug logging | `false` |
 
-| Output           | Description       |
-| ---------------- | ----------------- |
-| `name`           | Collector name    |
-| `version`        | Collector version |
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `name` | Collector name |
+| `version` | Collector version |
 | `artifacts_path` | Path to artifacts |
 
-### Example: Multi-Platform Build with Container Publishing
-
-```yaml
-- uses: observiq/otel-builder@v1
-  with:
-    manifest: collector/manifest.yaml
-    output-dir: ./dist
-    platforms: linux/amd64,linux/arm64
-
-- name: Build and push container images
-  uses: docker/build-push-action@v5
-  with:
-    context: ./dist
-    platforms: linux/amd64,linux/arm64
-    push: true
-    tags: |
-      ghcr.io/observiq/collector:latest
-      ghcr.io/observiq/collector:1.0.0
-```
-
-See `.github/workflows/examples/` for more example workflows.
-
-## Versioning
-
-We follow semantic versioning. The builder is available in several forms:
-
-- GitHub Action: Use `@v1` for latest 1.x version, or `@v1.2.3` for specific versions
-- Docker Image: Use `main` for latest, or version tags like `v1.2.3`
-- Container Registry: `ghcr.io/observiq/otel-builder:main` or `ghcr.io/observiq/otel-builder:v1.2.3`
-
-## Docker Usage
-
-The builder is available as a container image from GitHub Container Registry:
+### Docker Usage
 
 ```bash
-# Pull latest version
+# Pull the latest version
 docker pull ghcr.io/observiq/otel-builder:main
 
 # Pull specific version
@@ -106,33 +93,9 @@ docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
   --output /workspace/dist
 ```
 
-## Directory Structure
+## 🛠️ Development
 
-```
-otel-builder/
-├── builder/                # Builder application
-│   ├── src/               # Core builder code
-│   │   ├── main.py           # Main entry point
-│   │   ├── build.py          # Build process implementation
-│   │   ├── ocb_downloader.py # OCB binary management
-│   │   └── logger.py         # Logging utilities
-│   ├── templates/         # Build templates
-│   ├── tests/            # Test suite
-│   │   ├── test_build.py     # Build process tests
-│   │   └── conftest.py       # Test configuration
-│   ├── Dockerfile        # Builder image definition
-│   ├── requirements.txt  # Python dependencies
-│   ├── pylintrc         # Python linting configuration
-│   └── .dockerignore    # Docker build exclusions
-├── action/                # GitHub Action
-│   └── action.yml        # Action definition
-├── scripts/              # Scripts
-└── Makefile              # Development commands
-```
-
-## Development
-
-### Requirements
+### Prerequisites
 
 - Python 3
 - Docker
@@ -193,30 +156,73 @@ Options:
 
 The artifacts will be saved to the specified output directory (default: `./artifacts`).
 
-## Build Process
+## 📁 Project Structure
 
-1. The builder image is built and pushed to Google Container Registry
-2. The manifest file is uploaded to the build environment
-3. The builder:
-   - Downloads OCB (OpenTelemetry Collector Builder)
-   - Validates the manifest configuration
-   - Generates Go source files from the manifest
-   - Builds platform-specific packages
-   - Creates SBOMs and checksums
-4. Artifacts are uploaded to Google Cloud Storage
+```
+otel-builder/
+├── builder/                # Builder application
+│   ├── src/               # Core builder code
+│   ├── templates/         # Build templates
+│   ├── tests/            # Test suite
+│   └── Dockerfile        # Builder image definition
+├── action/                # GitHub Action
+├── scripts/              # Build scripts
+└── Makefile              # Development commands
+```
 
-## Build Artifacts
+## 🔧 Build Process
 
-The build produces several artifacts:
+1. **Builder Image Preparation**: Build and push to Google Container Registry
+2. **Manifest Processing**: Upload and validate manifest configuration
+3. **Build Execution**:
+   - Download OpenTelemetry Collector Builder (OCB)
+   - Generate Go source files
+   - Build platform-specific packages
+   - Create SBOMs and checksums
+4. **Artifact Management**: Upload to Google Cloud Storage
 
-- Binary packages (APK, DEB, RPM)
-- Source tarball
-- Raw binary
-- SBOM files
-- Checksums
-- Build metadata
+## 📦 Build Artifacts
 
-Artifacts are stored in:
+The builder produces:
 
-- Local builds: `./artifacts` directory
-- Cloud builds: `gs://<bucket>/<build_id>/`
+- 📦 Binary packages (APK, DEB, RPM)
+- 📚 Source tarball
+- 🔧 Raw binary
+- 📋 SBOM files
+- 🔍 Checksums
+- 📝 Build metadata
+
+### Storage Locations
+
+- **Local builds**: `./artifacts` directory
+- **Cloud builds**: `gs://<bucket>/<build_id>/`
+
+## Versioning
+
+We follow semantic versioning. The builder is available in several forms:
+
+- GitHub Action: Use `@v1` for latest 1.x version, or `@v1.2.3` for specific versions
+- Docker Image: Use `main` for latest, or version tags like `v1.2.3`
+- Container Registry: `ghcr.io/observiq/otel-builder:main` or `ghcr.io/observiq/otel-builder:v1.2.3`
+
+## 📚 Examples
+
+Check out our example workflows in `.github/workflows/examples/` for common use cases:
+
+- Multi-platform builds
+- Container publishing
+- Custom package configurations
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+Made with ❤️ by the Bindplane team
+</div>
