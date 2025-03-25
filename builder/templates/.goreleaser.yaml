@@ -1,8 +1,7 @@
-#partial:
-#  by: target
 project_name: __DISTRIBUTION__
 env:
   - COSIGN_YES=true
+
 builds:
   - id: __DISTRIBUTION__
     goos: __GOOS__
@@ -58,6 +57,7 @@ builds:
       - -trimpath
     env:
       - CGO_ENABLED=0
+
 archives:
   - id: __DISTRIBUTION__
     builds:
@@ -138,8 +138,15 @@ nfpms:
       - rpm
     description: OpenTelemetry Collector - __DISTRIBUTION__
     license: Apache 2.0
+
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
+release:
+  draft: false
+  prerelease: "true"
+  extra_files:
+    - glob: "install_unix.sh"
+
 # dockers:
 #   - goos: linux
 #     goarch: "386"

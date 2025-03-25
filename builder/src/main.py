@@ -36,6 +36,12 @@ def main():
         help="Comma-separated list of target architectures (overrides manifest)",
     )
     parser.add_argument(
+        "--go-version",
+        type=str,
+        default="1.24.1",
+        help="Version of Go to use for building",
+    )
+    parser.add_argument(
         "--ocb-version",
         type=str,
         default="0.121.0",
@@ -48,10 +54,10 @@ def main():
         help="Version of OpenTelemetry Collector Supervisor to use",
     )
     parser.add_argument(
-        "--go-version",
+        "--repository-url",
         type=str,
-        default="1.24.1",
-        help="Version of Go to use for building",
+        default="",
+        help="The URL of the repository the resulting GitHub release will be uploaded to. Used for generating install scripts for the collector.",
     )
     args = parser.parse_args()
 
@@ -75,9 +81,10 @@ def main():
             artifact_dir=args.artifacts,
             goos=args.goos.split(","),
             goarch=args.goarch.split(","),
+            go_version=args.go_version,
             ocb_version=args.ocb_version,
             supervisor_version=args.supervisor_version,
-            go_version=args.go_version,
+            repository_url=args.repository_url,
         )
 
         sys.exit(0 if success else 1)
