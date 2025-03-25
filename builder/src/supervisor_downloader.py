@@ -32,7 +32,7 @@ def clone_repo(output_dir, tag):
             text=True
         )
         repo_logger.success(f"Successfully cloned repository at tag: {tag}")
-   
+
         # Verify opampsupervisor folder exists
         opamp_path = os.path.join(repo_path, "cmd", "opampsupervisor")
         if not os.path.exists(opamp_path):

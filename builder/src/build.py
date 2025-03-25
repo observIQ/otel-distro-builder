@@ -284,6 +284,33 @@ def move_files(ctx: BuildContext):
         shutil.copy2(src, dst)
         logger.info(f"Moved: {file}", indent=1)
 
+def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
+    """Prepare the release."""
+    logger.section("Release Preparation")
+
+    # Generate sources
+    metrics.start_phase("generate_sources")
+    generate_sources(ctx)
+    metrics.update_resource_usage()
+    metrics.end_phase("generate_sources")
+
+    # Retrieve supervisor source
+    metrics.start_phase("retrieve_supervisor_source")
+    retrieve_supervisor_source(ctx)
+    metrics.update_resource_usage()
+    metrics.end_phase("retrieve_supervisor_source")
+
+    # Process templates
+    metrics.start_phase("process_templates")
+    process_templates(ctx)
+    metrics.update_resource_usage()
+    metrics.end_phase("process_templates")
+
+    # Move additional files to build directory
+    metrics.start_phase("move_files")
+    move_files(ctx)
+    metrics.update_resource_usage()
+    metrics.end_phase("move_files")
 
 def build_release(ctx: BuildContext) -> bool:
     """Build the final release using goreleaser."""
@@ -400,29 +427,11 @@ def build(
         create_directories(ctx)
         metrics.end_phase("create_dirs")
 
-        # Generate sources
-        metrics.start_phase("generate_sources")
-        generate_sources(ctx)
+        # Release preparation
+        metrics.start_phase("release_preparation")
+        release_preparation(ctx, metrics)
         metrics.update_resource_usage()
-        metrics.end_phase("generate_sources")
-
-        # Retrieve supervisor source
-        metrics.start_phase("retrieve_supervisor_source")
-        retrieve_supervisor_source(ctx)
-        metrics.update_resource_usage()
-        metrics.end_phase("retrieve_supervisor_source")
-
-        # Process templates
-        metrics.start_phase("process_templates")
-        process_templates(ctx)
-        metrics.update_resource_usage()
-        metrics.end_phase("process_templates")
-
-        # Move additional files to build directory
-        metrics.start_phase("move_files")
-        move_files(ctx)
-        metrics.update_resource_usage()
-        metrics.end_phase("move_files")
+        metrics.end_phase("release_preparation")
 
         # Build release
         metrics.start_phase("build_release")
