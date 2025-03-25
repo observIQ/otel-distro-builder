@@ -99,10 +99,11 @@ class BuildContext:
     distribution: str  # Name of the distribution
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
+    go_version: str  # Version of Go to use
     ocb_version: str  # Version of OCB to use
     supervisor_version: str  # Version of supervisor to use
-    go_version: str  # Version of Go to use
     manifest_path: str  # Path to the manifest file
+    repository_url: str  # URL of the repository the resulting GitHub release will be uploaded to
 
     @classmethod
     # pylint: disable=too-many-positional-arguments
@@ -111,9 +112,10 @@ class BuildContext:
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
+        go_version: Optional[str] = "1.24.1",
         ocb_version: Optional[str] = "0.121.0",
         supervisor_version: Optional[str] = "0.121.0",
-        go_version: Optional[str] = "1.24.1",
+        repository_url: Optional[str] = "",
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -157,10 +159,11 @@ class BuildContext:
             distribution=distribution,
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
+            go_version=go_version,
             ocb_version=ocb_version,
             supervisor_version=supervisor_version,
-            go_version=go_version,
             manifest_path=manifest_path,
+            repository_url=repository_url,
         )
 
 
@@ -243,6 +246,7 @@ def process_templates(ctx: BuildContext):
     templates = [
         (".goreleaser.yaml", ".goreleaser.yaml"),
         ("Dockerfile", "Dockerfile"),
+        ("install_unix.sh", "install_unix.sh"),
         ("postinstall.sh", "postinstall.sh"),
         ("preinstall.sh", "preinstall.sh"),
         ("preremove.sh", "preremove.sh"),
@@ -260,6 +264,7 @@ def process_templates(ctx: BuildContext):
             content = content.replace("__DISTRIBUTION__", ctx.distribution)
             content = content.replace("__GOOS__", ctx.goos_yaml)
             content = content.replace("__GOARCH__", ctx.goarch_yaml)
+            content = content.replace("__REPO__", ctx.repository_url)
             write_file(dest_path, content)
         logger.info(f"Processed: {template} → {dest}", indent=1)
 
@@ -348,9 +353,10 @@ def build(
     artifact_dir: Optional[str] = None,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
+    go_version: Optional[str] = "1.24.1",
     ocb_version: Optional[str] = "0.121.0",
     supervisor_version: Optional[str] = "0.121.0",
-    go_version: Optional[str] = "1.24.1",
+    repository_url: Optional[str] = "",
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -359,9 +365,10 @@ def build(
         artifact_dir: Optional directory to copy artifacts to after build
         goos: Comma-separated list of target operating systems
         goarch: Comma-separated list of target architectures
+        go_version: Version of Go to use for building
         ocb_version: Version of OpenTelemetry Collector Builder to use
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use
-        go_version: Version of Go to use for building
+        repository_url: The URL of the repository the resulting GitHub release will be uploaded to. Used for generating install scripts for the collector.
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -373,7 +380,7 @@ def build(
     logger.section("Build Configuration")
 
     # Create build context
-    ctx = BuildContext.create(manifest_content, goos, goarch, ocb_version, supervisor_version, go_version)
+    ctx = BuildContext.create(manifest_content, goos, goarch, go_version, ocb_version, supervisor_version, repository_url)
 
     # Log build information
     logger.info("Build Details:", indent=1)
@@ -387,6 +394,7 @@ def build(
     logger.info(f"OCB Version: {ctx.ocb_version}", indent=2)
     logger.info(f"Supervisor Version: {ctx.supervisor_version}", indent=2)
     logger.info(f"Go Version: {ctx.go_version}", indent=2)
+    logger.info(f"Repository URL: {ctx.repository_url}", indent=2)
 
     metrics.end_phase("setup")
 
