@@ -74,8 +74,10 @@ RUN for OCB_VERSION in $OCB_VERSIONS; do \
 RUN mkdir -p /build && \
     mkdir -p /artifacts
 
-# Copy only the builder directory contents
+# Copy only the required files
 COPY builder/ /app/builder/
+COPY LICENSE /app/LICENSE
+COPY VERSION /app/VERSION
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/builder/requirements.txt

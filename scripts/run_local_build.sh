@@ -7,6 +7,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OCB_VERSION="0.121.0"
+SUPERVISOR_VERSION="0.122.0"
 GO_VERSION="1.24.1"
 
 # Help message
@@ -16,30 +17,32 @@ usage() {
     echo "Build an OpenTelemetry Collector using Google Cloud Build"
     echo
     echo "Required arguments:"
-    echo "  -m <manifest_path>    Path to manifest.yaml/yml file"
+    echo "  -m <manifest_path>          Path to manifest.yaml/yml file"
     echo
     echo "Optional arguments:"
-    echo "  -i <build_id>        Build ID for artifact storage (default: auto-generated)"
-    echo "  -o <output_dir>      Directory to store build artifacts (default: ./artifacts)"
-    echo "  -v <ocb_version>     OpenTelemetry Collector Builder version (default: ${OCB_VERSION})"
-    echo "  -g <go_version>      Go version to use (default: ${GO_VERSION})"
-    echo "  -h                    Show this help message"
+    echo "  -i <build_id>               Build ID for artifact storage (default: auto-generated)"
+    echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
+    echo "  -v <ocb_version>            OpenTelemetry Collector Builder version (default: ${OCB_VERSION})"
+    echo "  -s <supervisor_version>     OpenTelemetry Collector Supervisor version (default: ${SUPERVISOR_VERSION})"
+    echo "  -g <go_version>             Go version to use (default: ${GO_VERSION})"
+    echo "  -h                          Show this help message"
     echo
     echo "Example:"
-    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts -v 0.121.0 -g 1.24.1"
+    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts -v 0.121.0 -s 0.122.0 -g 1.24.1"
     exit 1
 }
 
 # Parse command line arguments
-while getopts "m:p:i:o:v:g:h" opt; do
+while getopts "m:p:i:o:v:g:s:h" opt; do
     case $opt in
-        m) MANIFEST_PATH="$OPTARG";;
-        i) BUILD_ID="$OPTARG";;
-        o) OUTPUT_DIR="$OPTARG";;
-        v) OCB_VERSION="$OPTARG";;
-        g) GO_VERSION="$OPTARG";;
-        h) usage;;
-        ?) usage;;
+    m) MANIFEST_PATH="$OPTARG" ;;
+    i) BUILD_ID="$OPTARG" ;;
+    o) OUTPUT_DIR="$OPTARG" ;;
+    v) OCB_VERSION="$OPTARG" ;;
+    g) GO_VERSION="$OPTARG" ;;
+    s) SUPERVISOR_VERSION="$OPTARG" ;;
+    h) usage ;;
+    ?) usage ;;
     esac
 done
 
@@ -64,6 +67,7 @@ OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 echo "=== Running local build ==="
 echo "Manifest: $MANIFEST_PATH"
 echo "OCB Version: $OCB_VERSION"
+echo "Supervisor Version: $SUPERVISOR_VERSION"
 echo "Go Version: $GO_VERSION"
 echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
@@ -78,7 +82,7 @@ docker build -t otel-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || 
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    otel-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION"
+    otel-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

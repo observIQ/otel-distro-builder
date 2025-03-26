@@ -1,6 +1,6 @@
 #partial:
 #  by: target
-project_name: otel-collector-releases
+project_name: __DISTRIBUTION__
 env:
   - COSIGN_YES=true
 builds:
@@ -35,18 +35,37 @@ archives:
   - id: __DISTRIBUTION__
     builds:
       - __DISTRIBUTION__
-    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    files:
+      - LICENSE
+      - VERSION
+      - supervisor_config.yaml
+      - src: _contrib/supervisor_{{ .Os }}_{{ .Arch }}{{ .ArtifactExt }}
+        dst: supervisor
+      - src: __DISTRIBUTION__.service
+        dst: "service/__DISTRIBUTION__.service"
+      - src: __DISTRIBUTION__.conf
+        dst: "service/__DISTRIBUTION__.conf"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+  - id: __DISTRIBUTION___otelcol
+    builds:
+      - __DISTRIBUTION__
+    name_template: "{{ .ProjectName }}_otelcol_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    files:
+      - LICENSE
+      - VERSION
+      - collector_config.yaml
+      - src: __DISTRIBUTION___otelcol.service
+        dst: "service/__DISTRIBUTION__.service"
+      - src: __DISTRIBUTION___otelcol.conf
+        dst: "service/__DISTRIBUTION__.conf"
+
 nfpms:
   - package_name: __DISTRIBUTION__
-    contents:
-      - src: __DISTRIBUTION__.service
-        dst: /lib/systemd/system/__DISTRIBUTION__.service
-      - src: __DISTRIBUTION__.conf
-        dst: /etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
-        type: config|noreplace
-      - src: config.yaml
-        dst: /etc/__DISTRIBUTION__/config.yaml
-        type: config
+    bindir: /opt/__DISTRIBUTION__
     scripts:
       preinstall: preinstall.sh
       postinstall: postinstall.sh
@@ -58,11 +77,121 @@ nfpms:
       - apk
       - deb
       - rpm
-    #maintainer: The OpenTelemetry Collector maintainers <cncf-opentelemetry-maintainers@lists.cncf.io>
+    description: OpenTelemetry Collector with Supervisor - __DISTRIBUTION__
+    license: Apache 2.0
+    contents:
+      # systemd service files
+      - src: __DISTRIBUTION__.service
+        dst: /lib/systemd/system/__DISTRIBUTION__.service
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+      - src: __DISTRIBUTION__.conf
+        dst: /etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
+        type: config|noreplace
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+
+      # directory and files for the OpenTelemetry Collector distribution
+      - dst: /opt/__DISTRIBUTION__
+        type: dir
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: LICENSE
+        dst: /opt/__DISTRIBUTION__/LICENSE
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: VERSION
+        dst: /opt/__DISTRIBUTION__/VERSION
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: _contrib/supervisor_{{.Os}}_{{.Arch}}{{ .ArtifactExt }}
+        dst: /opt/__DISTRIBUTION__/supervisor{{ .ArtifactExt }}
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: supervisor_config.yaml
+        dst: /opt/__DISTRIBUTION__/supervisor_config.yaml
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - dst: /opt/__DISTRIBUTION__/supervisor_storage
+        type: dir
+        file_info:
+          mode: 0750
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+
+  - package_name: __DISTRIBUTION___otelcol
+    bindir: /opt/__DISTRIBUTION__
+    scripts:
+      preinstall: preinstall.sh
+      postinstall: postinstall.sh
+      preremove: preremove.sh
+    id: __DISTRIBUTION___otelcol
+    builds:
+      - __DISTRIBUTION__
+    formats:
+      - apk
+      - deb
+      - rpm
     description: OpenTelemetry Collector - __DISTRIBUTION__
     license: Apache 2.0
+    contents:
+      # systemd service files
+      - src: __DISTRIBUTION___otelcol.service
+        dst: /lib/systemd/system/__DISTRIBUTION__.service
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+      - src: __DISTRIBUTION___otelcol.conf
+        dst: /etc/__DISTRIBUTION__/__DISTRIBUTION__.conf
+        type: config|noreplace
+        file_info:
+          mode: 0644
+          owner: root
+          group: root
+
+      # directory and files for the OpenTelemetry Collector distribution
+      - dst: /opt/__DISTRIBUTION__
+        type: dir
+        file_info:
+          mode: 0755
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: LICENSE
+        dst: /opt/__DISTRIBUTION__/LICENSE
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: VERSION
+        dst: /opt/__DISTRIBUTION__/VERSION
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+      - src: collector_config.yaml
+        dst: /opt/__DISTRIBUTION__/collector_config.yaml
+        file_info:
+          mode: 0644
+          owner: __DISTRIBUTION__
+          group: __DISTRIBUTION__
+
 checksum:
-  name_template: "{{ .ProjectName }}___DISTRIBUTION___checksums.txt"
+  name_template: "{{ .ProjectName }}_checksums.txt"
 # dockers:
 #   - goos: linux
 #     goarch: "386"
