@@ -125,7 +125,7 @@ def test_build_distribution(manifest_path: Path):
     # Create artifacts directory in the current test directory
     artifact_dir = Path(__file__).parent / "artifacts"
     if artifact_dir.exists():
-        shutil.rmtree(artifact_dir, onexc=remove_readonly)
+        shutil.rmtree(artifact_dir, onerror=remove_readonly)
     artifact_dir.mkdir(exist_ok=True)
 
     try:
@@ -190,6 +190,6 @@ def test_build_distribution(manifest_path: Path):
         # Clean up the artifacts directory after the test
         if artifact_dir.exists():
             try:
-                shutil.rmtree(artifact_dir, onexc=remove_readonly)
+                shutil.rmtree(artifact_dir, onerror=remove_readonly)
             except (OSError, PermissionError) as e:
                 print(f"Failed to clean up {artifact_dir}: {e}")
