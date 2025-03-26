@@ -46,6 +46,8 @@ archives:
         dst: "service/__DISTRIBUTION__.service"
       - src: __DISTRIBUTION__.conf
         dst: "service/__DISTRIBUTION__.conf"
+      - src: com.__DISTRIBUTION__.plist
+        dst: "service/com.__DISTRIBUTION__.plist"
     format_overrides:
       - goos: windows
         format: zip
@@ -62,6 +64,8 @@ archives:
         dst: "service/__DISTRIBUTION__.service"
       - src: __DISTRIBUTION___otelcol.conf
         dst: "service/__DISTRIBUTION__.conf"
+      - src: com.__DISTRIBUTION___.plist
+        dst: "service/com.__DISTRIBUTION___.plist"
 
 nfpms:
   - package_name: __DISTRIBUTION__
@@ -358,6 +362,12 @@ checksum:
 #       - sign
 #       - ${artifact}
 #     artifacts: all
+
+release:
+  draft: false
+  prerelease: "true"
+  extra_files:
+    - glob: "install_macos.sh"
 sboms:
   - id: archive
     artifacts: archive
