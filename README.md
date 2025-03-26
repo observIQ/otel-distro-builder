@@ -1,4 +1,4 @@
-# 🚀 OpenTelemetry Collector Builder
+# 🚀 OpenTelemetry Distribution Builder
 
 <div align="center">
 
