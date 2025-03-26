@@ -90,7 +90,7 @@ docker pull ghcr.io/observiq/otel-builder:v1.2.3
 # Run a build
 docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
   --manifest /workspace/manifest.yaml \
-  --output /workspace/dist
+  --artifacts /workspace/dist
 ```
 
 ## 🛠️ Development
@@ -197,7 +197,7 @@ The builder produces:
 - **Local builds**: `./artifacts` directory
 - **Cloud builds**: `gs://<bucket>/<build_id>/`
 
-## Versioning
+## 🔢 Versioning
 
 We follow semantic versioning. The builder is available in several forms:
 
