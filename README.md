@@ -7,9 +7,17 @@
 
 Build custom OpenTelemetry Collector distributions from manifest files. Use a binary, Docker, or a GitHub Action.
 
-[Quick Start](#quick-start) • [Documentation](#documentation) • [Examples](#examples)
+[Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
 
 </div>
+
+## 🤔 Why OpenTelemetry Distribution Builder?
+
+The OpenTelemetry Distribution Builder lets you create and maintain custom, vendor-neutral OpenTelemetry Collector distributions—without all the usual complexity.
+
+Built on top of the [OpenTelemetry Collector Builder (OCB)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder), it uses a `manifest.yaml` to define the components you need, then automates packaging for multiple platforms and manages version releases via GitHub.
+
+Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contrib Collector, and maintain a collector that’s perfectly tailored to your needs.
 
 ## ✨ Features
 
@@ -67,7 +75,16 @@ Build custom OpenTelemetry Collector distributions from manifest files. Use a bi
    git tag v1.0.0 && git push --tags
    ```
 
+5. **(Optional) Build with Docker**:
+    ```bash
+    docker pull ghcr.io/observiq/otel-builder:main
+    docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-builder:main \
+      --manifest /workspace/manifest.yaml
+    ```
+
 ## 📚 Documentation
+
+To view detailed guides, see the [docs](./docs) directory.
 
 ### GitHub Action Configuration
 
