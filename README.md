@@ -89,8 +89,13 @@ docker pull ghcr.io/observiq/otel-builder:v1.2.3
 
 # Run a build
 docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
-  --manifest /workspace/manifest.yaml \
-  --artifacts /workspace/dist
+  --manifest /workspace/builder.yaml \
+  # Optional
+  --artifacts /workspace/dist \
+  --goos linux \
+  --goarch amd64 \
+  --ocb-version 0.121.0 \
+  --go-version 1.20
 ```
 
 ## 🛠️ Development
@@ -143,7 +148,7 @@ Options:
 This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
 
 ```bash
-./builder/scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
+./scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
 ```
 
 Options:
@@ -224,5 +229,5 @@ This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENS
 ---
 
 <div align="center">
-Made with ❤️ by the Bindplane team
+  Made with ❤️ by the Bindplane team
 </div>
