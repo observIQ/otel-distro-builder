@@ -82,7 +82,7 @@ docker build -t otel-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || 
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    otel-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
+    otel-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION" --goos "darwin, linux" --goarch "arm64"
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"
