@@ -100,14 +100,14 @@ docker pull ghcr.io/observiq/otel-builder:main
 docker pull ghcr.io/observiq/otel-builder:v1.2.3
 
 # Run a build
-docker run --rm -v $(pwd):/workspace ghcr.io/observiq/otel-builder:main \
-  --manifest /workspace/builder.yaml \
+docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-builder:main \
+  --manifest /workspace/manifest.yaml \
   # Optional
-  --artifacts /workspace/dist \
+  --artifacts /workspace/artifacts \
   --goos linux \
   --goarch amd64 \
   --ocb-version 0.121.0 \
-  --go-version 1.20
+  --go-version 1.22.1
 ```
 
 ## 🛠️ Development
