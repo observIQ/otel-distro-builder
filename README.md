@@ -24,13 +24,25 @@ Build custom OpenTelemetry Collector distributions from manifest files. Use a bi
 
 1. **Create a new repository**
 2. **Add your manifest file** (`manifest.yaml`):
-   ```yaml
-   name: my-collector
-   version: 1.0.0
-   components:
-     - name: otelcol
-       version: 0.96.0
-   ```
+    ```yaml
+    dist:
+      module: github.com/open-telemetry/opentelemetry-collector-releases/core
+      name: my-otelcol
+      description: My Custom OpenTelemetry Collector Build
+      output_path: ./artifacts
+    extensions:
+      - # ...
+    exporters:
+      - # ...
+    processors:
+      - # ...
+    receivers:
+      - # ...
+    connectors:
+      - # ...
+    providers:
+      - # ...
+    ```
 
 3. **Set up GitHub Actions** (`.github/workflows/build.yml`):
    ```yaml
@@ -128,7 +140,7 @@ make release v=2.0.0 # Specific version
 
 ### Build Scripts
 
-#### run_cloud_build.sh
+#### `run_cloud_build.sh`
 
 Triggers a build using Google Cloud Build:
 
@@ -143,12 +155,17 @@ Options:
 - `-b`: Artifact bucket name
 - `-i`: Build ID for artifact storage (default: auto-generated)
 
-#### run_local_build.sh
+#### `run_local_build.sh`
 
 This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
 
 ```bash
 ./scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
+
+# Optionally, run it with
+make build-local # to get the latest version of the otelcol and ocb
+# Or
+make build -v 0.121.0 -s 0.122.0 -g 1.24.1 # to pass custom params as needed
 ```
 
 Options:
@@ -163,7 +180,7 @@ The artifacts will be saved to the specified output directory (default: `./artif
 
 ## 📁 Project Structure
 
-```
+```text
 otel-builder/
 ├── builder/                # Builder application
 │   ├── src/               # Core builder code
