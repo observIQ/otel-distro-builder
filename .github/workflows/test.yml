@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # Required for actions/checkout
+      checks: write # Required for publishing test results
 
     steps:
       - name: Free Disk Space
