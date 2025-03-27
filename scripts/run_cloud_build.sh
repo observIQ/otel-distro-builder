@@ -5,7 +5,7 @@ set -e
 usage() {
     echo "Usage: $0 -m <manifest_path> [-p <project_id>] [-b <artifact_bucket>]"
     echo
-    echo "Build an OpenTelemetry Collector using Google Cloud Build"
+    echo "Build an OpenTelemetry Collector Distribution using Google Cloud Build"
     echo
     echo "Required arguments:"
     echo "  -m <manifest_path>    Path to manifest.yaml/yml file"
@@ -93,7 +93,7 @@ echo
 
 # Build and push the builder image
 echo "Step 1: Building and pushing builder image..."
-BUILDER_IMAGE="gcr.io/${PROJECT_ID}/otel-builder"
+BUILDER_IMAGE="gcr.io/${PROJECT_ID}/otel-distro-builder"
 if ! docker build -t "$BUILDER_IMAGE" --platform linux/amd64 "$(dirname "$0")/.."; then
     echo "Docker build failed"
     exit 1

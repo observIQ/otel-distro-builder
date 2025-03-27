@@ -1,6 +1,6 @@
-# 🤝 Contributing to OpenTelemetry Collector Builder
+# 🤝 Contributing to OpenTelemetry Distribution Builder
 
-We love your input! We want to make contributing to the OpenTelemetry Collector Builder as easy and transparent as possible, whether it's:
+We love your input! We want to make contributing to the OpenTelemetry Distribution Builder as easy and transparent as possible, whether it's:
 
 - 🐛 Reporting a bug
 - 💡 Discussing the current state of the code
@@ -47,7 +47,7 @@ make lint
 
 ## 🐛 Bug Reports
 
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/observIQ/otel-builder/issues/new); it's that easy!
+We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/observIQ/otel-distro-builder/issues/new); it's that easy!
 
 **Great Bug Reports** tend to have:
 
@@ -61,7 +61,7 @@ We use GitHub issues to track public bugs. Report a bug by [opening a new issue]
 
 ## 💡 Feature Requests
 
-We love feature requests! We want to make the OpenTelemetry Collector Builder the best it can be. Please use the [feature request template](https://github.com/observIQ/otel-builder/issues/new?template=feature_request.md) when creating a new feature request.
+We love feature requests! We want to make the OpenTelemetry Distribution Builder the best it can be. Please use the [feature request template](https://github.com/observIQ/otel-distro-builder/issues/new?template=feature_request.md) when creating a new feature request.
 
 ## 📄 License
 
@@ -72,7 +72,7 @@ By contributing, you agree that your contributions will be licensed under its Ap
 1. **Fork the repository**
 2. **Clone your fork**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/otel-builder.git
+   git clone https://github.com/YOUR_USERNAME/otel-distro-builder.git
    ```
 3. **Set up your development environment**:
    ```bash
@@ -108,4 +108,4 @@ Don't hesitate to ask. We want to help you contribute! You can:
 
 ## 🙏 Thank You!
 
-Thank you for contributing to the OpenTelemetry Collector Builder! Your contributions help make this project better for everyone. 
+Thank you for contributing to the OpenTelemetry Distribution Builder! Your contributions help make this project better for everyone.

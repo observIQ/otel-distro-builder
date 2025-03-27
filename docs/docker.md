@@ -4,12 +4,14 @@ This guide explains how to use `otel-distro-builder` with Docker to build custom
 
 ## Quick Start
 
-1. Pull the latest otel-builder image:
+1. Pull the latest otel-distro-builder image:
+
 ```bash
-docker pull ghcr.io/observiq/otel-builder:main
+docker pull ghcr.io/observiq/otel-distro-builder:main
 ```
 
 2. Create a manifest file (`manifest.yaml`) that defines your collector configuration:
+
 ```yaml
 dist:
   module: github.com/open-telemetry/opentelemetry-collector-releases/core
@@ -17,42 +19,43 @@ dist:
   description: My Custom OpenTelemetry Collector Build
   output_path: ./artifacts
 extensions:
-  - # Add your extensions
+  -  # Add your extensions
 exporters:
-  - # Add your exporters
+  -  # Add your exporters
 processors:
-  - # Add your processors
+  -  # Add your processors
 receivers:
-  - # Add your receivers
+  -  # Add your receivers
 connectors:
-  - # Add your connectors
+  -  # Add your connectors
 providers:
-  - # Add your providers
+  -  # Add your providers
 ```
 
 3. Run the builder:
+
 ```bash
 docker run --rm \
   -v $(pwd):/workspace \
   -v $(pwd)/build:/build \
-  ghcr.io/observiq/otel-builder:main \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml \
-  --artifacts /workspace/artifacts  
+  --artifacts /workspace/artifacts
 ```
 
 ## Available Options
 
 The Docker container accepts the following command-line options:
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--manifest` | Path to manifest file | Required |
-| `--artifacts` | Output directory for artifacts | `/artifacts` |
-| `--goos` | Target operating system | `linux` |
-| `--goarch` | Target architecture | `amd64` |
-| `--ocb-version` | OpenTelemetry Collector Builder version | `0.121.0` |
-| `--go-version` | Go version to use | `1.24.1` |
-| `--supervisor-version` | Supervisor version | `0.122.0` |
+| Option                 | Description                             | Default      |
+| ---------------------- | --------------------------------------- | ------------ |
+| `--manifest`           | Path to manifest file                   | Required     |
+| `--artifacts`          | Output directory for artifacts          | `/artifacts` |
+| `--goos`               | Target operating system                 | `linux`      |
+| `--goarch`             | Target architecture                     | `amd64`      |
+| `--ocb-version`        | OpenTelemetry Collector Builder version | `0.121.0`    |
+| `--go-version`         | Go version to use                       | `1.24.1`     |
+| `--supervisor-version` | Supervisor version                      | `0.122.0`    |
 
 ## Using Local Build Script
 
@@ -67,6 +70,7 @@ The repository includes a convenient script for local builds:
 ```
 
 Example:
+
 ```bash
 ./scripts/run_local_build.sh \
   -m manifest.yaml \
@@ -81,6 +85,7 @@ Example:
 When running the container, you need to mount two volumes:
 
 1. **Workspace Volume**: Contains your manifest file, source files, and the output artifacts directory
+
    ```bash
    -v $(pwd):/workspace
    ```
@@ -103,31 +108,34 @@ The builder will generate the following artifacts in your specified output direc
 ## Example Usage
 
 ### Basic Build
+
 ```bash
 docker run --rm \
   -v $(pwd):/workspace \
   -v $(pwd)/build:/build \
-  ghcr.io/observiq/otel-builder:main \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml
 ```
 
 ### Custom Platform Build
+
 ```bash
 docker run --rm \
   -v $(pwd):/workspace \
   -v $(pwd)/build:/build \
-  ghcr.io/observiq/otel-builder:main \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml \
   --goos linux \
   --goarch arm64
 ```
 
 ### Specific Version Build
+
 ```bash
 docker run --rm \
   -v $(pwd):/workspace \
   -v $(pwd)/build:/build \
-  ghcr.io/observiq/otel-builder:main \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml \
   --ocb-version 0.121.0 \
   --go-version 1.24.1 \
@@ -137,10 +145,12 @@ docker run --rm \
 ## Troubleshooting
 
 1. **Permission Issues**
+
    - Ensure the output directory has the correct permissions
    - The container runs as a non-root user (UID 10001)
 
 2. **Volume Mount Issues**
+
    - Verify the paths are correct and accessible
    - Check if SELinux or AppArmor are blocking access
 
@@ -152,10 +162,12 @@ docker run --rm \
 ## Best Practices
 
 1. **Version Pinning**
+
    - Always specify exact versions for OCB, Go, and Supervisor
    - This ensures reproducible builds
 
 2. **Artifact Management**
+
    - Use a dedicated artifacts directory
    - Clean up old artifacts before new builds
 
@@ -167,5 +179,5 @@ docker run --rm \
 ## Additional Resources
 
 - [OpenTelemetry Collector Documentation](https://opentelemetry.io/docs/collector/)
-- [GitHub Repository](https://github.com/observiq/otel-builder)
-- [Issue Tracker](https://github.com/observiq/otel-builder/issues)
+- [GitHub Repository](https://github.com/observiq/otel-distro-builder)
+- [Issue Tracker](https://github.com/observiq/otel-distro-builder/issues)

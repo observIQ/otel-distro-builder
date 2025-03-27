@@ -2,10 +2,10 @@
 
 <div align="center">
 
-[![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-builder)](https://github.com/observIQ/otel-builder/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-distro-builder)](https://github.com/observIQ/otel-distro-builder/releases)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Build custom OpenTelemetry Collector distributions from manifest files. Use a binary, Docker, or a GitHub Action.
+Build custom OpenTelemetry Collector Distributions from manifest files. Use a binary, Docker, or a GitHub Action.
 
 [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
 
@@ -17,11 +17,11 @@ The OpenTelemetry Distribution Builder lets you create and maintain custom, vend
 
 Built on top of the [OpenTelemetry Collector Builder (OCB)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder), it uses a `manifest.yaml` to define the components you need, then automates packaging for multiple platforms and manages version releases via GitHub.
 
-Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contrib Collector, and maintain a collector that’s perfectly tailored to your needs.
+Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contrib Collector, and maintain a distribution that’s perfectly tailored to your needs.
 
 ## ✨ Features
 
-- 🎯 **Custom Component Selection**: Build collectors with exactly the components you need
+- 🎯 **Custom Component Selection**: Build distributions with exactly the components you need
 - 🌐 **Multi-Platform Support**: Build for multiple architectures (amd64, arm64)
 - 📦 **Multiple Package Formats**: Generate APK, DEB, RPM, and TAR.GZ packages
 - 🔄 **GitHub Actions Integration**: Seamless CI/CD integration
@@ -32,29 +32,31 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
 
 1. **Create a new repository**
 2. **Add your manifest file** (`manifest.yaml`):
-    ```yaml
-    dist:
-      module: github.com/open-telemetry/opentelemetry-collector-releases/core
-      name: my-otelcol
-      description: My Custom OpenTelemetry Collector Build
-      output_path: ./artifacts
-    extensions:
-      - # ...
-    exporters:
-      - # ...
-    processors:
-      - # ...
-    receivers:
-      - # ...
-    connectors:
-      - # ...
-    providers:
-      - # ...
-    ```
+
+   ```yaml
+   dist:
+     module: github.com/open-telemetry/opentelemetry-collector-releases/core
+     name: my-otelcol
+     description: My Custom OpenTelemetry Collector Distro
+     output_path: ./artifacts
+   extensions:
+     -  # ...
+   exporters:
+     -  # ...
+   processors:
+     -  # ...
+   receivers:
+     -  # ...
+   connectors:
+     -  # ...
+   providers:
+     -  # ...
+   ```
 
 3. **Set up GitHub Actions** (`.github/workflows/build.yml`):
+
    ```yaml
-   name: Build Collector
+   name: Build OpenTelemetry Distribution
    on:
      push:
        tags: ["v*"]
@@ -65,22 +67,23 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
        runs-on: ubuntu-latest
        steps:
          - uses: actions/checkout@v3
-         - uses: observiq/otel-builder@v1
+         - uses: observiq/otel-distro-builder@v1
            with:
              manifest: "./manifest.yaml"
    ```
 
 4. **Trigger a build**:
+
    ```bash
    git tag v1.0.0 && git push --tags
    ```
 
 5. **(Optional) Build with Docker**:
-    ```bash
-    docker pull ghcr.io/observiq/otel-builder:main
-    docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-builder:main \
-      --manifest /workspace/manifest.yaml
-    ```
+   ```bash
+   docker pull ghcr.io/observiq/otel-distro-builder:main
+   docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
+     --manifest /workspace/manifest.yaml
+   ```
 
 ## 📚 Documentation
 
@@ -90,34 +93,34 @@ To view detailed guides, see the [docs](./docs) directory.
 
 #### Inputs
 
-| Input | Description | Default |
-|-------|-------------|---------|
-| `manifest` | Path to manifest file | `./manifest.yaml` |
-| `output-dir` | Output directory | `./artifacts` |
-| `create_release` | Create GitHub release | `true` |
-| `upload_artifacts` | Upload to Actions artifacts | `true` |
-| `platforms` | Target platforms | `linux/amd64` |
-| `debug` | Enable debug logging | `false` |
+| Input              | Description                 | Default           |
+| ------------------ | --------------------------- | ----------------- |
+| `manifest`         | Path to manifest file       | `./manifest.yaml` |
+| `output-dir`       | Output directory            | `./artifacts`     |
+| `create_release`   | Create GitHub release       | `true`            |
+| `upload_artifacts` | Upload to Actions artifacts | `true`            |
+| `platforms`        | Target platforms            | `linux/amd64`     |
+| `debug`            | Enable debug logging        | `false`           |
 
 #### Outputs
 
-| Output | Description |
-|--------|-------------|
-| `name` | Collector name |
-| `version` | Collector version |
-| `artifacts_path` | Path to artifacts |
+| Output           | Description          |
+| ---------------- | -------------------- |
+| `name`           | Distribution name    |
+| `version`        | Distribution version |
+| `artifacts_path` | Path to artifacts    |
 
 ### Docker Usage
 
 ```bash
 # Pull the latest version
-docker pull ghcr.io/observiq/otel-builder:main
+docker pull ghcr.io/observiq/otel-distro-builder:main
 
 # Pull specific version
-docker pull ghcr.io/observiq/otel-builder:v1.2.3
+docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 
 # Run a build
-docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-builder:main \
+docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml \
   # Optional
   --artifacts /workspace/artifacts \
@@ -198,7 +201,7 @@ The artifacts will be saved to the specified output directory (default: `./artif
 ## 📁 Project Structure
 
 ```text
-otel-builder/
+otel-distro-builder/
 ├── builder/                # Builder application
 │   ├── src/               # Core builder code
 │   ├── templates/         # Build templates
@@ -240,9 +243,9 @@ The builder produces:
 
 We follow semantic versioning. The builder is available in several forms:
 
-- GitHub Action: Use `@v1` for latest 1.x version, or `@v1.2.3` for specific versions
-- Docker Image: Use `main` for latest, or version tags like `v1.2.3`
-- Container Registry: `ghcr.io/observiq/otel-builder:main` or `ghcr.io/observiq/otel-builder:v1.2.3`
+- GitHub Action: Use `@v1` for latest 1.x version, or `@v1.0.5` for specific versions
+- Docker Image: Use `main` for latest, or version tags like `v1.0.5`
+- Container Registry: `ghcr.io/observiq/otel-distro-builder:main` or `ghcr.io/observiq/otel-distro-builder:v1.0.5`
 
 ## 📚 Examples
 

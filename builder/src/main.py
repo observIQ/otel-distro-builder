@@ -12,10 +12,10 @@ logger = logger.get_logger(__name__)
 def main():
     """
     Main entry point for the OTel Hub Builder Node.
-    Handles command-line arguments, builds the collector, and logs performance metrics.
+    Handles command-line arguments, builds and packages the collector, and logs performance metrics.
     """
     parser = argparse.ArgumentParser(
-        description="Build a custom OpenTelemetry Collector distribution."
+        description="Build and package a custom OpenTelemetry Collector Distribution."
     )
     parser.add_argument(
         "--manifest", type=str, required=True, help="Path to the manifest file"
