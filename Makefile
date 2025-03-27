@@ -79,5 +79,5 @@ clean: ## Remove generated files
 
 .PHONY: build
 build:
-	./builder/scripts/run_local_build.sh -m manifest.yaml
+	./scripts/run_local_build.sh -m manifest.yaml
  
