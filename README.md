@@ -5,7 +5,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-distro-builder)](https://github.com/observIQ/otel-distro-builder/releases)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Build custom OpenTelemetry Collector Distributions from manifest files. Use a binary, Docker, or a GitHub Action.
+Build custom OpenTelemetry Collector Distributions from manifest files with a local build utility, Docker, Google Cloud Build, or a GitHub Action.
 
 [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
 
