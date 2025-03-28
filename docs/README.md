@@ -4,7 +4,17 @@ This directory contains comprehensive documentation for using `otel-distro-build
 
 ## Available Guides
 
-### [Using otel-distro-builder with Docker](docker.md)
+### [Using the Local Build Script](local-build-script.md)
+
+Learn how to use the `run_local_build.sh` script for local builds. This guide covers:
+
+- Running builds with the script
+- Available command-line options
+- Using Make commands
+- Managing artifacts
+- Troubleshooting common issues
+
+### [Using `otel-distro-builder` with Docker](docker.md)
 
 Learn how to build custom OpenTelemetry Collector distributions using Docker. This guide covers:
 
@@ -14,15 +24,25 @@ Learn how to build custom OpenTelemetry Collector distributions using Docker. Th
 - Managing artifacts
 - Troubleshooting common issues
 
-### [Using otel-distro-builder with GitHub Actions](github-action.md)
+### [Using `otel-distro-builder` with GitHub Actions](github-actions.md)
 
-Learn how to integrate otel-distro-builder into your CI/CD pipeline using GitHub Actions. This guide covers:
+Learn how to integrate `otel-distro-builder` into your CI/CD pipeline using GitHub Actions. This guide covers:
 
 - Setting up GitHub Actions workflows
-- Configuring the otel-distro-builder action
+- Configuring the `otel-distro-builder` action
 - Managing releases and artifacts
 - Multi-platform builds
 - Best practices and troubleshooting
+
+### [Using `otel-distro-builder` with Google Cloud Build](google-cloud-build.md)
+
+Learn how to use `otel-distro-builder` with Google Cloud Build for enterprise-scale builds. This guide covers:
+
+- Setting up Google Cloud Build
+- Configuring build pipelines
+- Managing artifacts in Google Cloud Storage
+- Security and permissions
+- Cost optimization and best practices
 
 ## Quick Links
 
@@ -43,7 +63,9 @@ If you find any issues or have suggestions for improving the documentation, plea
 
 ```text
 docs/
-├── README.md          # This landing page
-├── docker.md          # Docker usage guide
-└── github-action.md   # GitHub Actions usage guide
+├── README.md              # This landing page
+├── local-build-script.md # Local build script guide
+├── docker.md             # Docker usage guide
+├── github-actions.md     # GitHub Actions usage guide
+└── google-cloud-build.md # Google Cloud Build usage guide
 ```

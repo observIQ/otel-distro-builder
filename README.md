@@ -79,6 +79,7 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
    ```
 
 5. **(Optional) Build with Docker**:
+
    ```bash
    docker pull ghcr.io/observiq/otel-distro-builder:main
    docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
