@@ -1,5 +1,5 @@
-name: "OpenTelemetry Collector Builder"
-description: "Build custom OpenTelemetry Collectors using your manifest"
+name: "OpenTelemetry Distribution Builder"
+description: "Build custom OpenTelemetry Distributions"
 
 inputs:
   manifest:
@@ -29,15 +29,15 @@ inputs:
 
 outputs:
   name:
-    description: "Name of the built collector"
+    description: "Name of the built distribution"
   version:
-    description: "Version of the built collector"
+    description: "Version of the built distribution"
   artifacts_path:
     description: "Path to the built artifacts"
 
 runs:
   using: "docker"
-  image: "docker://ghcr.io/observiq/otel-builder:v1"
+  image: "docker://ghcr.io/observiq/otel-distro-builder:v1"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
     INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}

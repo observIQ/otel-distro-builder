@@ -14,7 +14,7 @@ GO_VERSION="1.24.1"
 usage() {
     echo "Usage: $0 -m <manifest_path> [-i <build_id>] [-o <output_dir>] [-v <ocb_version>] [-g <go_version>]"
     echo
-    echo "Build an OpenTelemetry Collector using Google Cloud Build"
+    echo "Build an OpenTelemetry Collector Distribution using local Docker"
     echo
     echo "Required arguments:"
     echo "  -m <manifest_path>          Path to manifest.yaml/yml file"
@@ -73,7 +73,7 @@ echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
 # Build and run the builder container
-docker build -t otel-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || {
+docker build -t otel-distro-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || {
     echo "Failed to build builder image"
     exit 1
 }
@@ -82,7 +82,7 @@ docker build -t otel-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || 
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    otel-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
+    otel-distro-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

@@ -1,4 +1,4 @@
-name: Build Collector
+name: OpenTelemetry Distribution Build
 
 on:
   push:
@@ -11,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Collector
-        uses: observiq/otel-builder@v1
+      - name: Build and Package
+        uses: observiq/otel-distro-builder@v1
         with:
           manifest: collector/manifest.yaml
           output-dir: ./dist

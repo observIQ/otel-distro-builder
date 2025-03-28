@@ -5,6 +5,7 @@ This guide explains how to use `otel-distro-builder` with GitHub Actions to buil
 ## Quick Start
 
 1. Create a manifest file (`manifest.yaml`) that defines your collector configuration:
+
 ```yaml
 dist:
   module: github.com/open-telemetry/opentelemetry-collector-releases/core
@@ -12,22 +13,23 @@ dist:
   description: My Custom OpenTelemetry Collector Build
   output_path: ./artifacts
 extensions:
-  - # Add your extensions
+  -  # Add your extensions
 exporters:
-  - # Add your exporters
+  -  # Add your exporters
 processors:
-  - # Add your processors
+  -  # Add your processors
 receivers:
-  - # Add your receivers
+  -  # Add your receivers
 connectors:
-  - # Add your connectors
+  -  # Add your connectors
 providers:
-  - # Add your providers
+  -  # Add your providers
 ```
 
 2. Create a GitHub Actions workflow file (`.github/workflows/build.yml`):
+
 ```yaml
-name: Build Collector
+name: Build OpenTelemetry Collector Distribution
 
 on:
   push:
@@ -39,9 +41,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build Collector
-        uses: observiq/otel-builder@v1
+
+      - name: Build and Package
+        uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
           output-dir: "./artifacts"
@@ -55,28 +57,29 @@ jobs:
 
 The GitHub Action accepts the following inputs:
 
-| Input | Description | Default | Required |
-|-------|-------------|---------|----------|
-| `manifest` | Path to manifest file | `./manifest.yaml` | Yes |
-| `output-dir` | Output directory for artifacts | `./artifacts` | No |
-| `create_release` | Create GitHub release | `true` | No |
-| `upload_artifacts` | Upload to Actions artifacts | `true` | No |
-| `platforms` | Target platforms (comma-separated) | `linux/amd64` | No |
-| `debug` | Enable debug logging | `false` | No |
+| Input              | Description                        | Default           | Required |
+| ------------------ | ---------------------------------- | ----------------- | -------- |
+| `manifest`         | Path to manifest file              | `./manifest.yaml` | Yes      |
+| `output-dir`       | Output directory for artifacts     | `./artifacts`     | No       |
+| `create_release`   | Create GitHub release              | `true`            | No       |
+| `upload_artifacts` | Upload to Actions artifacts        | `true`            | No       |
+| `platforms`        | Target platforms (comma-separated) | `linux/amd64`     | No       |
+| `debug`            | Enable debug logging               | `false`           | No       |
 
 ## Outputs
 
 The action provides the following outputs:
 
-| Output | Description |
-|--------|-------------|
-| `name` | Name of the built collector |
-| `version` | Version of the built collector |
-| `artifacts_path` | Path to the built artifacts |
+| Output           | Description                    |
+| ---------------- | ------------------------------ |
+| `name`           | Name of the built collector    |
+| `version`        | Version of the built collector |
+| `artifacts_path` | Path to the built artifacts    |
 
 ## Example Workflows
 
 ### Basic Build with Release
+
 ```yaml
 name: Build and Release
 
@@ -92,9 +95,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Build Collector
-        uses: observiq/otel-builder@v1
+
+      - name: Build and Package Collector
+        uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
           create_release: true
@@ -102,6 +105,7 @@ jobs:
 ```
 
 ### Multi-Platform Build
+
 ```yaml
 name: Multi-Platform Build
 
@@ -115,9 +119,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build Collector
-        uses: observiq/otel-builder@v1
+
+      - name: Build and Package Collector
+        uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
           platforms: "linux/amd64,linux/arm64,linux/arm/v7"
@@ -126,6 +130,7 @@ jobs:
 ```
 
 ### Custom Output Directory
+
 ```yaml
 name: Custom Output Build
 
@@ -139,9 +144,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Build Collector
-        uses: observiq/otel-builder@v1
+
+      - name: Build and Package Collector
+        uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
           output-dir: "./dist"
@@ -180,16 +185,19 @@ When `upload_artifacts` is enabled:
 ## Best Practices
 
 1. **Version Management**
+
    - Use semantic versioning for tags
    - Tag format: `vX.Y.Z` (e.g., `v1.0.0`)
    - Include version in manifest file
 
 2. **Platform Selection**
+
    - Specify only needed platforms
    - Consider your target environments
    - Balance build time vs. coverage
 
 3. **Artifact Management**
+
    - Use meaningful output directories
    - Clean up old artifacts
    - Consider artifact retention policies
@@ -202,12 +210,14 @@ When `upload_artifacts` is enabled:
 ## Troubleshooting
 
 1. **Build Failures**
+
    - Check manifest file syntax
    - Verify component compatibility
    - Enable debug logging
    - Check action logs
 
 2. **Release Issues**
+
    - Ensure proper tag format
    - Check GitHub permissions
    - Verify release settings
@@ -221,5 +231,5 @@ When `upload_artifacts` is enabled:
 
 - [OpenTelemetry Collector Documentation](https://opentelemetry.io/docs/collector/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [GitHub Repository](https://github.com/observiq/otel-builder)
-- [Issue Tracker](https://github.com/observiq/otel-builder/issues)
+- [GitHub Repository](https://github.com/observiq/otel-distor-builder)
+- [Issue Tracker](https://github.com/observiq/otel-distro-builder/issues)

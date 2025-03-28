@@ -1,4 +1,4 @@
-"""Utility for downloading and managing OpenTelemetry Collector Contrib repository."""
+"""Utility for downloading OpenTelemetry OpAMP Supervisor releases."""
 
 import os
 import requests
