@@ -2,6 +2,10 @@
 
 This guide explains how to use `otel-distro-builder` with Docker to build custom OpenTelemetry Collector distributions.
 
+## Prerequisites
+
+1. Docker
+
 ## Quick Start
 
 1. Pull the latest otel-distro-builder image:
@@ -56,29 +60,6 @@ The Docker container accepts the following command-line options:
 | `--ocb-version`        | OpenTelemetry Collector Builder version | `0.121.0`    |
 | `--go-version`         | Go version to use                       | `1.24.1`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
-
-## Using Local Build Script
-
-The repository includes a convenient script for local builds:
-
-```bash
-./scripts/run_local_build.sh -m manifest.yaml \
-  [-o output_dir] \
-  [-v ocb_version] \
-  [-g go_version] \
-  [-s supervisor_version]
-```
-
-Example:
-
-```bash
-./scripts/run_local_build.sh \
-  -m manifest.yaml \
-  -o ./artifacts \
-  -v 0.121.0 \
-  -g 1.24.1 \
-  -s 0.122.0
-```
 
 ## Volume Mounts
 
