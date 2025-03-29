@@ -10,7 +10,7 @@ ENV DEFAULT_GO_VERSION="1.23.4"
 
 # Install essential libraries for Go, glibc compatibility, and ARM support
 RUN apt-get update && \
-    apt-get install -y wget gnupg libc6 git && \
+    apt-get install -y --no-install-recommends wget gnupg libc6 git && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set architecture variable
@@ -75,9 +75,7 @@ RUN mkdir -p /build && \
     mkdir -p /artifacts
 
 # Copy only the required files
-COPY builder/ /app/builder/
-COPY LICENSE /app/LICENSE
-COPY VERSION /app/VERSION
+COPY . /app/builder/
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/builder/requirements.txt

@@ -9,6 +9,7 @@ OUTPUT_DIR="$(pwd)/artifacts"
 OCB_VERSION="0.121.0"
 SUPERVISOR_VERSION="0.122.0"
 GO_VERSION="1.24.1"
+DOCKER_IMAGE="otel-distro-builder"
 
 # Help message
 usage() {
@@ -72,17 +73,18 @@ echo "Go Version: $GO_VERSION"
 echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
-# Build and run the builder container
-docker build -t otel-distro-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || {
-    echo "Failed to build builder image"
+# Check if the builder image exists
+if ! docker image inspect "$DOCKER_IMAGE" >/dev/null 2>&1; then
+    echo "Error: Builder image '$DOCKER_IMAGE' not found."
+    echo "Please run 'make docker-build' first."
     exit 1
-}
+fi
 
 # Run the builder with mounted volumes
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    otel-distro-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
+    "$DOCKER_IMAGE" --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"
