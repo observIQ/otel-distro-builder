@@ -231,5 +231,5 @@ When `upload_artifacts` is enabled:
 
 - [OpenTelemetry Collector Documentation](https://opentelemetry.io/docs/collector/)
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [GitHub Repository](https://github.com/observiq/otel-distor-builder)
+- [GitHub Repository](https://github.com/observiq/otel-distro-builder)
 - [Issue Tracker](https://github.com/observiq/otel-distro-builder/issues)
