@@ -12,9 +12,9 @@ CURRENT_VERSION=$(cat VERSION)
 echo -e "${BLUE}Current version:${NC} $CURRENT_VERSION"
 
 # Calculate next version (increment patch)
-MAJOR=$(echo $CURRENT_VERSION | cut -d. -f1)
-MINOR=$(echo $CURRENT_VERSION | cut -d. -f2)
-PATCH=$(echo $CURRENT_VERSION | cut -d. -f3)
+MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
+PATCH=$(echo "$CURRENT_VERSION" | cut -d. -f3)
 NEXT_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
 
 # Get version from argument or suggest next version
@@ -55,7 +55,7 @@ git commit -m "Release version $VERSION"
 git tag -a "v$VERSION" -m "Release version $VERSION"
 
 # Create major version tag
-MAJOR_VERSION=$(echo $VERSION | cut -d. -f1)
+MAJOR_VERSION=$(echo "$VERSION" | cut -d. -f1)
 git tag -fa "v$MAJOR_VERSION" -m "Update v$MAJOR_VERSION to $VERSION"
 
 echo -e "\n${GREEN}✅ Ready to push! Run:${NC}"

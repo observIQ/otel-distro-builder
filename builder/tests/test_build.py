@@ -6,8 +6,9 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-import yaml
+
 import pytest
+import yaml
 
 
 def get_manifest_files():

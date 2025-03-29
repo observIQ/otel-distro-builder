@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-# Get the repository root directory (parent of the directory containing this script)
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OCB_VERSION="0.121.0"
@@ -21,7 +18,6 @@ usage() {
     echo "  -m <manifest_path>          Path to manifest.yaml/yml file"
     echo
     echo "Optional arguments:"
-    echo "  -i <build_id>               Build ID for artifact storage (default: auto-generated)"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
     echo "  -v <ocb_version>            OpenTelemetry Collector Builder version (default: ${OCB_VERSION})"
     echo "  -s <supervisor_version>     OpenTelemetry Collector Supervisor version (default: ${SUPERVISOR_VERSION})"
@@ -37,7 +33,6 @@ usage() {
 while getopts "m:p:i:o:v:g:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
-    i) BUILD_ID="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
     v) OCB_VERSION="$OPTARG" ;;
     g) GO_VERSION="$OPTARG" ;;

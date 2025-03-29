@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps lint lint-check build docker-build docker-rebuild
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local
 
 # Variables
 VENV_DIR := builder/.venv
@@ -23,10 +23,13 @@ help: ## Show this help
 	@echo "  deps             Install project dependencies"
 	@echo ""
 	@echo "$(CYAN)Quality & Testing:$(NC)"
-	@echo "  lint             Run linter and fix common issues"
-	@echo "  lint-check       Check linting without fixing"
-	@echo "  test             Run tests (includes lint check)"
-	@echo "  test-coverage    Run tests with coverage report"
+	@echo "  format           Format code using black and isort"
+	@echo "  lint             Run linting checks"
+	@echo "  type-check       Run type checking"
+	@echo "  quality          Run all code quality checks (format, lint, type-check)"
+	@echo "  shell-check      Check shell scripts"
+	@echo "  test             Run tests"
+	@echo "  check-all        Run all checks (quality, shell-check, test)"
 	@echo ""
 	@echo "$(CYAN)Docker Operations:$(NC)"
 	@echo "  docker-build     Build the builder Docker image"
@@ -67,24 +70,37 @@ setup: deps ## Setup development environment
 # Quality & Testing #
 #####################
 
-lint: deps ## Run linting and attempt to fix common issues
-	@echo "$(BLUE)Running linter...$(NC)"
-	$(VENV_BIN)/pip install pylint
-	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc $(PYTHON_FILES)
+format: deps ## Format code using black and isort
+	@echo "$(BLUE)Formatting code...$(NC)"
+	$(VENV_BIN)/pip install black isort
+	$(VENV_BIN)/black builder/
+	$(VENV_BIN)/isort builder/
 
-lint-check: deps ## Check linting without fixing
-	@echo "$(BLUE)Checking linting...$(NC)"
+lint: deps ## Run linting checks
+	@echo "$(BLUE)Running linter...$(NC)"
 	$(VENV_BIN)/pip install pylint
 	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc --score=y $(PYTHON_FILES)
 
-test: deps lint-check ## Run tests
-	@echo "$(BLUE)Running tests...$(NC)"
-	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/test_build.py -v
+type-check: deps ## Run type checking
+	@echo "$(BLUE)Running type checks...$(NC)"
+	$(VENV_BIN)/pip install mypy \
+		types-requests \
+		types-psutil \
+		types-PyYAML
+	$(VENV_BIN)/mypy builder/src
 
-test-coverage: deps lint-check ## Run tests with coverage report
-	@echo "$(BLUE)Running tests with coverage...$(NC)"
-	$(VENV_BIN)/pip install pytest-cov
-	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/test_build.py -v --cov=builder/src --cov-report=term-missing
+quality: format lint type-check ## Run all code quality checks
+	@echo "$(GREEN)All quality checks passed!$(NC)"
+
+shell-check: ## Check shell scripts
+	@echo "$(BLUE)Checking shell scripts...$(NC)"
+	shellcheck scripts/*.sh
+
+test: deps ## Run tests
+	@echo "$(BLUE)Running tests...$(NC)"
+	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/
+
+check-all: quality shell-check test ## Run all checks including tests
 
 ######################
 # Docker Operations #

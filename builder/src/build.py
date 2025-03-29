@@ -1,19 +1,19 @@
 """Core build system for creating custom OpenTelemetry Collector distributions."""
 
 import os
-import subprocess
 import shutil
+import subprocess
 import time
-from typing import Optional
 from dataclasses import dataclass
-import yaml
-import psutil
+from typing import Optional
+
 import ocb_downloader as ocb
+import psutil
 import supervisor_downloader as supervisor
-import logger
+import yaml
+from logger import BuildLogger, get_logger
 
-
-logger = logger.get_logger(__name__)
+logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
 BUILD_DIR = "/build"
@@ -118,6 +118,11 @@ class BuildContext:
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
         goarch = goarch or ["arm64"]
+        # Use default values if None is provided
+        ocb_version = ocb_version or "0.121.0"
+        supervisor_version = supervisor_version or "0.122.0"
+        go_version = go_version or "1.24.1"
+
         # Parse manifest
         manifest = yaml.safe_load(manifest_content)
 
