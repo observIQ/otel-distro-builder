@@ -37,7 +37,7 @@ outputs:
 
 runs:
   using: "docker"
-  image: "docker://ghcr.io/observiq/otel-distro-builder:v1"
+  image: "builder/Dockerfile"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
     INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}

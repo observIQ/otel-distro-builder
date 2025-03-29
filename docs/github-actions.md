@@ -2,6 +2,12 @@
 
 This guide explains how to use `otel-distro-builder` with GitHub Actions to build custom OpenTelemetry Collector distributions in your CI/CD pipeline.
 
+## Prerequisites
+
+1. GitHub repository
+2. GitHub Actions enabled
+3. Appropriate repository permissions
+
 ## Quick Start
 
 1. Create a manifest file (`manifest.yaml`) that defines your collector configuration:
