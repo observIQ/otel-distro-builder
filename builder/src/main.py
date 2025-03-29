@@ -1,15 +1,16 @@
-"""Command-line interface for the OTel Hub builder system."""
+"""Command-line interface for the OTel Distro Builder."""
 
 import argparse
 import logging
 import sys
+
 import build
-import logger
+from logger import BuildLogger, get_logger
 
-logger = logger.get_logger(__name__)
+logger: BuildLogger = get_logger(__name__)
 
 
-def main():
+def main() -> None:
     """
     Main entry point for the OTel Hub Builder Node.
     Handles command-line arguments, builds and packages the collector, and logs performance metrics.
@@ -53,14 +54,26 @@ def main():
         default="1.24.1",
         help="Version of Go to use for building",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Enable verbose logging",
+    )
     args = parser.parse_args()
 
-    # Configure logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
-        handlers=[logging.StreamHandler()],
-    )
+    # Set log level on root logger
+    root_logger = logging.getLogger()
+    if args.debug:
+        root_logger.setLevel(logging.DEBUG)
+    elif args.verbose:
+        root_logger.setLevel(logging.INFO)
+    else:
+        root_logger.setLevel(logging.WARNING)
 
     try:
         # Read manifest file

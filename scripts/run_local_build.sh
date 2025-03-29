@@ -1,14 +1,12 @@
 #!/bin/bash
 set -e
 
-# Get the repository root directory (parent of the directory containing this script)
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OCB_VERSION="0.121.0"
 SUPERVISOR_VERSION="0.122.0"
 GO_VERSION="1.24.1"
+DOCKER_IMAGE="otel-distro-builder"
 
 # Help message
 usage() {
@@ -20,7 +18,6 @@ usage() {
     echo "  -m <manifest_path>          Path to manifest.yaml/yml file"
     echo
     echo "Optional arguments:"
-    echo "  -i <build_id>               Build ID for artifact storage (default: auto-generated)"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
     echo "  -v <ocb_version>            OpenTelemetry Collector Builder version (default: ${OCB_VERSION})"
     echo "  -s <supervisor_version>     OpenTelemetry Collector Supervisor version (default: ${SUPERVISOR_VERSION})"
@@ -36,7 +33,6 @@ usage() {
 while getopts "m:p:i:o:v:g:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
-    i) BUILD_ID="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
     v) OCB_VERSION="$OPTARG" ;;
     g) GO_VERSION="$OPTARG" ;;
@@ -72,17 +68,25 @@ echo "Go Version: $GO_VERSION"
 echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
-# Build and run the builder container
-docker build -t otel-distro-builder -f "$REPO_ROOT/builder/Dockerfile" "$REPO_ROOT" || {
-    echo "Failed to build builder image"
+# Always build the latest version of the image
+echo "Building Docker image..."
+(cd builder && docker build -t "$DOCKER_IMAGE" .)
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to build Docker image."
     exit 1
-}
+fi
 
 # Run the builder with mounted volumes
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    otel-distro-builder --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
+    "$DOCKER_IMAGE" \
+    --manifest /manifest.yaml \
+    --artifacts /artifacts \
+    --ocb-version "$OCB_VERSION" \
+    --go-version "$GO_VERSION" \
+    --supervisor-version "$SUPERVISOR_VERSION" \
+    --debug
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

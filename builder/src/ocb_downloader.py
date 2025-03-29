@@ -1,8 +1,9 @@
 """Utility for downloading and managing OpenTelemetry Collector Builder (OCB) binaries."""
 
 import os
-import requests
+
 import logger
+import requests
 
 build_logger = logger.get_logger(__name__)
 
