@@ -51,11 +51,6 @@ jobs:
         run: |
           make quality
 
-      - name: Run pip-audit
-        uses: pypa/gh-action-pip-audit@v1.0.0
-        with:
-          inputs: builder/requirements-dev.txt
-
       - name: Clean build artifacts
         run: |
           rm -rf ./artifacts

@@ -68,10 +68,11 @@ echo "Go Version: $GO_VERSION"
 echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
-# Check if the builder image exists
-if ! docker image inspect "$DOCKER_IMAGE" >/dev/null 2>&1; then
-    echo "Error: Builder image '$DOCKER_IMAGE' not found."
-    echo "Please run 'make docker-build' first."
+# Always build the latest version of the image
+echo "Building Docker image..."
+(cd builder && docker build -t "$DOCKER_IMAGE" .)
+if [ $? -ne 0 ]; then
+    echo "Error: Failed to build Docker image."
     exit 1
 fi
 
@@ -79,7 +80,13 @@ fi
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    "$DOCKER_IMAGE" --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION" --debug
+    "$DOCKER_IMAGE" \
+    --manifest /manifest.yaml \
+    --artifacts /artifacts \
+    --ocb-version "$OCB_VERSION" \
+    --go-version "$GO_VERSION" \
+    --supervisor-version "$SUPERVISOR_VERSION" \
+    --debug
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"
