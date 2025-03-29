@@ -66,14 +66,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    build_logger: BuildLogger = get_logger(__name__)
-
+    # Set log level on root logger
+    root_logger = logging.getLogger()
     if args.debug:
-        build_logger.logger.setLevel(logging.DEBUG)
+        root_logger.setLevel(logging.DEBUG)
     elif args.verbose:
-        build_logger.logger.setLevel(logging.INFO)
+        root_logger.setLevel(logging.INFO)
     else:
-        build_logger.logger.setLevel(logging.WARNING)
+        root_logger.setLevel(logging.WARNING)
 
     try:
         # Read manifest file

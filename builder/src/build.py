@@ -111,7 +111,7 @@ class BuildContext:
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
-        ocb_version: Optional[str] = "0.121.0",
+        ocb_version: Optional[str] = "0.122.0",
         supervisor_version: Optional[str] = "0.122.0",
         go_version: Optional[str] = "1.24.1",
     ):
@@ -119,7 +119,7 @@ class BuildContext:
         goos = goos or ["linux"]
         goarch = goarch or ["arm64"]
         # Use default values if None is provided
-        ocb_version = ocb_version or "0.121.0"
+        ocb_version = ocb_version or "0.122.0"
         supervisor_version = supervisor_version or "0.122.0"
         go_version = go_version or "1.24.1"
 

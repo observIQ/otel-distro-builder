@@ -1,6 +1,7 @@
 """Logging utilities for the OTel builder with colored output support."""
 
 import logging
+import sys
 from typing import Optional
 
 # ANSI color codes
@@ -12,6 +13,18 @@ RED = "\033[91m"
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 END = "\033[0m"
+
+# Configure root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Create console handler if none exists
+if not root_logger.handlers:
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(message)s")
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
 
 class BuildLogger:

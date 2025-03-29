@@ -1,17 +1,22 @@
 # Start with an official Python 3 image as the base
-FROM python:3.9-slim
+FROM python:3.9-slim-bookworm
 
 # Version definitions for easy updates
 ENV GORELEASER_VERSION=1.26.2
-ENV SYFT_VERSION=1.15.0
-ENV OCB_VERSIONS="0.119.0 0.120.0 0.121.0"
-ENV GO_VERSIONS="1.23.4 1.24.1"
-ENV DEFAULT_GO_VERSION="1.23.4"
+ENV SYFT_VERSION=1.21.0
+ENV OCB_VERSIONS="0.120.0 0.121.0 0.122.0"
+ENV GO_VERSIONS="1.24.1"
+ENV DEFAULT_GO_VERSION="1.24.1"
 
 # Install essential libraries for Go, glibc compatibility, and ARM support
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends wget gnupg libc6 git && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+    wget \
+    gnupg \
+    libc6 \
+    git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Set architecture variable
 ARG TARGETARCH
@@ -51,7 +56,7 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     chmod +x /usr/local/bin/goreleaser
 
 # Install syft for SBOM generation
-RUN wget -q -O- https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_$TARGETARCH.tar.gz | \
+RUN wget -q -O- https://github.com/anchore/syft/releases/download/v${SYFT_VERSION}/syft_${SYFT_VERSION}_linux_${TARGETARCH}.tar.gz | \
     tar -C /usr/local/bin -xzf - syft && \
     chmod +x /usr/local/bin/syft
 
@@ -63,7 +68,7 @@ ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 WORKDIR /app
 
 # Pre-install OpenTelemetry Collector Builder versions
-RUN mkdir -p /app/ocb  # Ensure the ocb directory exists
+RUN mkdir -p /app/ocb
 RUN for OCB_VERSION in $OCB_VERSIONS; do \
     wget -O ocb/ocb_${OCB_VERSION}_linux_${TARGETARCH} \
     "https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fbuilder%2Fv${OCB_VERSION}/ocb_${OCB_VERSION}_linux_${TARGETARCH}" && \

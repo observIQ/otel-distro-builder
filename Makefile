@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update
 
 # Variables
 VENV_DIR := builder/.venv
@@ -42,6 +42,11 @@ help: ## Show this help
 	@echo ""
 	@echo "$(CYAN)Cleanup:$(NC)"
 	@echo "  clean            Remove all generated files and caches"
+	@echo ""
+	@echo "$(CYAN)Security Scanning:$(NC)"
+	@echo "  scan-fs          Run Trivy filesystem scan"
+	@echo "  scan-image       Run Trivy container scan"
+	@echo "  scan-all         Run all security scans"
 	@echo ""
 	@echo "For more details, see the README.md file."
 
@@ -100,7 +105,7 @@ test: deps ## Run tests
 	@echo "$(BLUE)Running tests...$(NC)"
 	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/
 
-check-all: quality shell-check test ## Run all checks including tests
+check-all: quality shell-check test scan-all ## Run all checks including security scans
 
 ######################
 # Docker Operations #
@@ -143,4 +148,19 @@ clean: ## Remove generated files
 	find builder -type d -name ".pytest_cache" -exec rm -rf {} +
 	find builder -type f -name "*.pyc" -delete
 	find builder -type f -name ".coverage" -delete
+
+#####################
+# Security Scanning #
+#####################
+
+scan-fs: ## Run Trivy filesystem scan
+	@echo "$(BLUE)Running filesystem security scan...$(NC)"
+	trivy fs .
+
+scan-image: docker-build ## Run Trivy container scan
+	@echo "$(BLUE)Running container security scan...$(NC)"
+	trivy image $(DOCKER_IMAGE)
+
+scan-all: scan-fs scan-image ## Run all security scans
+	@echo "$(GREEN)All security scans completed!$(NC)"
  

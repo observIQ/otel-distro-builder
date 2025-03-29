@@ -79,7 +79,7 @@ fi
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
-    "$DOCKER_IMAGE" --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION"
+    "$DOCKER_IMAGE" --manifest /manifest.yaml --artifacts /artifacts --ocb-version "$OCB_VERSION" --go-version "$GO_VERSION" --supervisor-version "$SUPERVISOR_VERSION" --debug
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"
