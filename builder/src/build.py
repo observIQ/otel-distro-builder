@@ -22,6 +22,7 @@ BUILD_DIR = "/build"
 # Default versions
 DEFAULT_OTEL_CONTRIB_VERSION = "0.122.0"  # Default OpenTelemetry Contrib version to use if not detected from manifest
 MIN_SUPERVISOR_VERSION = "0.122.0"  # Minimum required version for the supervisor
+DEFAULT_GO_VERSION = "1.24.1"  # Default Go version to use for building
 
 
 class BuildMetrics:
@@ -98,7 +99,7 @@ class BuildContext:
     working_dir: str  # Root of builder project
     build_dir: str  # Main build workspace
     source_dir: str  # Generated Go files directory
-    artifact_dir: str  # Build artifacts directory
+    build_artifact_dir: str  # Build artifacts directory
     ocb_dir: str  # OCB binaries directory
     templates_dir: str  # Template files directory
     distribution: str  # Name of the distribution
@@ -179,7 +180,7 @@ class BuildContext:
             os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         )
         source_dir = os.path.join(BUILD_DIR, "_build")
-        artifact_dir = os.path.join(BUILD_DIR, "dist")
+        build_artifact_dir = os.path.join(BUILD_DIR, "dist")
         ocb_dir = os.path.join(working_dir, "ocb")
         templates_dir = os.path.join(working_dir, "builder", "templates")
         manifest_path = os.path.join(BUILD_DIR, "manifest.yaml")
@@ -198,7 +199,7 @@ class BuildContext:
             working_dir=working_dir,
             build_dir=BUILD_DIR,
             source_dir=source_dir,
-            artifact_dir=artifact_dir,
+            build_artifact_dir=build_artifact_dir,
             ocb_dir=ocb_dir,
             templates_dir=templates_dir,
             distribution=distribution,
@@ -232,7 +233,7 @@ def create_directories(ctx: BuildContext):
     for directory in [
         ctx.build_dir,
         ctx.source_dir,
-        ctx.artifact_dir,
+        ctx.build_artifact_dir,
         ctx.ocb_dir,
         os.path.join(ctx.build_dir, "_contrib"),
     ]:
@@ -385,45 +386,59 @@ def build_release(ctx: BuildContext) -> bool:
     return True
 
 
-def copy_artifacts(ctx: BuildContext, artifact_dir: str) -> None:
-    """Copy build artifacts to the specified directory."""
+def copy_artifacts(ctx: BuildContext, final_artifact_dir: str) -> None:
+    """Copy build artifacts to final directory.
+
+    Args:
+        ctx: Build context
+        final_artifact_dir: Directory to copy artifacts to
+    """
     logger.section("Copying Artifacts")
 
-    if not os.path.exists(ctx.artifact_dir):
-        logger.error(f"Build artifacts directory not found: {ctx.artifact_dir}")
+    if not os.path.exists(ctx.build_artifact_dir):
+        logger.error(f"Build artifacts directory not found: {ctx.build_artifact_dir}")
         raise RuntimeError("Build artifacts not found")
 
-    os.makedirs(artifact_dir, exist_ok=True)
+    # Create artifacts directory if it doesn't exist
+    try:
+        os.makedirs(final_artifact_dir, exist_ok=True)
+    except (OSError, PermissionError) as e:
+        logger.error(f"Could not create artifacts directory {final_artifact_dir}: {e}")
+        raise RuntimeError(f"Could not create artifacts directory: {e}") from e
 
-    # Copy all files from dist directory
-    for item in os.listdir(ctx.artifact_dir):
-        src = os.path.join(ctx.artifact_dir, item)
-        dst = os.path.join(artifact_dir, item)
-        if os.path.isfile(src):
-            shutil.copy2(src, dst)
-            logger.info(f"Copied: {item}", indent=1)
-        elif os.path.isdir(src):
-            shutil.copytree(src, dst, dirs_exist_ok=True)
-            logger.info(f"Copied directory: {item}", indent=1)
+    # Copy all files from build artifacts directory
+    for item in os.listdir(ctx.build_artifact_dir):
+        src = os.path.join(ctx.build_artifact_dir, item)
+        dst = os.path.join(final_artifact_dir, item)
+        try:
+            if os.path.isfile(src):
+                shutil.copy2(src, dst)
+                logger.info(f"Copied: {item}", indent=1)
+            elif os.path.isdir(src):
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+                logger.info(f"Copied directory: {item}", indent=1)
+        except (OSError, PermissionError) as e:
+            logger.error(f"Failed to copy {item}: {e}")
+            raise RuntimeError(f"Failed to copy artifacts: {e}") from e
 
-    logger.success(f"Artifacts copied to: {artifact_dir}")
+    logger.success(f"Artifacts copied to: {final_artifact_dir}")
 
 
 # pylint: disable=R0913
 def build(
     manifest_content: str,
-    artifact_dir: Optional[str] = None,
+    artifact_dir: str,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
-    go_version: Optional[str] = "1.24.1",
+    go_version: Optional[str] = DEFAULT_GO_VERSION,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
     Args:
         manifest_content: Content of the manifest file
-        artifact_dir: Optional directory to copy artifacts to after build
+        artifact_dir: Directory to copy artifacts to after build
         goos: Comma-separated list of target operating systems
         goarch: Comma-separated list of target architectures
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
@@ -444,14 +459,16 @@ def build(
         manifest_content, goos, goarch, ocb_version, supervisor_version, go_version
     )
 
+    # For internal use, rename to final_artifact_dir for clarity
+    final_artifact_dir = artifact_dir
+
     # Log build information
     logger.info("Build Details:", indent=1)
     logger.info(f"Working Directory: {ctx.working_dir}", indent=2)
     logger.info(f"Build Directory: {ctx.build_dir}", indent=2)
     logger.info(f"Source Directory: {ctx.source_dir}", indent=2)
-    logger.info(f"Artifact Directory: {ctx.artifact_dir}", indent=2)
-    if artifact_dir:
-        logger.info(f"Final Artifacts Will Be Copied To: {artifact_dir}", indent=2)
+    logger.info(f"Build Artifacts Directory: {ctx.build_artifact_dir}", indent=2)
+    logger.info(f"Final Artifacts Directory: {final_artifact_dir}", indent=2)
     logger.info(f"OCB Directory: {ctx.ocb_dir}", indent=2)
     logger.info(f"OCB Version: {ctx.ocb_version}", indent=2)
     logger.info(f"Supervisor Version: {ctx.supervisor_version}", indent=2)
@@ -486,12 +503,11 @@ def build(
             logger.section("Build Summary")
             logger.success(f"Build completed successfully for {ctx.distribution}")
 
-            # Copy artifacts if a destination was specified
-            if artifact_dir:
-                metrics.start_phase("copy_artifacts")
-                copy_artifacts(ctx, artifact_dir)
-                metrics.update_resource_usage()
-                metrics.end_phase("copy_artifacts")
+            # Always copy artifacts to the specified directory
+            metrics.start_phase("copy_artifacts")
+            copy_artifacts(ctx, final_artifact_dir)
+            metrics.update_resource_usage()
+            metrics.end_phase("copy_artifacts")
 
             # Log final metrics
             metrics.log_summary()

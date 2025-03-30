@@ -4,10 +4,14 @@ import argparse
 import logging
 import sys
 
-import build
 from logger import BuildLogger, get_logger
 
+import build
+
 logger: BuildLogger = get_logger(__name__)
+
+# Fixed container artifacts directory
+CONTAINER_ARTIFACTS_DIR = "/artifacts"
 
 
 def main() -> None:
@@ -22,7 +26,9 @@ def main() -> None:
         "--manifest", type=str, required=True, help="Path to the manifest file"
     )
     parser.add_argument(
-        "--artifacts", type=str, help="Directory to copy final artifacts to (optional)"
+        "--artifacts",
+        type=str,
+        help=f"Directory to copy final artifacts to (default: {CONTAINER_ARTIFACTS_DIR})",
     )
     parser.add_argument(
         "--goos",
@@ -67,7 +73,7 @@ def main() -> None:
         # Build the collector
         success = build.build(
             manifest_content=manifest_content,
-            artifact_dir=args.artifacts,
+            artifact_dir=args.artifacts or CONTAINER_ARTIFACTS_DIR,
             goos=args.goos.split(","),
             goarch=args.goarch.split(","),
             ocb_version=args.ocb_version,

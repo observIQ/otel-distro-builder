@@ -1,22 +1,19 @@
-name: Tests
+name: Comprehensive Tests
 
 on:
+  schedule:
+    - cron: "0 0 * * *" # Run daily at midnight UTC
+  workflow_dispatch: # Allow manual trigger
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  merge_group:
+    tags:
+      - "v*" # Run on version tags
 
 jobs:
-  test:
+  comprehensive-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        manifest: [0, 1] # This will run test_build_distribution[manifest_path0] and [manifest_path1]
-      fail-fast: false # Continue with other tests if one fails
     permissions:
-      contents: read # Required for actions/checkout
-      checks: write # Required for publishing test results
+      contents: read
+      checks: write
 
     steps:
       - name: Free Disk Space
@@ -51,16 +48,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r builder/requirements-dev.txt
 
-      - name: Run Quality Checks
-        run: |
-          make quality
-
       - name: Clean build artifacts
         run: |
           rm -rf ./artifacts
           docker system prune -af
           df -h
 
-      - name: Run Tests
+      - name: Run Base Tests
         run: |
-          python -m pytest builder/tests/test_build.py -v -k "test_build_distribution[manifest_path${{ matrix.manifest }}]"
+          python -m pytest builder/tests/ -v -m "base"
+
+      - name: Run Comprehensive Tests
+        run: |
+          python -m pytest builder/tests/ -v -m "release"
