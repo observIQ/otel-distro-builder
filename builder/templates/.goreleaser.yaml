@@ -1,5 +1,3 @@
-#partial:
-#  by: target
 project_name: __DISTRIBUTION__
 env:
   - COSIGN_YES=true
@@ -37,8 +35,6 @@ archives:
       - __DISTRIBUTION__
     name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
-      - LICENSE
-      - VERSION
       - supervisor_config.yaml
       - src: _contrib/supervisor_{{ .Os }}_{{ .Arch }}{{ .ArtifactExt }}
         dst: supervisor
@@ -55,8 +51,6 @@ archives:
       - __DISTRIBUTION__
     name_template: "{{ .ProjectName }}_otelcol_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
-      - LICENSE
-      - VERSION
       - collector_config.yaml
       - src: __DISTRIBUTION___otelcol.service
         dst: "service/__DISTRIBUTION__.service"
@@ -100,18 +94,6 @@ nfpms:
         type: dir
         file_info:
           mode: 0755
-          owner: __DISTRIBUTION__
-          group: __DISTRIBUTION__
-      - src: LICENSE
-        dst: /opt/__DISTRIBUTION__/LICENSE
-        file_info:
-          mode: 0644
-          owner: __DISTRIBUTION__
-          group: __DISTRIBUTION__
-      - src: VERSION
-        dst: /opt/__DISTRIBUTION__/VERSION
-        file_info:
-          mode: 0644
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
       - src: _contrib/supervisor_{{.Os}}_{{.Arch}}{{ .ArtifactExt }}
@@ -169,18 +151,6 @@ nfpms:
         type: dir
         file_info:
           mode: 0755
-          owner: __DISTRIBUTION__
-          group: __DISTRIBUTION__
-      - src: LICENSE
-        dst: /opt/__DISTRIBUTION__/LICENSE
-        file_info:
-          mode: 0644
-          owner: __DISTRIBUTION__
-          group: __DISTRIBUTION__
-      - src: VERSION
-        dst: /opt/__DISTRIBUTION__/VERSION
-        file_info:
-          mode: 0644
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
       - src: collector_config.yaml

@@ -1,0 +1,37 @@
+# Metadata for contrib-0.117.0.yaml build configuration
+#
+# This metadata file configures the build and test process for the OpenTelemetry Collector.
+# Available configuration options:
+#
+# ocb_version: (required)
+#   The version of the OpenTelemetry Collector Builder to use.
+#   Example: "0.117.0"
+#
+# go_version: (optional, default: "1.24.1")
+#   The Go version to use for building the collector.
+#   Example: "1.24.1"
+#
+# expected_artifacts: (optional)
+#   List of glob patterns for artifacts that must be present after the build.
+#   Supports wildcards (*) for flexible matching.
+#   Example:
+#     - "otelcol-contrib"          # Raw binary
+#     - "otelcol-contrib*.deb"     # Debian package
+#     - "otelcol-contrib*.rpm"     # RPM package
+#     - "otelcol-contrib*.tar.gz"  # Tarball
+#     - "*.sbom.json"              # SBOM files
+#
+# skip_platforms: (optional)
+#   List of platforms where this build should be skipped.
+#   Valid values: "linux", "darwin", "windows"
+#   Example:
+#     - "windows"  # Skip on Windows
+#     - "darwin"   # Skip on macOS
+
+ocb_version: "0.122.1"
+go_version: "1.24.1"
+expected_artifacts:
+  - "otelcol-contrib*.deb"
+  - "otelcol-contrib*.rpm"
+  - "otelcol-contrib*.tar.gz"
+  - "*.sbom.json" 

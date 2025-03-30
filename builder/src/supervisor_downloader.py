@@ -1,10 +1,12 @@
 """Utility for downloading OpenTelemetry OpAMP Supervisor releases."""
 
 import os
-import requests
+
 import logger
+import requests
 
 repo_logger = logger.get_logger(__name__)
+
 
 def download_file(url, output_file):
     """Download a file from a given URL and save it to the specified path."""
@@ -23,11 +25,13 @@ def download_file(url, output_file):
         repo_logger.error(f"Failed to download {url}: {e}")
         raise
 
+
 def set_permissions(file_path, os_name):
     """Set appropriate permissions for the downloaded file."""
     if os_name != "windows":
         os.chmod(file_path, 0o777)
         repo_logger.info(f"Set executable permissions for: {file_path}", indent=1)
+
 
 def download_supervisor(output_dir, version):
     """Download the OpAMP Supervisor release artifacts."""
@@ -40,7 +44,7 @@ def download_supervisor(output_dir, version):
         ("linux", "arm64"),
         ("linux", "amd64"),
         ("linux", "ppc64le"),
-        ("windows", "amd64")
+        ("windows", "amd64"),
     ]
 
     repo_logger.section("Supervisor Download")
@@ -61,7 +65,9 @@ def download_supervisor(output_dir, version):
             download_file(download_url, output_file)
             set_permissions(output_file, os_name)
 
-        repo_logger.success(f"Successfully downloaded supervisor artifacts for version: {version}")
+        repo_logger.success(
+            f"Successfully downloaded supervisor artifacts for version: {version}"
+        )
         return output_dir
 
     except Exception as e:

@@ -1,19 +1,19 @@
 """Core build system for creating custom OpenTelemetry Collector distributions."""
 
 import os
-import subprocess
 import shutil
+import subprocess
 import time
-from typing import Optional
 from dataclasses import dataclass
-import yaml
-import psutil
+from typing import Optional
+
 import ocb_downloader as ocb
+import psutil
 import supervisor_downloader as supervisor
-import logger
+import yaml
+from logger import BuildLogger, get_logger
 
-
-logger = logger.get_logger(__name__)
+logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
 BUILD_DIR = "/build"
@@ -111,13 +111,18 @@ class BuildContext:
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
-        ocb_version: Optional[str] = "0.121.0",
+        ocb_version: Optional[str] = "0.122.0",
         supervisor_version: Optional[str] = "0.122.0",
         go_version: Optional[str] = "1.24.1",
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
         goarch = goarch or ["arm64"]
+        # Use default values if None is provided
+        ocb_version = ocb_version or "0.122.0"
+        supervisor_version = supervisor_version or "0.122.0"
+        go_version = go_version or "1.24.1"
+
         # Parse manifest
         manifest = yaml.safe_load(manifest_content)
 
@@ -182,7 +187,13 @@ def validate_environment():
 def create_directories(ctx: BuildContext):
     """Create all necessary directories for the build."""
     logger.section("Directory Setup")
-    for directory in [ctx.build_dir, ctx.source_dir, ctx.artifact_dir, ctx.ocb_dir, os.path.join(ctx.build_dir, "_contrib")]:
+    for directory in [
+        ctx.build_dir,
+        ctx.source_dir,
+        ctx.artifact_dir,
+        ctx.ocb_dir,
+        os.path.join(ctx.build_dir, "_contrib"),
+    ]:
         os.makedirs(directory, exist_ok=True)
         logger.info(f"Created directory: {directory}", indent=1)
     logger.success("All directories created")
@@ -205,7 +216,7 @@ def generate_sources(ctx: BuildContext) -> None:
     logger.section("Source Generation")
 
     cmd = f"{ocb_path} --skip-compilation=true --config {ctx.manifest_path}"
-    logger.info("Running OCB builder:", indent=1)
+    logger.info("Running OpenTelemetry Collector Builder (OCB):", indent=1)
     logger.command(cmd)
 
     result = subprocess.run(
@@ -230,10 +241,14 @@ def generate_sources(ctx: BuildContext) -> None:
 
     logger.success(f"Source files generated for '{ctx.distribution}'")
 
+
 def download_supervisor(ctx: BuildContext):
     # Download supervisor
-    supervisor.download_supervisor(os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version)
+    supervisor.download_supervisor(
+        os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version
+    )
     logger.success("Supervisor binaries downloaded")
+
 
 def process_templates(ctx: BuildContext):
     """Process and copy template files."""
@@ -272,20 +287,6 @@ def process_templates(ctx: BuildContext):
 
     logger.success("All templates processed")
 
-def move_files(ctx: BuildContext):
-    """Move files to the build directory."""
-    logger.section("Moving Files")
-
-    # Move additional files
-    files = [
-        "LICENSE",
-        "VERSION",
-    ]
-    for file in files:
-        src = os.path.join(ctx.working_dir, file)
-        dst = os.path.join(ctx.build_dir, file)
-        shutil.copy2(src, dst)
-        logger.info(f"Moved: {file}", indent=1)
 
 def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
     """Prepare the release."""
@@ -309,11 +310,6 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
     metrics.update_resource_usage()
     metrics.end_phase("process_templates")
 
-    # Move additional files to build directory
-    metrics.start_phase("move_files")
-    move_files(ctx)
-    metrics.update_resource_usage()
-    metrics.end_phase("move_files")
 
 def build_release(ctx: BuildContext) -> bool:
     """Build the final release using goreleaser."""
@@ -402,7 +398,9 @@ def build(
     logger.section("Build Configuration")
 
     # Create build context
-    ctx = BuildContext.create(manifest_content, goos, goarch, ocb_version, supervisor_version, go_version)
+    ctx = BuildContext.create(
+        manifest_content, goos, goarch, ocb_version, supervisor_version, go_version
+    )
 
     # Log build information
     logger.info("Build Details:", indent=1)
