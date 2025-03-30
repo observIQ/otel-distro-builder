@@ -39,7 +39,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./builder
           file: ./builder/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
