@@ -15,8 +15,8 @@ elif [ -n "$1" ]; then
 fi
 
 # Optional arguments
-if [ -n "$INPUT_OUTPUT_DIR" ]; then
-    ARGS="$ARGS --artifacts $INPUT_OUTPUT_DIR"
+if [ -n "$INPUT_ARTIFACT_DIR" ]; then
+    ARGS="$ARGS --artifacts $INPUT_ARTIFACT_DIR"
 fi
 
 # Handle platform specifications

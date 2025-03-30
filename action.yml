@@ -6,6 +6,10 @@ inputs:
     description: "Path to the collector manifest file"
     required: true
     default: "./manifest.yaml"
+  artifact_dir:
+    description: "Directory to store build artifacts"
+    required: true
+    default: "/github/workspace/artifacts"
   create_release:
     description: "Create a GitHub release with the built artifacts"
     required: false
@@ -17,7 +21,6 @@ inputs:
   platforms:
     description: "Target platforms (comma-separated: linux/amd64,linux/arm64)"
     required: false
-    default: "linux/amd64"
   ocb_version:
     description: "Version of OpenTelemetry Collector Builder to use"
     required: false
@@ -27,7 +30,6 @@ inputs:
   go_version:
     description: "Version of Go to use for building"
     required: false
-    default: "1.24.1"
 
 outputs:
   name:
@@ -46,6 +48,7 @@ runs:
     INPUT_PLATFORMS: ${{ inputs.platforms }}
     INPUT_OCB_VERSION: ${{ inputs.ocb_version }}
     INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
+    INPUT_ARTIFACT_DIR: ${{ inputs.artifact_dir }}
     INPUT_SUPERVISOR_VERSION: ${{ inputs.supervisor_version }}
     INPUT_GO_VERSION: ${{ inputs.go_version }}
 
