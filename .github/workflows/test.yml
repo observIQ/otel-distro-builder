@@ -10,6 +10,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        manifest: [0, 1] # This will run test_build_distribution[manifest_path0] and [manifest_path1]
+      fail-fast: false # Continue with other tests if one fails
     permissions:
       contents: read # Required for actions/checkout
       checks: write # Required for publishing test results
@@ -59,4 +63,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          python -m pytest builder/tests/test_build.py -v
+          python -m pytest builder/tests/test_build.py -v -k "test_build_distribution[manifest_path${{ matrix.manifest }}]"
