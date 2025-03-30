@@ -6,10 +6,6 @@ inputs:
     description: "Path to the collector manifest file"
     required: true
     default: "./manifest.yaml"
-  output-dir:
-    description: "Directory to store build artifacts"
-    required: false
-    default: "./artifacts"
   create_release:
     description: "Create a GitHub release with the built artifacts"
     required: false
@@ -22,10 +18,16 @@ inputs:
     description: "Target platforms (comma-separated: linux/amd64,linux/arm64)"
     required: false
     default: "linux/amd64"
-  debug:
-    description: "Enable debug logging"
+  ocb_version:
+    description: "Version of OpenTelemetry Collector Builder to use"
     required: false
-    default: "false"
+  supervisor_version:
+    description: "Version of OpenTelemetry Collector Supervisor to use"
+    required: false
+  go_version:
+    description: "Version of Go to use for building"
+    required: false
+    default: "1.24.1"
 
 outputs:
   name:
@@ -40,11 +42,12 @@ runs:
   image: "builder/Dockerfile"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
-    INPUT_OUTPUT_DIR: ${{ inputs.output-dir }}
     INPUT_CREATE_RELEASE: ${{ inputs.create_release }}
-    INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
     INPUT_PLATFORMS: ${{ inputs.platforms }}
-    INPUT_DEBUG: ${{ inputs.debug }}
+    INPUT_OCB_VERSION: ${{ inputs.ocb_version }}
+    INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
+    INPUT_SUPERVISOR_VERSION: ${{ inputs.supervisor_version }}
+    INPUT_GO_VERSION: ${{ inputs.go_version }}
 
 branding:
   icon: "package"

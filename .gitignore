@@ -37,6 +37,7 @@ builder/.venv
 builder/__pycache__
 builder/**/__pycache__
 builder/.pytest_cache
+builder/.mypy_cache
 distributions
 ocb
 *credentials*

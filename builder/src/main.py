@@ -52,26 +52,10 @@ def main() -> None:
         default="1.24.1",
         help="Version of Go to use for building",
     )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging",
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging",
-    )
     args = parser.parse_args()
 
-    # Set log level on root logger
-    root_logger = logging.getLogger()
-    if args.debug:
-        root_logger.setLevel(logging.DEBUG)
-    elif args.verbose:
-        root_logger.setLevel(logging.INFO)
-    else:
-        root_logger.setLevel(logging.WARNING)
+    # Set log level to INFO
+    logging.getLogger().setLevel(logging.INFO)
 
     try:
         # Read manifest file

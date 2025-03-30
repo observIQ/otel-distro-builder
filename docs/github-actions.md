@@ -56,7 +56,6 @@ jobs:
           create_release: true
           upload_artifacts: true
           platforms: "linux/amd64,linux/arm64"
-          debug: false
 ```
 
 ## Available Inputs
@@ -70,7 +69,6 @@ The GitHub Action accepts the following inputs:
 | `create_release`   | Create GitHub release              | `true`            | No       |
 | `upload_artifacts` | Upload to Actions artifacts        | `true`            | No       |
 | `platforms`        | Target platforms (comma-separated) | `linux/amd64`     | No       |
-| `debug`            | Enable debug logging               | `false`           | No       |
 
 ## Outputs
 
@@ -219,7 +217,6 @@ When `upload_artifacts` is enabled:
 
    - Check manifest file syntax
    - Verify component compatibility
-   - Enable debug logging
    - Check action logs
 
 2. **Release Issues**
