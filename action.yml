@@ -6,7 +6,7 @@ inputs:
     description: "Path to the collector manifest file"
     required: true
     default: "./manifest.yaml"
-  artifact-dir:
+  artifact_dir:
     description: "Directory to store build artifacts"
     required: true
     default: "/github/workspace/artifacts"
