@@ -5,7 +5,6 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENV_DIR="${PROJECT_ROOT}/builder/.venv"
-VENV_ACTIVATE="${VENV_DIR}/bin/activate"
 
 echo "🔧 Setting up development environment..."
 
@@ -21,19 +20,18 @@ if [ ! -d "$VENV_DIR" ]; then
     python3 -m venv "$VENV_DIR"
 fi
 
-# Ensure virtual environment is activated
-if [ -z "$VIRTUAL_ENV" ]; then
-    if [ -f "$VENV_ACTIVATE" ]; then
-        # shellcheck disable=SC1090
-        . "$VENV_ACTIVATE"
-    else
-        echo "❌ Virtual environment activation script not found at $VENV_ACTIVATE"
-        exit 1
-    fi
-fi
+# Activate virtual environment
+source "$VENV_DIR/bin/activate"
+
+# Upgrade pip
+echo "Upgrading pip..."
+pip install --upgrade pip
 
 # Install dependencies
 echo "Installing dependencies..."
 pip install -r "${PROJECT_ROOT}/builder/requirements.txt"
+pip install -r "${PROJECT_ROOT}/builder/requirements-dev.txt"
 
-echo "✅ Setup complete! Run 'make test' to test the action"
+echo "✅ Setup complete!"
+echo "ℹ️  To activate the virtual environment in your shell, run:"
+echo "    source ${VENV_DIR}/bin/activate"

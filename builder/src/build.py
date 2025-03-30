@@ -12,11 +12,16 @@ import psutil
 import supervisor_downloader as supervisor
 import yaml
 from logger import BuildLogger, get_logger
+from version import get_otel_contrib_version_from_manifest
 
 logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
 BUILD_DIR = "/build"
+
+# Default versions
+DEFAULT_OTEL_CONTRIB_VERSION = "0.122.0"  # Default OpenTelemetry Contrib version to use if not detected from manifest
+MIN_SUPERVISOR_VERSION = "0.122.0"  # Minimum required version for the supervisor
 
 
 class BuildMetrics:
@@ -105,22 +110,20 @@ class BuildContext:
     manifest_path: str  # Path to the manifest file
 
     @classmethod
-    # pylint: disable=too-many-positional-arguments
+    # pylint: disable=R0913
     def create(
         cls,
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
-        ocb_version: Optional[str] = "0.122.0",
-        supervisor_version: Optional[str] = "0.122.0",
+        ocb_version: Optional[str] = None,
+        supervisor_version: Optional[str] = None,
         go_version: Optional[str] = "1.24.1",
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
         goarch = goarch or ["arm64"]
-        # Use default values if None is provided
-        ocb_version = ocb_version or "0.122.0"
-        supervisor_version = supervisor_version or "0.122.0"
+        # Ensure go_version is always a string
         go_version = go_version or "1.24.1"
 
         # Parse manifest
@@ -128,6 +131,45 @@ class BuildContext:
 
         # Extract required fields
         distribution = manifest["dist"]["name"]
+
+        # Determine version from manifest if either ocb_version or supervisor_version is None
+        contrib_version = None
+        if ocb_version is None or supervisor_version is None:
+            try:
+                contrib_version = get_otel_contrib_version_from_manifest(
+                    manifest_content
+                )
+                logger.info(
+                    f"Detected OpenTelemetry Contrib version {contrib_version} from manifest"
+                )
+            except (ValueError, yaml.YAMLError) as e:
+                logger.warning(f"Could not detect version from manifest: {e}")
+                contrib_version = DEFAULT_OTEL_CONTRIB_VERSION  # Fall back to default if detection fails
+                logger.info(f"Using default version {contrib_version}")
+
+        # Set versions based on detection results
+        if ocb_version is None:
+            ocb_version = contrib_version
+            logger.info(f"Using version {ocb_version} for OCB")
+
+        if supervisor_version is None:
+            # Ensure supervisor version meets minimum requirement
+            if contrib_version is not None and contrib_version < MIN_SUPERVISOR_VERSION:
+                logger.warning(
+                    f"Detected version {contrib_version} is below minimum supervisor version {MIN_SUPERVISOR_VERSION}"
+                )
+                supervisor_version = MIN_SUPERVISOR_VERSION
+                logger.info(
+                    f"Using minimum version {supervisor_version} for Supervisor"
+                )
+            else:
+                supervisor_version = contrib_version
+                logger.info(f"Using version {supervisor_version} for Supervisor")
+
+        # Ensure we have valid string versions before creating BuildContext
+        ocb_version = ocb_version or DEFAULT_OTEL_CONTRIB_VERSION
+        supervisor_version = supervisor_version or DEFAULT_OTEL_CONTRIB_VERSION
+
         # Format as YAML array
         goos_yaml = "[" + ", ".join(goos) + "]"
         goarch_yaml = "[" + ", ".join(goarch) + "]"
@@ -367,14 +409,14 @@ def copy_artifacts(ctx: BuildContext, artifact_dir: str) -> None:
     logger.success(f"Artifacts copied to: {artifact_dir}")
 
 
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=R0913
 def build(
     manifest_content: str,
     artifact_dir: Optional[str] = None,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
-    ocb_version: Optional[str] = "0.121.0",
-    supervisor_version: Optional[str] = "0.122.0",
+    ocb_version: Optional[str] = None,
+    supervisor_version: Optional[str] = None,
     go_version: Optional[str] = "1.24.1",
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
@@ -384,8 +426,8 @@ def build(
         artifact_dir: Optional directory to copy artifacts to after build
         goos: Comma-separated list of target operating systems
         goarch: Comma-separated list of target architectures
-        ocb_version: Version of OpenTelemetry Collector Builder to use
-        supervisor_version: Version of OpenTelemetry Collector Supervisor to use
+        ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
+        supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
         go_version: Version of Go to use for building
 
     Returns:

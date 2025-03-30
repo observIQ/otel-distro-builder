@@ -66,10 +66,13 @@ deps: venv ## Install project dependencies
 	$(VENV_BIN)/pip install -r builder/requirements.txt
 	$(VENV_BIN)/pip install -r builder/requirements-dev.txt
 
-setup: deps ## Setup development environment
+setup: ## Setup complete development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
 	@chmod +x scripts/*.sh
 	@./scripts/setup.sh
+	@echo "$(GREEN)Setup complete!$(NC)"
+	@echo "$(CYAN)To activate the virtual environment, run:$(NC)"
+	@echo "    source $(VENV_DIR)/bin/activate"
 
 #####################
 # Quality & Testing #
@@ -77,21 +80,15 @@ setup: deps ## Setup development environment
 
 format: deps ## Format code using black and isort
 	@echo "$(BLUE)Formatting code...$(NC)"
-	$(VENV_BIN)/pip install black isort
 	$(VENV_BIN)/black builder/
 	$(VENV_BIN)/isort builder/
 
 lint: deps ## Run linting checks
 	@echo "$(BLUE)Running linter...$(NC)"
-	$(VENV_BIN)/pip install pylint
 	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc --score=y $(PYTHON_FILES)
 
 type-check: deps ## Run type checking
 	@echo "$(BLUE)Running type checks...$(NC)"
-	$(VENV_BIN)/pip install mypy \
-		types-requests \
-		types-psutil \
-		types-PyYAML
 	$(VENV_BIN)/mypy builder/src
 
 quality: format lint type-check ## Run all code quality checks

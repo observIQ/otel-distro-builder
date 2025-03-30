@@ -39,14 +39,12 @@ def main() -> None:
     parser.add_argument(
         "--ocb-version",
         type=str,
-        default="0.121.0",
-        help="Version of OpenTelemetry Collector Builder to use",
+        help="Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)",
     )
     parser.add_argument(
         "--supervisor-version",
         type=str,
-        default="0.122.0",
-        help="Version of OpenTelemetry Collector Supervisor to use",
+        help="Version of OpenTelemetry Collector Supervisor to use (detected from manifest if not provided)",
     )
     parser.add_argument(
         "--go-version",
