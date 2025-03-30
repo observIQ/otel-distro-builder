@@ -70,8 +70,7 @@ echo
 
 # Always build the latest version of the image
 echo "Building Docker image..."
-(cd builder && docker build -t "$DOCKER_IMAGE" .)
-if [ $? -ne 0 ]; then
+if ! (cd builder && docker build -t "$DOCKER_IMAGE" .); then
     echo "Error: Failed to build Docker image."
     exit 1
 fi
