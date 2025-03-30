@@ -75,6 +75,13 @@ if ! gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
     exit 1
 fi
 
+# Set the active project
+echo "Setting active project to $PROJECT_ID..."
+if ! gcloud config set project "$PROJECT_ID" >/dev/null 2>&1; then
+    echo "Error: Failed to set active project"
+    exit 1
+fi
+
 # Generate a unique build ID if not provided
 if [ -z "${BUILD_ID:-}" ]; then
     BUILD_ID=$(date +%Y%m%d-%H%M%S)-$(head -c 6 /dev/urandom | xxd -p)
@@ -94,7 +101,7 @@ echo
 # Build and push the builder image
 echo "Step 1: Building and pushing builder image..."
 BUILDER_IMAGE="gcr.io/${PROJECT_ID}/otel-distro-builder"
-if ! docker build -t "$BUILDER_IMAGE" --platform linux/amd64 "$(dirname "$0")/.."; then
+if ! docker build -t "$BUILDER_IMAGE" --platform linux/amd64 -f "$(dirname "$0")/../builder/Dockerfile" "$(dirname "$0")/../builder"; then
     echo "Docker build failed"
     exit 1
 fi
@@ -119,6 +126,7 @@ echo
 # Run the build using cloudbuild.yaml
 echo "Step 3: Triggering Cloud Build..."
 if ! CLOUD_BUILD_ID=$(gcloud builds submit \
+    --project="$PROJECT_ID" \
     --config="$(dirname "$0")/cloudbuild.yaml" \
     --substitutions=_MANIFEST_PATH="$MANIFEST_GCS_PATH",_BUILDER_IMAGE="$BUILDER_IMAGE",_ARTIFACT_BUCKET="$ARTIFACT_BUCKET",_BUILD_ID="$BUILD_ID" \
     --no-source \

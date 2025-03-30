@@ -4,10 +4,14 @@ import argparse
 import logging
 import sys
 
-import build
 from logger import BuildLogger, get_logger
 
+import build
+
 logger: BuildLogger = get_logger(__name__)
+
+# Fixed container artifacts directory
+CONTAINER_ARTIFACTS_DIR = "/artifacts"
 
 
 def main() -> None:
@@ -22,7 +26,9 @@ def main() -> None:
         "--manifest", type=str, required=True, help="Path to the manifest file"
     )
     parser.add_argument(
-        "--artifacts", type=str, help="Directory to copy final artifacts to (optional)"
+        "--artifacts",
+        type=str,
+        help=f"Directory to copy final artifacts to (default: {CONTAINER_ARTIFACTS_DIR})",
     )
     parser.add_argument(
         "--goos",
@@ -39,14 +45,12 @@ def main() -> None:
     parser.add_argument(
         "--ocb-version",
         type=str,
-        default="0.121.0",
-        help="Version of OpenTelemetry Collector Builder to use",
+        help="Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)",
     )
     parser.add_argument(
         "--supervisor-version",
         type=str,
-        default="0.122.0",
-        help="Version of OpenTelemetry Collector Supervisor to use",
+        help="Version of OpenTelemetry Collector Supervisor to use (detected from manifest if not provided)",
     )
     parser.add_argument(
         "--go-version",
@@ -54,26 +58,10 @@ def main() -> None:
         default="1.24.1",
         help="Version of Go to use for building",
     )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug logging",
-    )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="Enable verbose logging",
-    )
     args = parser.parse_args()
 
-    # Set log level on root logger
-    root_logger = logging.getLogger()
-    if args.debug:
-        root_logger.setLevel(logging.DEBUG)
-    elif args.verbose:
-        root_logger.setLevel(logging.INFO)
-    else:
-        root_logger.setLevel(logging.WARNING)
+    # Set log level to INFO
+    logging.getLogger().setLevel(logging.INFO)
 
     try:
         # Read manifest file
@@ -85,7 +73,7 @@ def main() -> None:
         # Build the collector
         success = build.build(
             manifest_content=manifest_content,
-            artifact_dir=args.artifacts,
+            artifact_dir=args.artifacts or CONTAINER_ARTIFACTS_DIR,
             goos=args.goos.split(","),
             goarch=args.goarch.split(","),
             ocb_version=args.ocb_version,

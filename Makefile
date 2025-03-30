@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update quicktest
 
 # Variables
 VENV_DIR := builder/.venv
@@ -28,7 +28,8 @@ help: ## Show this help
 	@echo "  type-check       Run type checking"
 	@echo "  quality          Run all code quality checks (format, lint, type-check)"
 	@echo "  shell-check      Check shell scripts"
-	@echo "  test             Run tests"
+	@echo "  test             Run all tests"
+	@echo "  quicktest        Run quick tests (simple build and version tests)"
 	@echo "  check-all        Run all checks (quality, shell-check, test)"
 	@echo ""
 	@echo "$(CYAN)Docker Operations:$(NC)"
@@ -66,10 +67,13 @@ deps: venv ## Install project dependencies
 	$(VENV_BIN)/pip install -r builder/requirements.txt
 	$(VENV_BIN)/pip install -r builder/requirements-dev.txt
 
-setup: deps ## Setup development environment
+setup: ## Setup complete development environment
 	@echo "$(BLUE)Setting up development environment...$(NC)"
 	@chmod +x scripts/*.sh
 	@./scripts/setup.sh
+	@echo "$(GREEN)Setup complete!$(NC)"
+	@echo "$(CYAN)To activate the virtual environment, run:$(NC)"
+	@echo "    source $(VENV_DIR)/bin/activate"
 
 #####################
 # Quality & Testing #
@@ -77,21 +81,15 @@ setup: deps ## Setup development environment
 
 format: deps ## Format code using black and isort
 	@echo "$(BLUE)Formatting code...$(NC)"
-	$(VENV_BIN)/pip install black isort
 	$(VENV_BIN)/black builder/
 	$(VENV_BIN)/isort builder/
 
 lint: deps ## Run linting checks
 	@echo "$(BLUE)Running linter...$(NC)"
-	$(VENV_BIN)/pip install pylint
 	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc --score=y $(PYTHON_FILES)
 
 type-check: deps ## Run type checking
 	@echo "$(BLUE)Running type checks...$(NC)"
-	$(VENV_BIN)/pip install mypy \
-		types-requests \
-		types-psutil \
-		types-PyYAML
 	$(VENV_BIN)/mypy builder/src
 
 quality: format lint type-check ## Run all code quality checks
@@ -101,9 +99,13 @@ shell-check: ## Check shell scripts
 	@echo "$(BLUE)Checking shell scripts...$(NC)"
 	shellcheck scripts/*.sh
 
-test: deps ## Run tests
-	@echo "$(BLUE)Running tests...$(NC)"
-	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/
+test: deps ## Run all tests
+	@echo "$(BLUE)Running all tests (base and release)...$(NC)"
+	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v
+
+quicktest: deps ## Run quick tests (base tests only)
+	@echo "$(BLUE)Running base tests...$(NC)"
+	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "base"
 
 check-all: quality shell-check test scan-all ## Run all checks including security scans
 

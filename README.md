@@ -97,11 +97,9 @@ To view detailed guides, see the [docs](./docs) directory.
 | Input              | Description                 | Default           |
 | ------------------ | --------------------------- | ----------------- |
 | `manifest`         | Path to manifest file       | `./manifest.yaml` |
-| `output-dir`       | Output directory            | `./artifacts`     |
 | `create_release`   | Create GitHub release       | `true`            |
 | `upload_artifacts` | Upload to Actions artifacts | `true`            |
 | `platforms`        | Target platforms            | `linux/amd64`     |
-| `debug`            | Enable debug logging        | `false`           |
 
 #### Outputs
 

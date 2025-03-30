@@ -57,7 +57,7 @@ The Docker container accepts the following command-line options:
 | `--artifacts`          | Output directory for artifacts          | `/artifacts` |
 | `--goos`               | Target operating system                 | `linux`      |
 | `--goarch`             | Target architecture                     | `amd64`      |
-| `--ocb-version`        | OpenTelemetry Collector Builder version | `0.121.0`    |
+| `--ocb-version`        | OpenTelemetry Collector Builder version | `0.122.0`    |
 | `--go-version`         | Go version to use                       | `1.24.1`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
 

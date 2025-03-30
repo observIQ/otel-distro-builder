@@ -82,11 +82,14 @@ RUN mkdir -p /build && \
 # Copy only the required files
 COPY . /app/builder/
 
+# Make entrypoint script executable
+RUN chmod +x /app/builder/entrypoint.sh
+
 # Install Python dependencies
 RUN pip install --no-cache-dir -r /app/builder/requirements.txt
 
-# Set the entrypoint to make the container behave like a command
-ENTRYPOINT ["python", "/app/builder/src/main.py"]
+# Set the entrypoint to our script
+ENTRYPOINT ["/app/builder/entrypoint.sh"]
 
 # Default to showing help
 CMD ["--help"]

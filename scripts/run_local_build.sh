@@ -3,14 +3,11 @@ set -e
 
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
-OCB_VERSION="0.121.0"
-SUPERVISOR_VERSION="0.122.0"
-GO_VERSION="1.24.1"
 DOCKER_IMAGE="otel-distro-builder"
 
 # Help message
 usage() {
-    echo "Usage: $0 -m <manifest_path> [-i <build_id>] [-o <output_dir>] [-v <ocb_version>] [-g <go_version>]"
+    echo "Usage: $0 -m <manifest_path> [-o <output_dir>]"
     echo
     echo "Build an OpenTelemetry Collector Distribution using local Docker"
     echo
@@ -19,13 +16,10 @@ usage() {
     echo
     echo "Optional arguments:"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
-    echo "  -v <ocb_version>            OpenTelemetry Collector Builder version (default: ${OCB_VERSION})"
-    echo "  -s <supervisor_version>     OpenTelemetry Collector Supervisor version (default: ${SUPERVISOR_VERSION})"
-    echo "  -g <go_version>             Go version to use (default: ${GO_VERSION})"
     echo "  -h                          Show this help message"
     echo
     echo "Example:"
-    echo "  $0 -m manifest.yaml -i 9ae45f -o /tmp/artifacts -v 0.121.0 -s 0.122.0 -g 1.24.1"
+    echo "  $0 -m manifest.yaml -o /tmp/artifacts"
     exit 1
 }
 
@@ -62,9 +56,6 @@ OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 
 echo "=== Running local build ==="
 echo "Manifest: $MANIFEST_PATH"
-echo "OCB Version: $OCB_VERSION"
-echo "Supervisor Version: $SUPERVISOR_VERSION"
-echo "Go Version: $GO_VERSION"
 echo "Artifacts will be saved to: $OUTPUT_DIR"
 echo
 
@@ -80,12 +71,7 @@ docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \
-    --manifest /manifest.yaml \
-    --artifacts /artifacts \
-    --ocb-version "$OCB_VERSION" \
-    --go-version "$GO_VERSION" \
-    --supervisor-version "$SUPERVISOR_VERSION" \
-    --debug
+    --manifest /manifest.yaml
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

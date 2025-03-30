@@ -111,9 +111,11 @@ def remove_readonly(func, path, _exc):
         print(f"Error while removing {path}: {e}")
 
 
-@pytest.mark.parametrize("manifest_path", get_manifest_files())
-def test_build_distribution(manifest_path: Path):
-    """Test building a distribution from a manifest file."""
+def run_build_test(manifest_name: str) -> None:
+    """Run a build test for a specific manifest file."""
+    manifest_path = Path(__file__).parent / "manifests" / manifest_name
+    assert manifest_path.exists(), f"Manifest file not found: {manifest_name}"
+
     # Load metadata for this manifest
     metadata = load_manifest_metadata(manifest_path)
 
@@ -123,17 +125,16 @@ def test_build_distribution(manifest_path: Path):
         if current_platform in metadata["skip_platforms"]:
             pytest.skip(f"Test skipped on platform {current_platform}")
 
-    # Create artifacts directory in the current test directory
-    artifact_dir = Path(__file__).parent / "artifacts"
+    # Create artifacts directory in the workspace root (where Docker will mount it)
+    workspace_root = Path(__file__).parent.parent.parent
+    artifact_dir = workspace_root / "artifacts"
     if artifact_dir.exists():
         shutil.rmtree(artifact_dir, onexc=remove_readonly)
     artifact_dir.mkdir(exist_ok=True)
 
     try:
         # Run the build using run_local_build.sh
-        script_path = (
-            Path(__file__).parent.parent.parent / "scripts" / "run_local_build.sh"
-        )
+        script_path = workspace_root / "scripts" / "run_local_build.sh"
         cmd = [
             str(script_path),
             "-m",
@@ -155,19 +156,18 @@ def test_build_distribution(manifest_path: Path):
 
         # Debug: Show contents of artifact directory
         print("\nArtifact Directory Contents:")
-        artifact_path = Path(artifact_dir)
-        if artifact_path.exists():
-            print(f"Directory exists: {artifact_path}")
+        if artifact_dir.exists():
+            print(f"Directory exists: {artifact_dir}")
             print("Files:")
-            for item in artifact_path.rglob("*"):
+            for item in artifact_dir.rglob("*"):
                 if item.is_file():
                     print(
-                        f"  {item.relative_to(artifact_path)} ({item.stat().st_size} bytes)"
+                        f"  {item.relative_to(artifact_dir)} ({item.stat().st_size} bytes)"
                     )
                 else:
-                    print(f"  {item.relative_to(artifact_path)}/")
+                    print(f"  {item.relative_to(artifact_dir)}/")
         else:
-            print(f"Directory does not exist: {artifact_path}")
+            print(f"Directory does not exist: {artifact_dir}")
 
         # Debug: Check directory permissions
         print("\nDirectory Permissions:")
@@ -183,7 +183,7 @@ def test_build_distribution(manifest_path: Path):
             result.returncode == 0
         ), f"Build failed with return code {result.returncode}"
 
-        verify_build_artifacts(artifact_path, metadata)
+        verify_build_artifacts(artifact_dir, metadata)
 
         # After running the binary
         time.sleep(1)  # Give the OS time to release file handles
@@ -194,3 +194,15 @@ def test_build_distribution(manifest_path: Path):
                 shutil.rmtree(artifact_dir, onexc=remove_readonly)
             except (OSError, PermissionError) as e:
                 print(f"Failed to clean up {artifact_dir}: {e}")
+
+
+@pytest.mark.base
+def test_simple_build() -> None:
+    """Test building a simple distribution with minimal components."""
+    run_build_test("simple.yaml")
+
+
+@pytest.mark.release
+def test_contrib_build() -> None:
+    """Test building a full contrib distribution with all components."""
+    run_build_test("contrib.yaml")
