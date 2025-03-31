@@ -6,6 +6,9 @@ on:
       - "v*" # Runs when a version tag is pushed (e.g., v1.0.0)
   workflow_dispatch: # Enables manual triggering from the GitHub UI
 
+permissions:
+  contents: write # This is required for creating/modifying releases
+
 jobs:
   build:
     # Configure build matrix to run multiple platform builds in parallel
@@ -25,7 +28,7 @@ jobs:
 
       # Build the OpenTelemetry distribution for each platform
       - name: Build and Package
-        uses: observiq/otel-distro-builder@main
+        uses: observiq/otel-distro-builder@v1
         with:
           platforms: ${{ matrix.platform }}
 
