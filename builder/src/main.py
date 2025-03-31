@@ -58,6 +58,12 @@ def main() -> None:
         default="1.24.1",
         help="Version of Go to use for building",
     )
+    parser.add_argument(
+        "--snapshot",
+        type=bool,
+        default=True,
+        help="Run goreleaser in snapshot mode",
+    )
     args = parser.parse_args()
 
     # Set log level to INFO

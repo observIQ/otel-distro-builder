@@ -120,6 +120,7 @@ class BuildContext:
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = "1.24.1",
+        snapshot: Optional[bool] = True,
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -209,6 +210,7 @@ class BuildContext:
             supervisor_version=supervisor_version,
             go_version=go_version,
             manifest_path=manifest_path,
+            snapshot=snapshot,
         )
 
 
@@ -359,11 +361,13 @@ def build_release(ctx: BuildContext) -> bool:
     logger.section("Release Building")
     logger.info(f"Building release for {ctx.distribution} with goreleaser")
 
-    cmd = "goreleaser --snapshot --clean"
+    # Determine if snapshot flag should be used
+    snapshot_flag = "--snapshot" if ctx.snapshot else ""
+    cmd = f"goreleaser {snapshot_flag} --clean"
     logger.command(cmd)
 
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean"],
+        [arg for arg in ["goreleaser", snapshot_flag, "--clean"] if arg],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -433,6 +437,7 @@ def build(
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = DEFAULT_GO_VERSION,
+    snapshot: Optional[bool] = True,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 

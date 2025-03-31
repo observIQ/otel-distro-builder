@@ -28,6 +28,10 @@ inputs:
     description: "Version of Go to use for building"
     required: false
     default: "1.24.1"
+  snapshot:
+    description: "Run goreleaser in snapshot mode"
+    required: false
+    default: "true"
 
 outputs:
   name:
@@ -48,6 +52,7 @@ runs:
     INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
     INPUT_SUPERVISOR_VERSION: ${{ inputs.supervisor_version }}
     INPUT_GO_VERSION: ${{ inputs.go_version }}
+    INPUT_SNAPSHOT: ${{ inputs.snapshot }}
 
 branding:
   icon: "package"

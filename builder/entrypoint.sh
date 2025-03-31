@@ -22,7 +22,7 @@ fi
 # Handle platform specifications
 if [ -n "$INPUT_PLATFORMS" ]; then
     # Split platforms into GOOS and GOARCH
-    IFS='/' read -r goos goarch <<< "$INPUT_PLATFORMS"
+    IFS='/' read -r goos goarch <<<"$INPUT_PLATFORMS"
     if [ -n "$goos" ]; then
         ARGS="$ARGS --goos $goos"
     fi
@@ -45,7 +45,12 @@ if [ -n "$INPUT_GO_VERSION" ]; then
     ARGS="$ARGS --go-version $INPUT_GO_VERSION"
 fi
 
+# Handle snapshot mode
+if [ -n "$INPUT_SNAPSHOT" ]; then
+    ARGS="$ARGS --snapshot $INPUT_SNAPSHOT"
+fi
+
 echo "Executing: python /app/builder/src/main.py $ARGS"
 
 # Execute the Python script with the converted arguments
-exec python /app/builder/src/main.py $ARGS 
+exec python /app/builder/src/main.py $ARGS
