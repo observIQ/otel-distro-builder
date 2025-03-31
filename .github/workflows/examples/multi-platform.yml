@@ -1,43 +1,66 @@
-name: Multi-Platform OpenTelemetry Distribution Build
+name: Matrixed OpenTelemetry Distribution Build
 
 on:
   push:
     tags:
-      - "v*"
+      - "v*" # Runs when a version tag is pushed (e.g., v1.0.0)
+  workflow_dispatch: # Enables manual triggering from the GitHub UI
 
 jobs:
   build:
+    # Configure build matrix to run multiple platform builds in parallel
+    strategy:
+      matrix:
+        # Define the platforms we want to build for
+        platform: [linux/amd64, linux/arm64]
+        # Map platform identifiers to simpler names for artifact handling
+        include:
+          - platform: linux/amd64
+            artifact_name: linux-amd64
+          - platform: linux/arm64
+            artifact_name: linux-arm64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Build the OpenTelemetry distribution for each platform
       - name: Build and Package
-        uses: observiq/otel-distro-builder@v1
+        uses: observiq/otel-distro-builder@main
         with:
-          manifest: collector/manifest.yaml
-          output-dir: ./dist
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ matrix.platform }}
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push container images
-        uses: docker/build-push-action@v5
-        with:
-          context: ./dist
-          file: ./dist/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/collector:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}/collector:latest
-
-      - name: Upload build artifacts
+      # Upload platform-specific artifacts with a unique name
+      # These artifacts are available for download in the GitHub Actions UI
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: collector-packages
-          path: ./dist/**/*
+          name: distribution-artifacts-${{ matrix.artifact_name }}
+          path: |
+            ${{ github.workspace }}/artifacts/*.deb
+            ${{ github.workspace }}/artifacts/*.rpm
+            ${{ github.workspace }}/artifacts/*.apk
+            ${{ github.workspace }}/artifacts/*.tar.gz
+            ${{ github.workspace }}/artifacts/*.sbom.json
+          retention-days: 5 # Artifacts are kept for 5 days then automatically deleted
+
+  # Create a single release containing all platform artifacts
+  release:
+    needs: build # Wait for all platform builds to complete
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required permission for creating releases
+    steps:
+      # Download all platform-specific artifacts into a single directory
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+          pattern: distribution-artifacts-* # Match all our platform-specific artifacts
+          merge-multiple: true # Combine all artifacts into a single directory
+
+      # Create a GitHub Release and attach all platform artifacts
+      # This makes all platform builds available for download from the Releases page
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: all-artifacts/**/*

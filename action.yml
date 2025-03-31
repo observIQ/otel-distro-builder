@@ -10,14 +10,6 @@ inputs:
     description: "Directory to store build artifacts"
     required: true
     default: "/github/workspace/artifacts"
-  create_release:
-    description: "Create a GitHub release with the built artifacts"
-    required: false
-    default: "true"
-  upload_artifacts:
-    description: "Upload artifacts to GitHub Actions"
-    required: false
-    default: "true"
   platforms:
     description: "Target platforms (comma-separated: linux/amd64,linux/arm64)"
     required: false
@@ -31,23 +23,13 @@ inputs:
     description: "Version of Go to use for building"
     required: false
 
-outputs:
-  name:
-    description: "Name of the built distribution"
-  version:
-    description: "Version of the built distribution"
-  artifacts_path:
-    description: "Path to the built artifacts"
-
 runs:
   using: "docker"
   image: "builder/Dockerfile"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
-    INPUT_CREATE_RELEASE: ${{ inputs.create_release }}
     INPUT_PLATFORMS: ${{ inputs.platforms }}
     INPUT_OCB_VERSION: ${{ inputs.ocb_version }}
-    INPUT_UPLOAD_ARTIFACTS: ${{ inputs.upload_artifacts }}
     INPUT_ARTIFACT_DIR: ${{ inputs.artifact_dir }}
     INPUT_SUPERVISOR_VERSION: ${{ inputs.supervisor_version }}
     INPUT_GO_VERSION: ${{ inputs.go_version }}

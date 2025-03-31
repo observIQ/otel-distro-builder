@@ -35,10 +35,9 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
 
    ```yaml
    dist:
-     module: github.com/open-telemetry/opentelemetry-collector-releases/core
      name: my-otelcol
      description: My Custom OpenTelemetry Collector Distro
-     output_path: ./artifacts
+     # ...
    extensions:
      -  # ...
    exporters:
@@ -56,20 +55,31 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
 3. **Set up GitHub Actions** (`.github/workflows/build.yml`):
 
    ```yaml
-   name: Build OpenTelemetry Distribution
+   name: OpenTelemetry Distribution Build
+
    on:
      push:
-       tags: ["v*"]
+       tags:
+         - "v*"
      workflow_dispatch:
 
    jobs:
      build:
        runs-on: ubuntu-latest
        steps:
-         - uses: actions/checkout@v3
+         - uses: actions/checkout@v4
+
+         # Build the OpenTelemetry distribution using this custom action
          - uses: observiq/otel-distro-builder@v1
            with:
              manifest: "./manifest.yaml"
+
+         # Create a GitHub Release and attach the build artifacts
+         # This makes the artifacts available for download from the Releases page
+         - name: Create Release
+           uses: softprops/action-gh-release@v2
+           with:
+             files: ${{ github.workspace }}/artifacts/*
    ```
 
 4. **Trigger a build**:
@@ -94,26 +104,20 @@ To view detailed guides, see the [docs](./docs) directory.
 
 #### Inputs
 
-| Input              | Description                 | Default           |
-| ------------------ | --------------------------- | ----------------- |
-| `manifest`         | Path to manifest file       | `./manifest.yaml` |
-| `create_release`   | Create GitHub release       | `true`            |
-| `upload_artifacts` | Upload to Actions artifacts | `true`            |
-| `platforms`        | Target platforms            | `linux/amd64`     |
+| Input       | Description           | Default           |
+| ----------- | --------------------- | ----------------- |
+| `manifest`  | Path to manifest file | `./manifest.yaml` |
+| `platforms` | Target platforms      | `linux/amd64`     |
 
 #### Outputs
 
-| Output           | Description          |
-| ---------------- | -------------------- |
-| `name`           | Distribution name    |
-| `version`        | Distribution version |
-| `artifacts_path` | Path to artifacts    |
+All generated packages and binaries are available in the `${{ github.workspace }}/artifacts/*` folder.
 
 ### Docker Usage
 
 ```bash
 # Pull the latest version
-docker pull ghcr.io/observiq/otel-distro-builder:main
+docker pull ghcr.io/observiq/otel-distro-builder:latest
 
 # Pull specific version
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
@@ -152,9 +156,6 @@ make test
 # Run linting
 make lint
 
-# Create new release
-make release          # Auto-increment patch version
-make release v=2.0.0 # Specific version
 ```
 
 ### Build Scripts
@@ -164,7 +165,7 @@ make release v=2.0.0 # Specific version
 Triggers a build using Google Cloud Build:
 
 ```bash
-./scripts/run_cloud_build.sh -m manifest.yaml -p project_id -b artifact_bucket [-i build_id]
+./scripts/run_cloud_build.sh -m manifest.yaml -p project_id -b artifact_bucket
 ```
 
 Options:
@@ -172,7 +173,6 @@ Options:
 - `-m`: Path to manifest file (required)
 - `-p`: Google Cloud project ID
 - `-b`: Artifact bucket name
-- `-i`: Build ID for artifact storage (default: auto-generated)
 
 #### `run_local_build.sh`
 
@@ -191,9 +191,8 @@ Options:
 
 - `-m`: Path to manifest file (required)
 - `-o`: Directory to store build artifacts (default: ./artifacts)
-- `-v`: OpenTelemetry Collector Builder version (default: 0.121.0)
+- `-v`: OpenTelemetry Collector Builder version (default: auto-detected from manifest)
 - `-g`: Go version to use for building (default: 1.24.1)
-- `-i`: Build ID for artifact storage (default: auto-generated)
 
 The artifacts will be saved to the specified output directory (default: `./artifacts`).
 
@@ -213,14 +212,14 @@ otel-distro-builder/
 
 ## 🔧 Build Process
 
-1. **Builder Image Preparation**: Build and push to Google Container Registry
+1. **Builder Image Preparation**: Build and push to registry
 2. **Manifest Processing**: Upload and validate manifest configuration
 3. **Build Execution**:
    - Download OpenTelemetry Collector Builder (OCB)
    - Generate Go source files
    - Build platform-specific packages
    - Create SBOMs and checksums
-4. **Artifact Management**: Upload to Google Cloud Storage
+4. **Artifact Management**: Upload to GitHub, Google Cloud Storage, or save locally
 
 ## 📦 Build Artifacts
 
