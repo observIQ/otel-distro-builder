@@ -1,3 +1,4 @@
+version: 2
 project_name: __DISTRIBUTION__
 env:
   - COSIGN_YES=true
@@ -44,7 +45,7 @@ archives:
         dst: "service/__DISTRIBUTION__.conf"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: ["zip"]
 
   - id: __DISTRIBUTION___otelcol
     builds:

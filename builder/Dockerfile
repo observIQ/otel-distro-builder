@@ -2,7 +2,7 @@
 FROM python:3.9-slim-bookworm
 
 # Version definitions for easy updates
-ENV GORELEASER_VERSION=1.26.2
+ENV GORELEASER_VERSION=2.8.1
 ENV SYFT_VERSION=1.21.0
 ENV OCB_VERSIONS="0.120.0 0.121.0 0.122.0"
 ENV GO_VERSIONS="1.24.1"
