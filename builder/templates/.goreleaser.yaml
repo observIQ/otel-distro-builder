@@ -43,6 +43,8 @@ archives:
         dst: "service/__DISTRIBUTION__.service"
       - src: __DISTRIBUTION__.conf
         dst: "service/__DISTRIBUTION__.conf"
+      - src: __DISTRIBUTION__.plist
+        dst: "service/__DISTRIBUTION__.plist"
     format_overrides:
       - goos: windows
         formats: ["zip"]
@@ -57,6 +59,8 @@ archives:
         dst: "service/__DISTRIBUTION__.service"
       - src: __DISTRIBUTION___otelcol.conf
         dst: "service/__DISTRIBUTION__.conf"
+      - src: __DISTRIBUTION___otelcol.plist
+        dst: "service/__DISTRIBUTION__.plist"
 
 nfpms:
   - package_name: __DISTRIBUTION__

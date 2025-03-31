@@ -306,8 +306,10 @@ def process_templates(ctx: BuildContext):
         ("preremove.sh", "preremove.sh"),
         ("supervisor_config.yaml", "supervisor_config.yaml"),
         ("template.conf", f"{ctx.distribution}.conf"),
+        ("template.plist", f"{ctx.distribution}.plist"),
         ("template.service", f"{ctx.distribution}.service"),
         ("template_otelcol.conf", f"{ctx.distribution}_otelcol.conf"),
+        ("template_otelcol.plist", f"{ctx.distribution}_otelcol.plist"),
         ("template_otelcol.service", f"{ctx.distribution}_otelcol.service"),
     ]
 
