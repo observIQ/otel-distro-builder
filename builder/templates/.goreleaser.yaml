@@ -59,6 +59,7 @@ archives:
 
 nfpms:
   - package_name: __DISTRIBUTION__
+    file_name_template: '{{ .PackageName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
     bindir: /opt/__DISTRIBUTION__
     scripts:
       preinstall: preinstall.sh
@@ -116,6 +117,7 @@ nfpms:
           group: __DISTRIBUTION__
 
   - package_name: __DISTRIBUTION___otelcol
+    file_name_template: '{{ .PackageName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}{{ with .Mips }}_{{ . }}{{ end }}{{ if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}'
     bindir: /opt/__DISTRIBUTION__
     scripts:
       preinstall: preinstall.sh
@@ -161,7 +163,7 @@ nfpms:
           group: __DISTRIBUTION__
 
 snapshot:
-  name_template: "v{{ .Version }}"
+  name_template: "{{ .Version }}"
 
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
