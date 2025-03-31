@@ -32,7 +32,7 @@ builds:
       - CGO_ENABLED=0
 archives:
   - id: __DISTRIBUTION__
-    builds:
+    ids:
       - __DISTRIBUTION__
     name_template: "{{ .ProjectName }}_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
@@ -48,7 +48,7 @@ archives:
         formats: ["zip"]
 
   - id: __DISTRIBUTION___otelcol
-    builds:
+    ids:
       - __DISTRIBUTION__
     name_template: "{{ .ProjectName }}_otelcol_v{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
     files:
@@ -67,7 +67,7 @@ nfpms:
       postinstall: postinstall.sh
       preremove: preremove.sh
     id: __DISTRIBUTION__
-    builds:
+    ids:
       - __DISTRIBUTION__
     formats:
       - apk
@@ -125,7 +125,7 @@ nfpms:
       postinstall: postinstall.sh
       preremove: preremove.sh
     id: __DISTRIBUTION___otelcol
-    builds:
+    ids:
       - __DISTRIBUTION__
     formats:
       - apk
