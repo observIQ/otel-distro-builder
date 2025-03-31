@@ -17,6 +17,7 @@ usage() {
     echo "Optional arguments:"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
     echo "  -h                          Show this help message"
+    echo "  -s <boolean>                Run goreleaser in snapshot mode (default: true)"
     echo
     echo "Example:"
     echo "  $0 -m manifest.yaml -o /tmp/artifacts"
@@ -24,13 +25,11 @@ usage() {
 }
 
 # Parse command line arguments
-while getopts "m:p:i:o:v:g:s:h" opt; do
+while getopts "m:o:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
-    v) OCB_VERSION="$OPTARG" ;;
-    g) GO_VERSION="$OPTARG" ;;
-    s) SUPERVISOR_VERSION="$OPTARG" ;;
+    s) SNAPSHOT="$OPTARG" ;;
     h) usage ;;
     ?) usage ;;
     esac
@@ -66,12 +65,17 @@ if ! (cd builder && docker build -t "$DOCKER_IMAGE" .); then
     exit 1
 fi
 
+if [ -z "$SNAPSHOT" ]; then
+    SNAPSHOT="true"
+fi
+
 # Run the builder with mounted volumes
 docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \
-    --manifest /manifest.yaml
+    --manifest /manifest.yaml \
+    --snapshot "$SNAPSHOT"
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

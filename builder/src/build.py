@@ -120,7 +120,7 @@ class BuildContext:
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = "1.24.1",
-        snapshot: Optional[bool] = True,
+        snapshot: Optional[bool] = False,
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -373,7 +373,7 @@ def build_release(ctx: BuildContext) -> bool:
         stderr=subprocess.STDOUT,
         text=True,
         check=False,
-    )  # Ensure output is decoded as text
+    )
 
     # Always show goreleaser output
     if result.stdout:
@@ -437,7 +437,7 @@ def build(
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = DEFAULT_GO_VERSION,
-    snapshot: Optional[bool] = True,
+    snapshot: Optional[bool] = False,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 

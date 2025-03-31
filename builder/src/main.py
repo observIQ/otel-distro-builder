@@ -61,7 +61,7 @@ def main() -> None:
     parser.add_argument(
         "--snapshot",
         type=bool,
-        default=True,
+        default=False,
         help="Run goreleaser in snapshot mode",
     )
     args = parser.parse_args()

@@ -31,7 +31,7 @@ inputs:
   snapshot:
     description: "Run goreleaser in snapshot mode"
     required: false
-    default: "true"
+    default: "false"
 
 outputs:
   name:
