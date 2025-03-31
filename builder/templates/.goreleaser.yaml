@@ -160,8 +160,12 @@ nfpms:
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
 
+snapshot:
+  name_template: "v{{ .Version }}"
+
 checksum:
   name_template: "{{ .ProjectName }}_checksums.txt"
+
 sboms:
   - id: archive
     artifacts: archive
