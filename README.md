@@ -54,33 +54,36 @@ Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contri
 
 3. **Set up GitHub Actions** (`.github/workflows/build.yml`):
 
-   ```yaml
-   name: OpenTelemetry Distribution Build
+```yaml
+name: OpenTelemetry Distribution Build
 
-   on:
-     push:
-       tags:
-         - "v*"
-     workflow_dispatch:
+on:
+   push:
+     tags:
+       - "v*"
+   workflow_dispatch:
 
-   jobs:
-     build:
-       runs-on: ubuntu-latest
-       steps:
-         - uses: actions/checkout@v4
+  permissions:
+    contents: write # This is required for creating/modifying releases
 
-         # Build the OpenTelemetry distribution using this custom action
-         - uses: observiq/otel-distro-builder@v1
-           with:
-             manifest: "./manifest.yaml"
+  jobs:
+    build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-         # Create a GitHub Release and attach the build artifacts
-         # This makes the artifacts available for download from the Releases page
-         - name: Create Release
-           uses: softprops/action-gh-release@v2
-           with:
-             files: ${{ github.workspace }}/artifacts/*
-   ```
+      # Build the OpenTelemetry distribution using this custom action
+      - uses: observiq/otel-distro-builder@v1
+        with:
+          manifest: "./manifest.yaml"
+
+      # Create a GitHub Release and attach the build artifacts
+      # This makes the artifacts available for download from the Releases page
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.workspace }}/artifacts/*
+```
 
 4. **Trigger a build**:
 
