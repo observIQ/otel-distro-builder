@@ -13,7 +13,7 @@ import supervisor_downloader as supervisor
 import yaml
 from logger import BuildLogger, get_logger
 from version import get_otel_contrib_version_from_manifest
-
+from nfpms import nfpms_config
 logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
@@ -317,6 +317,8 @@ def process_templates(ctx: BuildContext):
         dest_path = os.path.join(ctx.build_dir, dest)
         with open(template_path, "r", encoding="utf-8") as src_file:
             content = src_file.read()
+            if template == ".goreleaser.yaml" and "linux" in ctx.goos_yaml:
+                content = content.replace("# __NFPMS_CONFIG__", nfpms_config)
             content = content.replace("__DISTRIBUTION__", ctx.distribution)
             content = content.replace("__GOOS__", ctx.goos_yaml)
             content = content.replace("__GOARCH__", ctx.goarch_yaml)
