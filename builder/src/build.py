@@ -322,7 +322,7 @@ def process_templates(ctx: BuildContext):
 
             # remove nfpms from .goreleaser.yaml if not linux
             if template == ".goreleaser.yaml" and "linux" not in ctx.goos_yaml:
-                config = yaml.load(content)
+                config = yaml.safe_load(content)
                 if "nfpms" in config:
                     del config["nfpms"]
                 content = yaml.dump(config, sort_keys=False)
