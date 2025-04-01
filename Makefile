@@ -127,7 +127,12 @@ docker-rebuild: ## Force rebuild the Docker image without cache
 
 build: docker-build ## Build distribution using manifest.yaml
 	@echo "$(BLUE)Building distribution...$(NC)"
-	./scripts/run_local_build.sh -m manifest.yaml
+	./scripts/run_local_build.sh -m manifest.yaml \
+		$(if $(output_dir),-o $(output_dir)) \
+		$(if $(ocb_version),-v $(ocb_version)) \
+		$(if $(supervisor_version),-s $(supervisor_version)) \
+		$(if $(build_id),-i $(build_id)) \
+		$(if $(go_version),-g $(go_version))
 
 build-local: docker-build ## Build distribution with specific versions
 	@if [ ! -f manifest.yaml ]; then \
