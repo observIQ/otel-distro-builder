@@ -13,7 +13,6 @@ import supervisor_downloader as supervisor
 import yaml
 from logger import BuildLogger, get_logger
 from version import get_otel_contrib_version_from_manifest
-
 logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
@@ -327,6 +326,11 @@ def process_templates(ctx: BuildContext):
             content = content.replace("__DISTRIBUTION__", ctx.distribution)
             content = content.replace("__GOOS__", ctx.goos_yaml)
             content = content.replace("__GOARCH__", ctx.goarch_yaml)
+
+            # further processing for .goreleaser.yaml
+            if template == ".goreleaser.yaml":
+                content = process_goreleaser_yaml(content, ctx.goos_yaml)
+
             write_file(dest_path, content)
         logger.info(f"Processed: {template} → {dest}", indent=1)
 
@@ -336,6 +340,19 @@ def process_templates(ctx: BuildContext):
         logger.info(f"Made executable: {script}", indent=1)
 
     logger.success("All templates processed")
+
+def process_goreleaser_yaml(content: str, goos_yaml: str) -> str:
+    """Process the .goreleaser.yaml file."""
+    # remove nfpms from .goreleaser.yaml if not linux
+    if "linux" not in goos_yaml:
+        config = yaml.safe_load(content)
+        if "nfpms" in config:
+            del config["nfpms"]
+        content = yaml.dump(config, sort_keys=False)
+
+    # expand with more processing as necessary
+
+    return content
 
 
 def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
