@@ -167,6 +167,7 @@ dockers:
   - id: linux-amd64
     goos: linux
     goarch: amd64
+    use: buildx
     image_templates:
       - "{{ .Env.GITHUB_REPOSITORY_OWNER }}/__DISTRIBUTION___amd64:latest"
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/__DISTRIBUTION___amd64:latest"
