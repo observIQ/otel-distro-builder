@@ -173,7 +173,7 @@ dockers:
     dockerfile: "Dockerfile"
     extra_files:
       - supervisor_config.yaml
-      - _contrib/supervisor_{{.Os}}_{{.Arch}}{{ .ArtifactExt }}
+      - _contrib/supervisor_linux_amd64
 
 snapshot:
   version_template: "{{ .Version }}"
