@@ -71,9 +71,7 @@ docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \
-    --manifest /manifest.yaml \
-    --goos darwin \
-    --goarch arm64
+    --manifest /manifest.yaml
 
 echo "=== Build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"
