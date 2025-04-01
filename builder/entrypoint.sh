@@ -19,16 +19,14 @@ if [ -n "$INPUT_ARTIFACT_DIR" ]; then
     ARGS="$ARGS --artifacts $INPUT_ARTIFACT_DIR"
 fi
 
-# Handle platform specifications
-if [ -n "$INPUT_PLATFORMS" ]; then
-    # Split platforms into GOOS and GOARCH
-    IFS='/' read -r goos goarch <<< "$INPUT_PLATFORMS"
-    if [ -n "$goos" ]; then
-        ARGS="$ARGS --goos $goos"
-    fi
-    if [ -n "$goarch" ]; then
-        ARGS="$ARGS --goarch $goarch"
-    fi
+# Handle OS if specified (overrides platforms)
+if [ -n "$INPUT_OS" ]; then
+    ARGS="$ARGS --goos $INPUT_OS"
+fi
+
+# Handle ARCH if specified
+if [ -n "$INPUT_ARCH" ]; then
+    ARGS="$ARGS --goarch $INPUT_ARCH"
 fi
 
 # Handle OCB and supervisor versions if specified
