@@ -97,7 +97,7 @@ This will use the latest versions of otelcol and ocb.
 ### Custom Versions
 
 ```bash
-make build -v 0.121.0 -s 0.122.0 -g 1.24.1
+make build output_dir=./artifacts ocb_version=0.121.0 go_version=1.22.1 supervisor_version=0.122.0
 ```
 
 This allows you to specify custom versions for:

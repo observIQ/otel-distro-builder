@@ -187,7 +187,7 @@ This script is used to build a custom OpenTelemetry Collector distribution using
 # Optionally, run it with
 make build-local # to get the latest version of the otelcol and ocb
 # Or
-make build -v 0.121.0 -s 0.122.0 -g 1.24.1 # to pass custom params as needed
+make build output_dir=./artifacts ocb_version=0.121.0 go_version=1.22.1 supervisor_version=0.122.0
 ```
 
 Options:
