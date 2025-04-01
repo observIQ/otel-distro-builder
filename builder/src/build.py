@@ -109,6 +109,7 @@ class BuildContext:
     supervisor_version: str  # Version of supervisor to use
     go_version: str  # Version of Go to use
     manifest_path: str  # Path to the manifest file
+    release_version: str  # Version of the release
 
     @classmethod
     # pylint: disable=R0913
@@ -132,6 +133,9 @@ class BuildContext:
 
         # Extract required fields
         distribution = manifest["dist"]["name"]
+
+        # Extract release version from manifest, use 1.0.0 if not present
+        release_version = manifest["dist"].get("version", "1.0.0")
 
         # Determine version from manifest if either ocb_version or supervisor_version is None
         contrib_version = None
@@ -209,6 +213,7 @@ class BuildContext:
             supervisor_version=supervisor_version,
             go_version=go_version,
             manifest_path=manifest_path,
+            release_version=release_version,
         )
 
 
@@ -361,11 +366,11 @@ def build_release(ctx: BuildContext) -> bool:
     logger.section("Release Building")
     logger.info(f"Building release for {ctx.distribution} with goreleaser")
 
-    cmd = "goreleaser --snapshot --clean"
+    cmd = f"GORELEASER_CURRENT_TAG={ctx.release_version} goreleaser --snapshot --clean"
     logger.command(cmd)
 
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean"],
+        [f"GORELEASER_CURRENT_TAG={ctx.release_version}", "goreleaser", "--snapshot", "--clean"],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
