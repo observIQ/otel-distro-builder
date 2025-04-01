@@ -133,7 +133,8 @@ docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/ote
   --goos linux \
   --goarch amd64 \
   --ocb-version 0.121.0 \
-  --go-version 1.22.1
+  --go-version 1.22.1 \ 
+  --supervisor-version 0.122.0
 ```
 
 ## 🛠️ Development
