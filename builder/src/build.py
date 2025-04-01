@@ -301,6 +301,7 @@ def process_templates(ctx: BuildContext):
         (".goreleaser.yaml", ".goreleaser.yaml"),
         ("collector_config.yaml", "collector_config.yaml"),
         ("Dockerfile", "Dockerfile"),
+        ("Dockerfile.otelcol", "Dockerfile.otelcol"),
         ("postinstall.sh", "postinstall.sh"),
         ("preinstall.sh", "preinstall.sh"),
         ("preremove.sh", "preremove.sh"),

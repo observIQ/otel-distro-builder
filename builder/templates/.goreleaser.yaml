@@ -163,6 +163,20 @@ nfpms:
           owner: __DISTRIBUTION__
           group: __DISTRIBUTION__
 
+dockers:
+  - id: ubuntu-amd64
+    goos: linux
+    goarch: amd64
+    ids:
+      - __DISTRIBUTION__
+    image_templates:
+      - "{{ .Env.GITHUB_REPOSITORY_OWNER }}/__DISTRIBUTION___amd64:latest"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY_OWNER }}/__DISTRIBUTION___amd64:latest"
+    dockerfile: "Dockerfile"
+    extra_files:
+      - supervisor_config.yaml
+      - _contrib/supervisor_{{.Os}}_{{.Arch}}{{ .ArtifactExt }}
+
 snapshot:
   version_template: "{{ .Version }}"
 
