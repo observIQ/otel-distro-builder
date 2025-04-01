@@ -366,7 +366,7 @@ def build_release(ctx: BuildContext) -> bool:
     logger.section("Release Building")
     logger.info(f"Building release for {ctx.distribution} with goreleaser")
 
-    cmd = f"GORELEASER_CURRENT_TAG={ctx.release_version} goreleaser --snapshot --clean"
+    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean"
     logger.command(cmd)
 
     result = subprocess.run(
@@ -378,8 +378,8 @@ def build_release(ctx: BuildContext) -> bool:
         check=False,
         env={
             **os.environ,  # Include existing environment variables
-            "GORELEASER_CURRENT_TAG": ctx.release_version
-        }
+            "RELEASE_VERSION": ctx.release_version,
+        },
     )  # Ensure output is decoded as text
 
     # Always show goreleaser output
