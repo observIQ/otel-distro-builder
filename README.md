@@ -13,11 +13,16 @@ Build custom OpenTelemetry Collector Distributions from manifest files with a lo
 
 ## 🤔 Why OpenTelemetry Distribution Builder?
 
-The OpenTelemetry Distribution Builder lets you create and maintain custom, vendor-neutral OpenTelemetry Collector distributions—without all the usual complexity.
-
 Built on top of the [OpenTelemetry Collector Builder (OCB)](https://github.com/open-telemetry/opentelemetry-collector/tree/main/cmd/builder), it uses a `manifest.yaml` to define the components you need, then automates packaging for multiple platforms and manages version releases via GitHub.
 
-Avoid vendor lock-in or the overhead of bundling the entire OpenTelemetry Contrib Collector, and maintain a distribution that’s perfectly tailored to your needs.
+While OCB (OpenTelemetry Collector Builder) focuses on building single collector binaries, the OpenTelemetry Distribution Builder provides a complete distribution management solution:
+
+- 🔨 Builds multi-platform binaries using OCB under the hood
+- 📦 Generates installation packages following OTel community best practices
+- 🚀 Automates versioned releases through GitHub Actions
+- 🔄 Simplifies updates through manifest-based configuration
+
+It handles all the complex aspects of managing your own distribution that have historically made building custom collectors challenging. With the OpenTelemetry Distribution Builder, you can focus on defining your components while the tooling takes care of the rest.
 
 ## ✨ Features
 
