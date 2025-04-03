@@ -19,7 +19,12 @@ if [ -n "$INPUT_ARTIFACT_DIR" ]; then
     ARGS="$ARGS --artifacts $INPUT_ARTIFACT_DIR"
 fi
 
-# Handle OS if specified (overrides platforms)
+# Handle platforms if specified
+if [ -n "$INPUT_PLATFORMS" ]; then
+    ARGS="$ARGS --platforms $INPUT_PLATFORMS"
+fi
+
+# Handle OS if specified
 if [ -n "$INPUT_OS" ]; then
     ARGS="$ARGS --goos $INPUT_OS"
 fi

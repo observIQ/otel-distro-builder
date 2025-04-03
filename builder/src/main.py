@@ -3,8 +3,10 @@
 import argparse
 import logging
 import sys
+from typing import Tuple, List, Union, Optional
 
 from logger import BuildLogger, get_logger
+from platforms import resolve_platforms
 
 import build
 
@@ -31,15 +33,18 @@ def main() -> None:
         help=f"Directory to copy final artifacts to (default: {CONTAINER_ARTIFACTS_DIR})",
     )
     parser.add_argument(
+        "--platforms",
+        type=str,
+        help="Comma-separated list of platforms in GOOS/GOARCH format (e.g. linux/amd64,linux/arm64)",
+    )
+    parser.add_argument(
         "--goos",
         type=str,
-        default="linux",
         help="Comma-separated list of target operating systems (overrides manifest)",
     )
     parser.add_argument(
         "--goarch",
         type=str,
-        default="arm64",
         help="Comma-separated list of target architectures (overrides manifest)",
     )
     parser.add_argument(
@@ -70,12 +75,17 @@ def main() -> None:
             manifest_content = f.read()
         logger.success(f"Manifest read from {args.manifest}")
 
+        # Resolve target platforms
+        goos, goarch = resolve_platforms(
+            platforms=args.platforms, goos=args.goos, goarch=args.goarch
+        )
+
         # Build the collector
         success = build.build(
             manifest_content=manifest_content,
             artifact_dir=args.artifacts or CONTAINER_ARTIFACTS_DIR,
-            goos=args.goos.split(","),
-            goarch=args.goarch.split(","),
+            goos=goos,
+            goarch=goarch,
             ocb_version=args.ocb_version,
             supervisor_version=args.supervisor_version,
             go_version=args.go_version,
