@@ -1,6 +1,5 @@
 """Tests for the platforms module."""
 
-from unittest.mock import patch, mock_open
 import pytest
 
 from src.platforms import parse_platforms, resolve_platforms

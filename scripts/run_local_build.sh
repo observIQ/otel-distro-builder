@@ -28,9 +28,9 @@ while getopts "m:p:i:o:v:g:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
-    v) OCB_VERSION="$OPTARG" ;;
-    g) GO_VERSION="$OPTARG" ;;
-    s) SUPERVISOR_VERSION="$OPTARG" ;;
+    # v) OCB_VERSION="$OPTARG" ;;
+    # g) GO_VERSION="$OPTARG" ;;
+    # s) SUPERVISOR_VERSION="$OPTARG" ;;
     h) usage ;;
     ?) usage ;;
     esac

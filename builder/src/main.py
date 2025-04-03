@@ -3,7 +3,6 @@
 import argparse
 import logging
 import sys
-from typing import Tuple, List, Union, Optional
 
 from logger import BuildLogger, get_logger
 from platforms import resolve_platforms

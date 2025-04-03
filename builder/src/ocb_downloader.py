@@ -47,7 +47,7 @@ def download_file(url, output_file):
     # Check if we got an actual binary file (GitHub returns HTML with 200 for missing files)
     content_type = response.headers.get("content-type", "")
     if "text/html" in content_type and "<html" in response.text[:100].lower():
-        logger.error(f"Failed to download file. Got HTML response instead of binary.")
+        logger.error("Failed to download file. Got HTML response instead of binary.")
         raise RuntimeError(f"File not found at {url}")
 
     if response.status_code == 200:
@@ -64,13 +64,13 @@ def download_file(url, output_file):
 
             if not os.path.getsize(output_file):
                 os.remove(output_file)
-                raise RuntimeError(f"Downloaded file is empty")
+                raise RuntimeError("Downloaded file is empty")
 
             logger.success(f"Downloaded file to: {output_file} ({bytes_written} bytes)")
         except Exception as e:
             if os.path.exists(output_file):
                 os.remove(output_file)
-            raise RuntimeError(f"Failed to save file: {str(e)}")
+            raise RuntimeError(f"Failed to save file: {str(e)}") from e
     else:
         logger.error(f"Failed to download file. Status code: {response.status_code}")
         raise RuntimeError(
