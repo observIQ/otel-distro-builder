@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 
-from . import build, logger
+from . import build
 from .logger import BuildLogger, get_logger
 from .platforms import resolve_platforms
 
