@@ -5,8 +5,9 @@ import argparse
 import json
 import re
 import sys
-import yaml
 from urllib.request import Request, urlopen
+
+import yaml
 
 
 def get_releases():

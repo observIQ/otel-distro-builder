@@ -1,7 +1,6 @@
 """Tests for the platforms module."""
 
 import pytest
-
 from src.platforms import parse_platforms, resolve_platforms
 
 

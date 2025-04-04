@@ -56,8 +56,8 @@ jobs:
 
       - name: Run Base Tests
         run: |
-          python -m pytest builder/tests/ -v -m "base"
+          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "base"
 
       - name: Run Comprehensive Tests
         run: |
-          python -m pytest builder/tests/ -v -m "release"
+          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "release"

@@ -1,8 +1,8 @@
 """Tests for the main module."""
 
-from unittest.mock import patch, mock_open
-import pytest
+from unittest.mock import mock_open, patch
 
+import pytest
 from src.main import main
 
 
@@ -65,10 +65,12 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
       - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/exporter/fileexporter v0.122.0
     """
 
-    with patch("builtins.open", mock_open(read_data=manifest_content)), patch(
-        "src.main.build.build"
-    ) as mock_build, patch("sys.argv", ["main.py"] + args), patch("os.makedirs"), patch(
-        "src.main.logger"
+    with (
+        patch("builtins.open", mock_open(read_data=manifest_content)),
+        patch("src.main.build.build") as mock_build,
+        patch("sys.argv", ["main.py"] + args),
+        patch("os.makedirs"),
+        patch("src.main.logger"),
     ):  # Mock logger to prevent actual logging
 
         mock_build.return_value = True
@@ -102,9 +104,11 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
 )
 def test_main_error_handling(error, expected_message, expected_exit_code):
     """Test main function error handling."""
-    with patch("builtins.open", side_effect=error), patch(
-        "src.main.logger.error"
-    ) as mock_error, patch("sys.argv", ["main.py", "--manifest", "test.yaml"]):
+    with (
+        patch("builtins.open", side_effect=error),
+        patch("src.main.logger.error") as mock_error,
+        patch("sys.argv", ["main.py", "--manifest", "test.yaml"]),
+    ):
 
         # Expect SystemExit(1) for errors
         with pytest.raises(SystemExit) as exc_info:

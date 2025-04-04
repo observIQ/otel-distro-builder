@@ -3,7 +3,7 @@
 import os
 
 import requests
-from logger import BuildLogger, get_logger
+from .logger import BuildLogger, get_logger
 
 logger: BuildLogger = get_logger(__name__)
 

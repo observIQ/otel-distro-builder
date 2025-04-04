@@ -34,9 +34,6 @@ The test framework verifies:
 
 - Build process completion
 - Presence of required files:
-  - metadata.json
-  - artifacts.json
-  - config.yaml
   - Package files (.deb, .rpm, .apk, .tar.gz)
   - SBOM files
   - Checksums

@@ -1,6 +1,6 @@
 """Platform handling utilities for the OTel Distro Builder."""
 
-from typing import Tuple, List, Optional
+from typing import List, Optional, Tuple
 
 
 def parse_platforms(platforms: Optional[str]) -> Tuple[List[str], List[str]]:

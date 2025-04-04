@@ -28,9 +28,9 @@ while getopts "m:p:i:o:v:g:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
-    # v) OCB_VERSION="$OPTARG" ;;
-    # g) GO_VERSION="$OPTARG" ;;
-    # s) SUPERVISOR_VERSION="$OPTARG" ;;
+    v) OCB_VERSION="$OPTARG" ;;
+    g) GO_VERSION="$OPTARG" ;;
+    s) SUPERVISOR_VERSION="$OPTARG" ;;
     h) usage ;;
     ?) usage ;;
     esac
@@ -71,6 +71,9 @@ docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \
+    ${OCB_VERSION:+"--ocb-version $OCB_VERSION"} \
+    ${GO_VERSION:+"--go-version $GO_VERSION"} \
+    ${SUPERVISOR_VERSION:+"--supervisor-version $SUPERVISOR_VERSION"} \
     --manifest /manifest.yaml
 
 echo "=== Build complete ==="

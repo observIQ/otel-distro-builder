@@ -1,0 +1,3 @@
+"""
+OpenTelemetry Collector Builder package.
+"""
