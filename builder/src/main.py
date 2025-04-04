@@ -4,11 +4,9 @@ import argparse
 import logging
 import sys
 
-from . import logger
+from . import build, logger
 from .logger import BuildLogger, get_logger
 from .platforms import resolve_platforms
-
-from . import build
 
 logger: BuildLogger = get_logger(__name__)
 
