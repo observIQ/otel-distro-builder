@@ -71,6 +71,9 @@ docker run \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \
+    ${OCB_VERSION:+"--ocb-version $OCB_VERSION"} \
+    ${GO_VERSION:+"--go-version $GO_VERSION"} \
+    ${SUPERVISOR_VERSION:+"--supervisor-version $SUPERVISOR_VERSION"} \
     --manifest /manifest.yaml
 
 echo "=== Build complete ==="

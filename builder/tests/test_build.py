@@ -47,10 +47,6 @@ def load_manifest_metadata(manifest_path: Path) -> dict:
 
 def verify_build_artifacts(artifact_path: Path, metadata: dict) -> None:
     """Verify all expected build artifacts exist."""
-    # Verify expected files exist
-    assert (artifact_path / "metadata.json").exists(), "metadata.json not found"
-    assert (artifact_path / "artifacts.json").exists(), "artifacts.json not found"
-    assert (artifact_path / "config.yaml").exists(), "config.yaml not found"
 
     # Check for binary packages
     packages = (
@@ -141,10 +137,6 @@ def run_build_test(manifest_name: str) -> None:
             str(manifest_path),
             "-o",
             str(artifact_dir),
-            "-v",
-            metadata["ocb_version"],
-            "-g",
-            metadata["go_version"],
         ]
 
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)

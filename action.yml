@@ -10,9 +10,14 @@ inputs:
     description: "Directory to store build artifacts"
     required: true
     default: "/github/workspace/artifacts"
-  platforms:
-    description: "Target platforms (comma-separated: linux/amd64,linux/arm64)"
+  os:
+    description: "Target operating systems (comma-separated: linux,darwin,windows)"
     required: false
+    default: "linux"
+  arch:
+    description: "Target architectures (comma-separated: amd64,arm64)"
+    required: false
+    default: "amd64"
   ocb_version:
     description: "Version of OpenTelemetry Collector Builder to use"
     required: false
@@ -28,7 +33,8 @@ runs:
   image: "builder/Dockerfile"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
-    INPUT_PLATFORMS: ${{ inputs.platforms }}
+    INPUT_OS: ${{ inputs.os }}
+    INPUT_ARCH: ${{ inputs.arch }}
     INPUT_OCB_VERSION: ${{ inputs.ocb_version }}
     INPUT_ARTIFACT_DIR: ${{ inputs.artifact_dir }}
     INPUT_SUPERVISOR_VERSION: ${{ inputs.supervisor_version }}

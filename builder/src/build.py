@@ -7,12 +7,14 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-import ocb_downloader as ocb
 import psutil
-import supervisor_downloader as supervisor
 import yaml
-from logger import BuildLogger, get_logger
-from version import get_otel_contrib_version_from_manifest
+
+from . import ocb_downloader as ocb
+from . import supervisor_downloader as supervisor
+from .logger import BuildLogger, get_logger
+from .version import determine_build_versions
+
 logger: BuildLogger = get_logger(__name__)
 
 # Fixed build workspace directory
@@ -22,6 +24,9 @@ BUILD_DIR = "/build"
 DEFAULT_OTEL_CONTRIB_VERSION = "0.122.0"  # Default OpenTelemetry Contrib version to use if not detected from manifest
 MIN_SUPERVISOR_VERSION = "0.122.0"  # Minimum required version for the supervisor
 DEFAULT_GO_VERSION = "1.24.1"  # Default Go version to use for building
+
+CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
+EXCLUDED_FILES = ["artifacts.json", "metadata.json", "config.yaml"]
 
 
 class BuildMetrics:
@@ -136,43 +141,17 @@ class BuildContext:
         # Extract release version from manifest, use 1.0.0 if not present
         release_version = manifest["dist"].get("version", "1.0.0")
 
-        # Determine version from manifest if either ocb_version or supervisor_version is None
-        contrib_version = None
-        if ocb_version is None or supervisor_version is None:
-            try:
-                contrib_version = get_otel_contrib_version_from_manifest(
-                    manifest_content
-                )
-                logger.info(
-                    f"Detected OpenTelemetry Contrib version {contrib_version} from manifest"
-                )
-            except (ValueError, yaml.YAMLError) as e:
-                logger.warning(f"Could not detect version from manifest: {e}")
-                contrib_version = DEFAULT_OTEL_CONTRIB_VERSION  # Fall back to default if detection fails
-                logger.info(f"Using default version {contrib_version}")
+        # Determine versions from manifest if needed
+        versions = determine_build_versions(
+            manifest_content,
+            ocb_version=ocb_version,
+            supervisor_version=supervisor_version,
+        )
+        ocb_version = versions.ocb
+        supervisor_version = versions.supervisor
 
-        # Set versions based on detection results
-        if ocb_version is None:
-            ocb_version = contrib_version
-            logger.info(f"Using version {ocb_version} for OCB")
-
-        if supervisor_version is None:
-            # Ensure supervisor version meets minimum requirement
-            if contrib_version is not None and contrib_version < MIN_SUPERVISOR_VERSION:
-                logger.warning(
-                    f"Detected version {contrib_version} is below minimum supervisor version {MIN_SUPERVISOR_VERSION}"
-                )
-                supervisor_version = MIN_SUPERVISOR_VERSION
-                logger.info(
-                    f"Using minimum version {supervisor_version} for Supervisor"
-                )
-            else:
-                supervisor_version = contrib_version
-                logger.info(f"Using version {supervisor_version} for Supervisor")
-
-        # Ensure we have valid string versions before creating BuildContext
-        ocb_version = ocb_version or DEFAULT_OTEL_CONTRIB_VERSION
-        supervisor_version = supervisor_version or DEFAULT_OTEL_CONTRIB_VERSION
+        logger.info(f"Using version {ocb_version} for OCB")
+        logger.info(f"Using version {supervisor_version} for Supervisor")
 
         # Format as YAML array
         goos_yaml = "[" + ", ".join(goos) + "]"
@@ -341,6 +320,7 @@ def process_templates(ctx: BuildContext):
 
     logger.success("All templates processed")
 
+
 def process_goreleaser_yaml(content: str, goos_yaml: str) -> str:
     """Process the .goreleaser.yaml file."""
     # remove nfpms from .goreleaser.yaml if not linux
@@ -440,11 +420,14 @@ def copy_artifacts(ctx: BuildContext, final_artifact_dir: str) -> None:
         dst = os.path.join(final_artifact_dir, item)
         try:
             if os.path.isfile(src):
-                shutil.copy2(src, dst)
-                logger.info(f"Copied: {item}", indent=1)
+                filename = os.path.basename(src)
+                if filename not in EXCLUDED_FILES:
+                    shutil.copy2(src, dst)
+                    logger.info(f"Copied: {item}", indent=1)
+                else:
+                    logger.info(f"Skipped excluded file: {item}", indent=1)
             elif os.path.isdir(src):
-                shutil.copytree(src, dst, dirs_exist_ok=True)
-                logger.info(f"Copied directory: {item}", indent=1)
+                logger.info(f"Skipping directory: {item}", indent=1)
         except (OSError, PermissionError) as e:
             logger.error(f"Failed to copy {item}: {e}")
             raise RuntimeError(f"Failed to copy artifacts: {e}") from e

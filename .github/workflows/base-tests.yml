@@ -59,4 +59,4 @@ jobs:
 
       - name: Run Base Tests
         run: |
-          python -m pytest builder/tests/ -v -m "base"
+          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "base"

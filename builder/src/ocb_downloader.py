@@ -3,7 +3,8 @@
 import os
 
 import requests
-from logger import BuildLogger, get_logger
+
+from .logger import BuildLogger, get_logger
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -34,11 +35,43 @@ def download_file(url, output_file):
     """Download a file from a given URL and save it to the specified path."""
     logger.info(f"Downloading from: {url}", indent=1)
     response = requests.get(url, stream=True, timeout=30)
+
+    # Log response details for debugging
+    logger.info(f"Response status: {response.status_code}", indent=2)
+    logger.info(
+        f"Content type: {response.headers.get('content-type', 'none')}", indent=2
+    )
+    logger.info(
+        f"Content length: {response.headers.get('content-length', 'none')}", indent=2
+    )
+
+    # Check if we got an actual binary file (GitHub returns HTML with 200 for missing files)
+    content_type = response.headers.get("content-type", "")
+    if "text/html" in content_type and "<html" in response.text[:100].lower():
+        logger.error("Failed to download file. Got HTML response instead of binary.")
+        raise RuntimeError(f"File not found at {url}")
+
     if response.status_code == 200:
-        with open(output_file, "wb") as file:
-            for chunk in response.iter_content(chunk_size=8192):
-                file.write(chunk)
-        logger.success(f"Downloaded file to: {output_file}")
+        try:
+            # Ensure output directory exists
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
+            with open(output_file, "wb") as file:
+                bytes_written = 0
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # Filter out keep-alive chunks
+                        file.write(chunk)
+                        bytes_written += len(chunk)
+
+            if not os.path.getsize(output_file):
+                os.remove(output_file)
+                raise RuntimeError("Downloaded file is empty")
+
+            logger.success(f"Downloaded file to: {output_file} ({bytes_written} bytes)")
+        except Exception as e:
+            if os.path.exists(output_file):
+                os.remove(output_file)
+            raise RuntimeError(f"Failed to save file: {str(e)}") from e
     else:
         logger.error(f"Failed to download file. Status code: {response.status_code}")
         raise RuntimeError(

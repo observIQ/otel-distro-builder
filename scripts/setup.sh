@@ -21,6 +21,7 @@ if [ ! -d "$VENV_DIR" ]; then
 fi
 
 # Activate virtual environment
+# shellcheck disable=SC1091
 source "$VENV_DIR/bin/activate"
 
 # Upgrade pip

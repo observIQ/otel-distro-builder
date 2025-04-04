@@ -1,0 +1,26 @@
+versions:
+  # Format:
+  # contrib_version:
+  #   supervisor: <version>
+  #   builder: <version>
+  #   go: <version>
+  "0.123.1":
+    supervisor: "0.123.0"  # Latest available supervisor version
+    builder: "0.123.0"     # Latest available builder version
+    go: "1.24.1"
+  "0.122.1":
+    supervisor: "0.122.0"  # Uses 0.122.0 since this was a patch release
+    builder: "0.122.0"     # Uses 0.122.0 since this was a patch release
+    go: "1.24.1"
+  "0.122.0":
+    supervisor: "0.122.0"
+    builder: "0.122.0"
+    go: "1.24.1"
+  "0.121.0":
+    supervisor: "0.122.0"  # Uses 0.122.0 since this is the first supervisor version
+    builder: "0.121.0"
+    go: "1.24.0"
+  "0.120.0":
+    supervisor: "0.122.0"  # Uses 0.122.0 since this is the first supervisor version
+    builder: "0.120.0"
+    go: "1.24.0" 
