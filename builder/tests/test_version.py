@@ -2,9 +2,12 @@
 
 import pytest
 import yaml
-from src.version import (MIN_SUPERVISOR_VERSION, BuildVersions,
-                         determine_build_versions,
-                         get_contrib_version_from_manifest)
+from src.version import (
+    MIN_SUPERVISOR_VERSION,
+    BuildVersions,
+    determine_build_versions,
+    get_contrib_version_from_manifest,
+)
 
 
 @pytest.mark.unit
