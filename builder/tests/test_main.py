@@ -6,7 +6,7 @@ import pytest
 from src.main import main
 
 
-@pytest.mark.base
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "args,expected_goos,expected_goarch",
     [
@@ -92,7 +92,7 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
         )
 
 
-@pytest.mark.base
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "error,expected_message,expected_exit_code",
     [

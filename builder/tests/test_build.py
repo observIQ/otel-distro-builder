@@ -8,14 +8,53 @@ import time
 from pathlib import Path
 
 import pytest
-import yaml
 
+# Expected artifacts for each build type
+LINUX_ARM64_ARTIFACTS = [
+    # collector-only artifacts
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.rpm",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.rpm.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.apk",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.apk.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.tar.gz",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.tar.gz.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.deb",
+    "otelcol-contrib_otelcol_v0.122.1_linux_arm64.deb.sbom.json",
+    # collector + supervisor artifacts
+    "otelcol-contrib_v0.122.1_linux_arm64.rpm",
+    "otelcol-contrib_v0.122.1_linux_arm64.rpm.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_arm64.apk",
+    "otelcol-contrib_v0.122.1_linux_arm64.apk.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_arm64.tar.gz",
+    "otelcol-contrib_v0.122.1_linux_arm64.tar.gz.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_arm64.deb",
+    "otelcol-contrib_v0.122.1_linux_arm64.deb.sbom.json",
+    # checksums (always present)
+    "otelcol-contrib_checksums.txt",
+]
 
-def get_manifest_files():
-    """Get all manifest files from the manifests directory."""
-    manifest_dir = Path(__file__).parent / "manifests"
-    # Exclude .meta.yaml files, only include actual manifest files
-    return [f for f in manifest_dir.glob("*.y*ml") if not f.name.endswith(".meta.yaml")]
+LINUX_AMD64_ARTIFACTS = [
+    # collector-only artifacts
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.rpm",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.rpm.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.apk",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.apk.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.tar.gz",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.tar.gz.sbom.json",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.deb",
+    "otelcol-contrib_otelcol_v0.122.1_linux_amd64.deb.sbom.json",
+    # collector + supervisor artifacts
+    "otelcol-contrib_v0.122.1_linux_amd64.rpm",
+    "otelcol-contrib_v0.122.1_linux_amd64.rpm.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_amd64.apk",
+    "otelcol-contrib_v0.122.1_linux_amd64.apk.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_amd64.tar.gz",
+    "otelcol-contrib_v0.122.1_linux_amd64.tar.gz.sbom.json",
+    "otelcol-contrib_v0.122.1_linux_amd64.deb",
+    "otelcol-contrib_v0.122.1_linux_amd64.deb.sbom.json",
+    # checksums (always present)
+    "otelcol-contrib_checksums.txt",
+]
 
 
 def get_current_platform() -> str:
@@ -29,41 +68,11 @@ def get_current_platform() -> str:
     return sys.platform
 
 
-def load_manifest_metadata(manifest_path: Path) -> dict:
-    """Load metadata for a manifest file if it exists."""
-    meta_path = manifest_path.parent / f"{manifest_path.stem}.meta.yaml"
-    if not meta_path.exists():
-        # Default metadata if no meta file exists
-        return {
-            "ocb_version": manifest_path.stem.split("-")[
-                -1
-            ],  # Extract version from filename
-            "go_version": "1.24.1",  # Default Go version
-        }
-
-    with open(meta_path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def verify_build_artifacts(artifact_path: Path, metadata: dict) -> None:
+def verify_build_artifacts(artifact_path: Path, expected_artifacts: list[str]) -> None:
     """Verify all expected build artifacts exist."""
-
-    # Check for binary packages
-    packages = (
-        list(artifact_path.glob("*.deb"))
-        + list(artifact_path.glob("*.rpm"))
-        + list(artifact_path.glob("*.apk"))
-        + list(artifact_path.glob("*.tar.gz"))
-    )
-    assert len(packages) > 0, "No package files found"
-
-    # Check for SBOM files
-    sbom_files = list(artifact_path.glob("*.sbom.json"))
-    assert len(sbom_files) > 0, "No SBOM files found"
-
-    # Check for checksums file
-    checksums = list(artifact_path.glob("*checksums.txt"))
-    assert len(checksums) == 1, "Checksums file not found"
+    for pattern in expected_artifacts:
+        matches = list(artifact_path.glob(pattern))
+        assert len(matches) > 0, f"Expected artifact {pattern} not found"
 
     # Check for raw binary - support both underscore and hyphen variants
     binary_dirs = (
@@ -75,12 +84,6 @@ def verify_build_artifacts(artifact_path: Path, metadata: dict) -> None:
     for binary_dir in binary_dirs:
         if binary_dir.is_dir():  # Skip if it's a package file
             assert any(binary_dir.iterdir()), f"Binary directory {binary_dir} is empty"
-
-    # Check for any additional expected artifacts specified in metadata
-    if "expected_artifacts" in metadata:
-        for artifact in metadata["expected_artifacts"]:
-            matches = list(artifact_path.glob(artifact))
-            assert len(matches) > 0, f"Expected artifact {artifact} not found"
 
 
 def remove_readonly(func, path, _exc):
@@ -107,21 +110,20 @@ def remove_readonly(func, path, _exc):
         print(f"Error while removing {path}: {e}")
 
 
-def run_build_test(manifest_name: str) -> None:
-    """Run a build test for a specific manifest file."""
+def run_build_test(
+    manifest_name: str, expected_artifacts: list[str], env_inputs: dict | None = None
+) -> None:
+    """Run a build test for a specific manifest file.
+
+    Args:
+        manifest_name: Name of the manifest file to use
+        expected_artifacts: List of artifacts to verify
+        env_inputs: Optional dict of environment variables (for GitHub Actions style inputs)
+    """
     manifest_path = Path(__file__).parent / "manifests" / manifest_name
     assert manifest_path.exists(), f"Manifest file not found: {manifest_name}"
 
-    # Load metadata for this manifest
-    metadata = load_manifest_metadata(manifest_path)
-
-    # Skip test if platform is in skip_platforms
-    if "skip_platforms" in metadata:
-        current_platform = get_current_platform()
-        if current_platform in metadata["skip_platforms"]:
-            pytest.skip(f"Test skipped on platform {current_platform}")
-
-    # Create artifacts directory in the workspace root (where Docker will mount it)
+    # Create artifacts directory in the workspace root
     workspace_root = Path(__file__).parent.parent.parent
     artifact_dir = workspace_root / "artifacts"
     if artifact_dir.exists():
@@ -129,17 +131,49 @@ def run_build_test(manifest_name: str) -> None:
     artifact_dir.mkdir(exist_ok=True)
 
     try:
-        # Run the build using run_local_build.sh
-        script_path = workspace_root / "scripts" / "run_local_build.sh"
+        # Build the Docker image
+        builder_dir = workspace_root / "builder"
+        image_name = "otel-distro-builder"
+        build_result = subprocess.run(
+            ["docker", "build", "-t", image_name, "."],
+            cwd=builder_dir,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if build_result.returncode != 0:
+            print("\nDocker Build Output:")
+            print(build_result.stdout)
+            print("\nDocker Build Errors:")
+            print(build_result.stderr)
+            raise RuntimeError("Docker build failed")
+
+        # Run the container with fixed mount points like run_local_build.sh
         cmd = [
-            str(script_path),
-            "-m",
-            str(manifest_path),
-            "-o",
-            str(artifact_dir),
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{manifest_path}:/manifest.yaml:ro",
+            "-v",
+            f"{artifact_dir}:/artifacts",
         ]
 
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        # Add any environment variables if provided
+        if env_inputs:
+            for k, v in env_inputs.items():
+                cmd.extend(["-e", f"{k}={v}"])
+
+        cmd.append(image_name)
+        cmd.extend(["--manifest", "/manifest.yaml"])
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
         print("\nBuild Output:")
         print(result.stdout)
         if result.stderr:
@@ -174,8 +208,7 @@ def run_build_test(manifest_name: str) -> None:
         assert (
             result.returncode == 0
         ), f"Build failed with return code {result.returncode}"
-
-        verify_build_artifacts(artifact_dir, metadata)
+        verify_build_artifacts(artifact_dir, expected_artifacts)
 
         # After running the binary
         time.sleep(1)  # Give the OS time to release file handles
@@ -188,13 +221,29 @@ def run_build_test(manifest_name: str) -> None:
                 print(f"Failed to clean up {artifact_dir}: {e}")
 
 
-@pytest.mark.base
+@pytest.mark.build
 def test_simple_build() -> None:
     """Test building a simple distribution with minimal components."""
-    run_build_test("simple.yaml")
+    run_build_test("simple.yaml", LINUX_ARM64_ARTIFACTS)
+
+
+@pytest.mark.build
+def test_simple_build_env() -> None:
+    """Test building using GitHub Actions style environment variables.
+
+    This test simulates how the GitHub Action would be used by a customer,
+    using the same environment variables defined in action.yml.
+    """
+    env_inputs = {
+        "INPUT_MANIFEST": "/manifest.yaml",  # Use fixed path in container
+        "INPUT_ARTIFACT_DIR": "/artifacts",  # Use fixed path in container
+        "INPUT_OS": "linux",
+        "INPUT_ARCH": "amd64",
+    }
+    run_build_test("simple.yaml", LINUX_AMD64_ARTIFACTS, env_inputs=env_inputs)
 
 
 @pytest.mark.release
 def test_contrib_build() -> None:
     """Test building a full contrib distribution with all components."""
-    run_build_test("contrib.yaml")
+    run_build_test("contrib.yaml", LINUX_ARM64_ARTIFACTS)

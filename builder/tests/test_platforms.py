@@ -4,7 +4,7 @@ import pytest
 from src.platforms import parse_platforms, resolve_platforms
 
 
-@pytest.mark.base
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "platforms,expected",
     [
@@ -32,7 +32,7 @@ def test_parse_platforms(platforms, expected):
     assert parse_platforms(platforms) == expected
 
 
-@pytest.mark.base
+@pytest.mark.unit
 @pytest.mark.parametrize(
     "platforms,goos,goarch,expected_goos,expected_goarch",
     [
