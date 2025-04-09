@@ -63,10 +63,10 @@ It handles all the complex aspects of managing your own distribution that have h
 name: OpenTelemetry Distribution Build
 
 on:
-   push:
-     tags:
-       - "v*"
-   workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
 
   permissions:
     contents: write # This is required for creating/modifying releases
@@ -112,10 +112,11 @@ To view detailed guides, see the [docs](./docs) directory.
 
 #### Inputs
 
-| Input       | Description           | Default           |
-| ----------- | --------------------- | ----------------- |
-| `manifest`  | Path to manifest file | `./manifest.yaml` |
-| `platforms` | Target platforms      | `linux/amd64`     |
+| Input      | Description           | Default           |
+| ---------- | --------------------- | ----------------- |
+| `manifest` | Path to manifest file | `./manifest.yaml` |
+| `os`       | Target OS             | `linux`           |
+| `arch`     | Target architecture   | `amd64`           |
 
 #### Outputs
 
@@ -136,10 +137,7 @@ docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/ote
   # Optional
   --artifacts /workspace/artifacts \
   --goos linux \
-  --goarch amd64 \
-  --ocb-version 0.121.0 \
-  --go-version 1.22.1 \ 
-  --supervisor-version 0.122.0
+  --goarch amd64
 ```
 
 ## 🛠️ Development
