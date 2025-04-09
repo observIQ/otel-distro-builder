@@ -2,12 +2,15 @@
 
 import pytest
 import yaml
-from src.version import (MIN_SUPERVISOR_VERSION, BuildVersions,
-                         determine_build_versions,
-                         get_contrib_version_from_manifest)
+from src.version import (
+    MIN_SUPERVISOR_VERSION,
+    BuildVersions,
+    determine_build_versions,
+    get_contrib_version_from_manifest,
+)
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_determine_build_versions_with_overrides():
     """Test version determination when both versions are provided."""
     manifest = """
@@ -26,7 +29,7 @@ extensions:
     assert versions.supervisor == "0.123.0"
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_determine_build_versions_from_manifest():
     """Test version determination from manifest when no versions provided."""
     manifest = """
@@ -40,7 +43,7 @@ extensions:
     assert versions.supervisor == "0.122.0"
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_determine_build_versions_with_minimum():
     """Test version determination respects minimum supervisor version."""
     manifest = """
@@ -54,7 +57,7 @@ extensions:
     assert versions.supervisor == MIN_SUPERVISOR_VERSION
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_parse_simple_manifest():
     """Test parsing version from a simple manifest with consistent versions."""
     manifest = """
@@ -72,7 +75,7 @@ processors:
     assert version == "0.122.0"
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_parse_mixed_versions():
     """Test parsing version from a manifest with mixed contrib versions."""
     manifest = """
@@ -89,7 +92,7 @@ processors:
     assert version == "0.122.0"
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_parse_no_contrib_components():
     """Test parsing version from a manifest with no contrib components."""
     manifest = """
@@ -102,7 +105,7 @@ processors:
         get_contrib_version_from_manifest(manifest)
 
 
-@pytest.mark.base
+@pytest.mark.unit
 def test_parse_invalid_manifest():
     """Test parsing version from an invalid manifest."""
     manifest = "invalid: yaml: content"

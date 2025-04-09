@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update quicktest
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update unit-test build-test
 
 # Variables
 VENV_DIR := builder/.venv
@@ -25,11 +25,14 @@ help: ## Show this help
 	@echo "$(CYAN)Quality & Testing:$(NC)"
 	@echo "  $(GREEN)quality**$(NC)       Run all code quality checks"
 	@echo "    format           Format code using black and isort"
+	@echo "    check-format     Check code formatting without modifying files"
 	@echo "    lint             Run linting checks"
 	@echo "    type-check       Run type checking"
 	@echo "    shell-check      Check shell scripts"
 	@echo "  $(GREEN)test**$(NC)          Run all tests"
 	@echo "    quicktest        Run quick tests (simple build and version tests)"
+	@echo "    unit-test        Run unit tests only"
+	@echo "    build-test       Run build tests only"
 	@echo "  $(GREEN)check-all**$(NC)     Run all checks (quality, shell-check, test)"
 	@echo ""
 	@echo "$(CYAN)Docker Operations:$(NC)"
@@ -84,6 +87,11 @@ format: deps ## Format code using black and isort
 	$(VENV_BIN)/black builder/
 	$(VENV_BIN)/isort builder/
 
+check-format: deps ## Check code formatting without modifying files
+	@echo "$(BLUE)Checking code formatting...$(NC)"
+	$(VENV_BIN)/black --check builder/
+	$(VENV_BIN)/isort --check-only builder/
+
 lint: deps ## Run linting checks
 	@echo "$(BLUE)Running linter...$(NC)"
 	PYTHONPATH=builder/src $(VENV_BIN)/pylint --rcfile=builder/pylintrc --score=y $(PYTHON_FILES)
@@ -100,12 +108,17 @@ quality: format lint type-check shell-check ## Run all code quality checks
 	@echo "$(GREEN)All quality checks passed!$(NC)"
 
 test: deps ## Run all tests
-	@echo "$(BLUE)Running all tests (base and release)...$(NC)"
+	@echo "$(BLUE)Running all tests (unit, build, and release)...$(NC)"
 	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v
 
-quicktest: deps ## Run quick tests (base tests only)
-	@echo "$(BLUE)Running base tests...$(NC)"
-	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "base"
+unit-test: deps ## Run unit tests only
+	@echo "$(BLUE)Running unit tests...$(NC)"
+	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "unit"
+
+build-test: deps ## Run build tests only
+	@echo "$(BLUE)Running build tests...$(NC)"
+	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "build"
+
 
 check-all: quality shell-check test scan-all ## Run all checks including security scans
 
