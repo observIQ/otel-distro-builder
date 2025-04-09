@@ -56,18 +56,21 @@ jobs:
 
       - name: Free Disk Space
         run: |
+          # Remove unnecessary large packages
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /usr/local/lib/android
           sudo rm -rf /opt/ghc
           sudo rm -rf /opt/hostedtoolcache/CodeQL
+          # Clean up docker images
           docker system prune -af
+          # Clean apt cache
           sudo apt-get clean
           df -h
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
           cache: "pip"
 
       - name: Set up Go

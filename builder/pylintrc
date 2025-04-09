@@ -2,6 +2,8 @@
 ignore=CVS
 persistent=yes
 load-plugins=
+# Ignore test files for most checks
+ignore-patterns=test_.*\.py
 
 [MESSAGES CONTROL]
 disable=
