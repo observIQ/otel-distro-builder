@@ -8,7 +8,7 @@
     <array>
         <string>/opt/__DISTRIBUTION__/supervisor</string>
         <string>--config</string>
-        <string>/opt/__DISTRIBUTION__/supervisor-config.yaml</string>
+        <string>/opt/__DISTRIBUTION__/supervisor_config.yaml</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
