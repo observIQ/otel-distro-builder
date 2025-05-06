@@ -10,7 +10,7 @@ if [ -n "$INPUT_MANIFEST" ]; then
 elif [ -n "$1" ]; then
     # Allow direct command line arguments to work too
     ARGS="$ARGS $@"
-    cd /app && PYTHONPATH=/app/src python -m builder.src.main $ARGS
+    PYTHONPATH=/app python -m builder.src.main $ARGS
     exit 0
 fi
 
@@ -48,7 +48,7 @@ if [ -n "$INPUT_GO_VERSION" ]; then
     ARGS="$ARGS --go-version $INPUT_GO_VERSION"
 fi
 
-echo "Executing: cd /app && PYTHONPATH=/app/src python -m builder.src.main $ARGS"
+echo "Executing: PYTHONPATH=/app python -m builder.src.main $ARGS"
 
 # Execute the Python script with the converted arguments
-cd /app && PYTHONPATH=/app/src python -m builder.src.main $ARGS 
+PYTHONPATH=/app python -m builder.src.main $ARGS
