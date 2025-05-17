@@ -16,8 +16,9 @@ CONTAINER_ARTIFACTS_DIR = "/artifacts"
 
 def main() -> None:
     """
-    Main entry point for the OTel Hub Builder Node.
-    Handles command-line arguments, builds and packages the collector, and logs performance metrics.
+    Main entry point for the OpenTelemetry Distribution Builder.
+    Handles command-line arguments, builds and packages the collector, and logs
+    performance metrics.
     """
     parser = argparse.ArgumentParser(
         description="Build and package a custom OpenTelemetry Collector Distribution."
