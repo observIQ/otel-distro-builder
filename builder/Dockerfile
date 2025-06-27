@@ -1,5 +1,6 @@
 # Start with an official Python 3 image as the base
-FROM python:3.13.3-slim-bookworm
+FROM python:3.13.5-slim-bookworm
+
 
 # Version definitions for easy updates
 ENV GORELEASER_VERSION=2.8.1
