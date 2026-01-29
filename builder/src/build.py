@@ -363,11 +363,11 @@ def build_release(ctx: BuildContext) -> bool:
     logger.section("Release Building")
     logger.info(f"Building release for {ctx.distribution} with goreleaser")
 
-    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean"
+    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean --parallelism 1"
     logger.command(cmd)
 
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean"],
+        ["goreleaser", "--snapshot", "--clean", "--parallelism", "1"],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

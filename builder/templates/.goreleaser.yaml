@@ -28,6 +28,8 @@ builds:
       - -w
     flags:
       - -trimpath
+      # Limit Go's package compilation parallelism to reduce memory use (avoids OOM on constrained environments)
+      - -p 1
     env:
       - CGO_ENABLED=0
 archives:
