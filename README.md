@@ -149,6 +149,26 @@ Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`
 
 > Read more details in the [Docker documentation](./docs/docker.md).
 
+#### Parallelism Benchmarks
+
+When building for multiple architectures or large manifests, the number of parallel Goreleaser build tasks (`--parallelism`) directly affects memory usage and build time. Here are real-world benchmarks for different parallelism settings (measured on a MacBook Pro M4 Pro with 48GB RAM, Docker Engine set to 14 CPUs + 24GB RAM):
+
+| Build Targets                                           | Parallelism | Duration    |
+| ------------------------------------------------------- | ----------- | ----------- |
+| Single architecture (`darwin/arm64`)                    | 1           | 5m 56s      |
+| Multi-architecture (`linux/arm64,linux/amd64`)          | 1           | 10m 9s      |
+| Multi-architecture (`darwin/arm64,linux/arm64,linux/amd64`) | 1           | 14m 16s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 16          | 10m 55s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 14          | 11m 21s     |
+
+- Lower `--parallelism` reduces peak memory use and may be required for constrained environments or very large builds, at the expense of longer build times.
+- Higher `--parallelism` can speed up builds if you have sufficient memory, but may cause OOM failures on systems with limited RAM.
+- For collector builds with many components, ensure Docker/host RAM is at least 4–6 GB (more for larger/parallel builds).
+
+> See [Docker documentation](./docs/docker.md) for more details and troubleshooting tips.
+
+
+
 ## 🛠️ Development
 
 ### Prerequisites

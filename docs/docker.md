@@ -192,7 +192,7 @@ docker run --rm \
      - Multi architecture build for `linux/arm64,linux/amd64` took **10min 9s** with `--parallelism 1`
      - Multi architecture build for `darwin/arm64,linux/arm64,linux/amd64` took **14min 16s** with `--parallelism 1`
      - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **10min 55s** with `--parallelism 16`
-     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **10min 55s** with `--parallelism 14`
+     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **11min 21s** with `--parallelism 14`
 
 ## Best Practices
 
