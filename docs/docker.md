@@ -101,13 +101,25 @@ docker run --rm \
 ### Custom Platform Build
 
 ```bash
+# ARM64
 docker run --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/build \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
-  --goos linux \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --goos darwin,linux,windows \
   --goarch arm64
+
+#AMD64
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --goos windows,linux,windows \
+  --goarch amd64
 ```
 
 ### Specific Version Build
@@ -140,33 +152,14 @@ docker run --rm \
    - Verify all required components are specified
    - Check the logs for specific error messages
 
-4. **Platform Mismatch (arm64 / Apple Silicon)**
+4. **Goreleaser build killed (signal: killed / OOM)**
 
-   If you see a warning like *"The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8)"* and the build fails with **SIGSEGV** in `runtime.netpoll`, you are running the amd64 image under emulation on an arm64 host. The OpenTelemetry Collector Builder (OCB) binary can crash under QEMU emulation when using epoll/netpoll.
+   If the release step fails with errors like *`/usr/local/go-versions/go1.x/pkg/tool/linux_arm64/compile: signal: killed`* when building large dependencies (e.g. elasticsearch, datadog, aws-sdk), the Go compiler process was likely killed by the system OOM killer due to memory limits.
 
-   **Workaround:** Build and run a native arm64 image locally so no emulation is used:
+   The builder limits build parallelism by default (`--parallelism 1` and Go `-p 1`) to reduce peak memory. If you still hit OOM:
 
-   ```bash
-   # From the repo root, build the image for your host architecture (arm64)
-   docker build --platform linux/arm64 -t otel-distro-builder:arm64 ./builder
-
-   # Run using the native image (no platform override)
-   docker run --rm \
-     -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
-     -v "$(pwd)/artifacts:/artifacts" \
-     otel-distro-builder:arm64 \
-     --manifest /manifest.yaml \
-     --artifacts /artifacts \
-     --goos darwin,linux,windows \
-     --goarch arm64
-   ```
-
-   If the published image is built for multiple platforms (linux/amd64 and linux/arm64), you can instead pull the native image explicitly:
-
-   ```bash
-   docker pull --platform linux/arm64 ghcr.io/observiq/otel-distro-builder:latest
-   docker run --rm ... ghcr.io/observiq/otel-distro-builder:latest ...
-   ```
+   - **Docker:** Increase memory for the Docker engine (e.g. Docker Desktop → Settings → Resources → Memory). Try at least 4–6 GB for collector builds with many components.
+   - **Local / CI:** Ensure the environment has enough RAM; cross-compiling multiple targets with large dependencies can use several GB.
 
 ## Best Practices
 

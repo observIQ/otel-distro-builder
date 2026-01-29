@@ -131,15 +131,15 @@ docker pull ghcr.io/observiq/otel-distro-builder:latest
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 
 # Run a build
-docker run \
+docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
-  -v "$(pwd)/build:/build" \
   ghcr.io/observiq/otel-distro-builder:latest \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64 \
-  # optional
+  --goos windows,linux,windows \ # select operating system
+  --goarch amd64,arm64 \ # select architecture
+  # optional, versions will default to values in manifest.yaml
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
   --go-version 1.24.1
