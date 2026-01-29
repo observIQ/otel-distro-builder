@@ -131,16 +131,21 @@ docker pull ghcr.io/observiq/otel-distro-builder:latest
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 
 # Run a build
-docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
-  # Optional
-  --artifacts /workspace/artifacts \
-  --goos linux \
-  --goarch amd64 \
-  --ocb-version 0.121.0 \
-  --go-version 1.22.1 \ 
-  --supervisor-version 0.122.0
+docker run \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  -v "$(pwd)/build:/build" \
+  ghcr.io/observiq/otel-distro-builder:latest \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64,windows/amd64 \
+  # optional
+  --ocb-version 0.123.0 \
+  --supervisor-version 0.123.0 \
+  --go-version 1.24.1
 ```
+
+> Read more details in the [Docker documentation](./docs/docker.md).
 
 ## 🛠️ Development
 

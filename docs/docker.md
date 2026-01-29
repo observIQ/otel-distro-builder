@@ -140,6 +140,34 @@ docker run --rm \
    - Verify all required components are specified
    - Check the logs for specific error messages
 
+4. **Platform Mismatch (arm64 / Apple Silicon)**
+
+   If you see a warning like *"The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8)"* and the build fails with **SIGSEGV** in `runtime.netpoll`, you are running the amd64 image under emulation on an arm64 host. The OpenTelemetry Collector Builder (OCB) binary can crash under QEMU emulation when using epoll/netpoll.
+
+   **Workaround:** Build and run a native arm64 image locally so no emulation is used:
+
+   ```bash
+   # From the repo root, build the image for your host architecture (arm64)
+   docker build --platform linux/arm64 -t otel-distro-builder:arm64 ./builder
+
+   # Run using the native image (no platform override)
+   docker run --rm \
+     -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+     -v "$(pwd)/artifacts:/artifacts" \
+     otel-distro-builder:arm64 \
+     --manifest /manifest.yaml \
+     --artifacts /artifacts \
+     --goos darwin,linux,windows \
+     --goarch arm64
+   ```
+
+   If the published image is built for multiple platforms (linux/amd64 and linux/arm64), you can instead pull the native image explicitly:
+
+   ```bash
+   docker pull --platform linux/arm64 ghcr.io/observiq/otel-distro-builder:latest
+   docker run --rm ... ghcr.io/observiq/otel-distro-builder:latest ...
+   ```
+
 ## Best Practices
 
 1. **Version Pinning**
