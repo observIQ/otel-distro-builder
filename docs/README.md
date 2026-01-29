@@ -14,6 +14,16 @@ Learn how to use the `run_local_build.sh` script for local builds. This guide co
 - Managing artifacts
 - Troubleshooting common issues
 
+### [Using the Local Multi-Arch Build Script](local-multiarch-build-script.md)
+
+Learn how to use the `run_local_multiarch_build.sh` script to build collector binaries for multiple architectures in one run. This guide covers:
+
+- When to use multi-arch vs single-platform builds
+- How the script chooses the Docker image platform (host-native)
+- Available options (`-m`, `-o`, `-p`, `-n`, `-v`, `-g`, `-s`)
+- Using Make targets (`multiarch-build-local`, `multiarch-build`)
+- Troubleshooting (SIGSEGV, OOM, platform list)
+
 ### [Using `otel-distro-builder` with Docker](docker.md)
 
 Learn how to build custom OpenTelemetry Collector distributions using Docker. This guide covers:
@@ -63,9 +73,10 @@ If you find any issues or have suggestions for improving the documentation, plea
 
 ```text
 docs/
-├── README.md              # This landing page
-├── local-build-script.md # Local build script guide
-├── docker.md             # Docker usage guide
-├── github-actions.md     # GitHub Actions usage guide
-└── google-cloud-build.md # Google Cloud Build usage guide
+├── README.md                    # This landing page
+├── local-build-script.md        # Local build script guide
+├── local-multiarch-build-script.md  # Local multi-arch build script guide
+├── docker.md                   # Docker usage guide
+├── github-actions.md           # GitHub Actions usage guide
+└── google-cloud-build.md       # Google Cloud Build usage guide
 ```

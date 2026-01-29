@@ -137,13 +137,15 @@ docker run --rm \
   ghcr.io/observiq/otel-distro-builder:latest \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --goos windows,linux,windows \ # select operating system
-  --goarch amd64,arm64 \ # select architecture
-  # optional, versions will default to values in manifest.yaml
+  --goos darwin,linux,windows \
+  --goarch amd64,arm64 \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
-  --go-version 1.24.1
+  --go-version 1.24.1 \
+  --parallelism 14
 ```
+
+Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 14; lower to reduce memory use).
 
 > Read more details in the [Docker documentation](./docs/docker.md).
 
@@ -190,25 +192,46 @@ Options:
 
 #### `run_local_build.sh`
 
-This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
+Build a custom OpenTelemetry Collector distribution using a local Docker container (single or custom platform):
 
 ```bash
-./scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
+# Basic build (host platform)
+./scripts/run_local_build.sh -m manifest.yaml
 
-# Optionally, run it with
-make build-local # to get the latest version of the otelcol and ocb
-# Or
-make build output_dir=./artifacts ocb_version=0.121.0 go_version=1.22.1 supervisor_version=0.122.0
+# Custom output directory and versions
+./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+
+# Build Docker image for a specific platform (e.g. Apple Silicon / arm64)
+./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64
+
+# Multiple platforms for Docker image (comma-delimited)
+./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64,linux/amd64
 ```
 
-Options:
+Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version), `-g` (Go version), `-s` (Supervisor version). When running the container directly, you can also pass `--parallelism N` to the builder (default 14; lower for less memory use).
 
-- `-m`: Path to manifest file (required)
-- `-o`: Directory to store build artifacts (default: ./artifacts)
-- `-v`: OpenTelemetry Collector Builder version (default: auto-detected from manifest)
-- `-g`: Go version to use for building (default: 1.24.1)
+Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
-The artifacts will be saved to the specified output directory (default: `./artifacts`).
+#### `run_local_multiarch_build.sh`
+
+Build collector binaries for multiple architectures in one run (default: linux/amd64, linux/arm64, darwin/arm64):
+
+```bash
+# Default: collector for linux/amd64, linux/arm64, darwin/arm64
+./scripts/run_local_multiarch_build.sh -m manifest.yaml
+
+# Custom platforms only
+./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
+
+# With output dir and versions
+./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+```
+
+Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 14).
+
+Via Make: `make build-multiarch`, `make build-multiarch-local`.
+
+Artifacts are written to the specified output directory (default: `./artifacts`).
 
 ## 📁 Project Structure
 

@@ -42,11 +42,15 @@ providers:
 |--------|-------------|---------|----------|
 | `-m` | Path to manifest file | None | Yes |
 | `-o` | Output directory for artifacts | `./artifacts` | No |
+| `-p` | Docker build platform(s), comma-delimited (e.g. linux/arm64,linux/amd64) | None | No |
+| `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (14) | No |
 | `-v` | OpenTelemetry Collector Builder version | `0.121.0` | No |
 | `-g` | Go version to use | `1.24.1` | No |
 | `-s` | Supervisor version | `0.122.0` | No |
 | `-i` | Build ID for artifact storage | Auto-generated | No |
 | `-h` | Show help message | N/A | No |
+
+The `-n` (parallelism) option is passed to the builder as `--parallelism` and controls how many build targets Goreleaser runs in parallel. See [Docker documentation](./docker.md) for the full list of builder options.
 
 ## Example Usage
 
