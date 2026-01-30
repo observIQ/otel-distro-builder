@@ -112,6 +112,7 @@ class BuildContext:
     ocb_version: str  # Version of OCB to use
     supervisor_version: str  # Version of supervisor to use
     go_version: str  # Version of Go to use
+    parallelism: int  # Number of parallel builds to run
     manifest_path: str  # Path to the manifest file
     release_version: str  # Version of the release
 
@@ -125,6 +126,7 @@ class BuildContext:
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = "1.24.1",
+        parallelism: int = 4,
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -190,6 +192,7 @@ class BuildContext:
             ocb_version=ocb_version,
             supervisor_version=supervisor_version,
             go_version=go_version,
+            parallelism=parallelism,
             manifest_path=manifest_path,
             release_version=release_version,
         )
@@ -361,13 +364,13 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
 def build_release(ctx: BuildContext) -> bool:
     """Build the final release using goreleaser."""
     logger.section("Release Building")
-    logger.info(f"Building release for {ctx.distribution} with goreleaser")
+    logger.info(f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs")
 
-    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean"
+    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean --parallelism {ctx.parallelism}"
     logger.command(cmd)
 
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean"],
+        ["goreleaser", "--snapshot", "--clean", "--parallelism", str(ctx.parallelism)],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -444,6 +447,7 @@ def build(
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = DEFAULT_GO_VERSION,
+    parallelism: int = 4,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -455,6 +459,7 @@ def build(
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
         go_version: Version of Go to use for building
+        parallelism: Number of parallel Goreleaser build tasks (default 4)
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -467,7 +472,13 @@ def build(
 
     # Create build context
     ctx = BuildContext.create(
-        manifest_content, goos, goarch, ocb_version, supervisor_version, go_version
+        manifest_content,
+        goos,
+        goarch,
+        ocb_version,
+        supervisor_version,
+        go_version,
+        parallelism=parallelism,
     )
 
     # For internal use, rename to final_artifact_dir for clarity

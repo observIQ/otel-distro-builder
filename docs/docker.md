@@ -55,11 +55,13 @@ The Docker container accepts the following command-line options:
 | ---------------------- | --------------------------------------- | ------------ |
 | `--manifest`           | Path to manifest file                   | Required     |
 | `--artifacts`          | Output directory for artifacts          | `/artifacts` |
+| `--platforms`          | Comma-separated GOOS/GOARCH (e.g. linux/amd64,linux/arm64) | (from manifest) |
 | `--goos`               | Target operating system                 | `linux`      |
 | `--goarch`             | Target architecture                     | `amd64`      |
 | `--ocb-version`        | OpenTelemetry Collector Builder version | `0.122.0`    |
 | `--go-version`         | Go version to use                       | `1.24.1`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
+| `--parallelism`        | Number of parallel Goreleaser build tasks (lower to reduce memory) | `4` |
 
 ## Volume Mounts
 
@@ -101,13 +103,25 @@ docker run --rm \
 ### Custom Platform Build
 
 ```bash
+# ARM64
 docker run --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/build \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
-  --goos linux \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --goos darwin,linux,windows \
   --goarch arm64
+
+#AMD64
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --goos windows,linux,windows \
+  --goarch amd64
 ```
 
 ### Specific Version Build
@@ -121,6 +135,30 @@ docker run --rm \
   --ocb-version 0.121.0 \
   --go-version 1.24.1 \
   --supervisor-version 0.122.0
+```
+
+### Controlling Build Parallelism
+
+Use `--parallelism` to control how many Goreleaser build targets run at once. Lower values reduce peak memory use; higher values can speed up builds when you have enough RAM.
+
+```bash
+# Reduce memory use (e.g. for constrained environments or to avoid OOM)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --parallelism 1
+
+# Use more parallelism when you have sufficient memory (default is 4)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --parallelism 8
 ```
 
 ## Troubleshooting
@@ -139,6 +177,15 @@ docker run --rm \
    - Check the manifest file syntax
    - Verify all required components are specified
    - Check the logs for specific error messages
+
+4. **Goreleaser build killed (signal: killed / OOM)**
+
+   If the release step fails with errors like *`/usr/local/go-versions/go1.x/pkg/tool/linux_arm64/compile: signal: killed`* when building large dependencies (e.g. elasticsearch, datadog, aws-sdk), the Go compiler process was likely killed by the system OOM killer due to memory limits.
+
+   The builder accepts `--parallelism N` (default 4). Use a lower value (e.g. `--parallelism 1`) to reduce peak memory and avoid OOM. If you still hit OOM:
+
+   - **Docker:** Increase memory for the Docker engine (e.g. Docker Desktop → Settings → Resources → Memory). Try at least 4–6 GB for collector builds with many components.
+   - **Local / CI:** Ensure the environment has enough RAM; cross-compiling multiple targets with large dependencies can use several GB.
 
 ## Best Practices
 

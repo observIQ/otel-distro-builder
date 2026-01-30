@@ -62,6 +62,12 @@ def main() -> None:
         default="1.24.1",
         help="Version of Go to use for building",
     )
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        default=4,
+        help="Number of parallel builds to run (default: 4)",
+    )
     args = parser.parse_args()
 
     # Set log level to INFO
@@ -88,6 +94,7 @@ def main() -> None:
             ocb_version=args.ocb_version,
             supervisor_version=args.supervisor_version,
             go_version=args.go_version,
+            parallelism=args.parallelism,
         )
 
         sys.exit(0 if success else 1)

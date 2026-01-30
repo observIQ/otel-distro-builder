@@ -131,16 +131,58 @@ docker pull ghcr.io/observiq/otel-distro-builder:latest
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 
 # Run a build
-docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
-  # Optional
-  --artifacts /workspace/artifacts \
-  --goos linux \
-  --goarch amd64 \
-  --ocb-version 0.121.0 \
-  --go-version 1.22.1 \ 
-  --supervisor-version 0.122.0
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:latest \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --goos darwin,linux,windows \
+  --goarch amd64,arm64 \
+  --ocb-version 0.123.0 \
+  --supervisor-version 0.123.0 \
+  --go-version 1.24.1 \
+  --parallelism 4
 ```
+
+Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
+
+> Read more details in the [Docker documentation](./docs/docker.md).
+
+#### Parallelism Benchmarks
+
+When building for multiple architectures or large manifests, the number of parallel Goreleaser build tasks (`--parallelism`) directly affects memory usage and build time. Here are real-world benchmarks for different parallelism settings (measured on a MacBook Pro M4 Pro with 48GB RAM, Docker Engine set to 14 CPUs + 24GB RAM):
+
+| Build Targets                                                            | Parallelism | Duration    |
+| ------------------------------------------------------------------------ | ----------- | ----------- |
+| Single architecture (`darwin/arm64`)                                     | 1           | 05m 56s     |
+| Single architecture (`darwin/arm64`)                                     | 4           | 04m 44s     |
+| Single architecture (`darwin/arm64`)                                     | 14          | 05m 26s     |
+| Single architecture (`linux/arm64`)                                      | 1           | 05m 23s     |
+| Single architecture (`linux/arm64`)                                      | 4           | 05m 45s     |
+| Single architecture (`linux/arm64`)                                      | 14          | 04m 38s     |
+| Single architecture (`linux/amd64`)                                      | 14          | 05m 06s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 1           | 07m 12s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 4           | 08m 04s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 14          | 06m 56s     |
+| Multi-architecture (`linux/arm64,linux/amd64`)                           | 1           | 10m 09s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 1           | 08m 27s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 4           | 07m 19s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 14          | 07m 32s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 1           | 14m 02s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 4           | 12m 14s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 14          | 11m 13s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 1           | 14m 06s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 14          | 11m 21s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 16          | 10m 55s     |
+| Single architecture (`darwin/arm64`)                                     | 48          | 03m 43s     |
+| Single architecture (`linux/amd64`)                                      | 48          | 04m 36s     |
+
+- Lower `--parallelism` reduces peak memory use and may be required for constrained environments or very large builds, at the expense of longer build times.
+- Higher `--parallelism` can speed up builds if you have sufficient memory, but may cause OOM failures on systems with limited RAM. In particular for multi-architecture builds for multiple platforms.
+- For collector builds with many components, ensure Docker/host RAM is at least 4–6 GB (more for larger/parallel builds).
+
+> See [Docker documentation](./docs/docker.md) for more details and troubleshooting tips.
 
 ## 🛠️ Development
 
@@ -185,25 +227,46 @@ Options:
 
 #### `run_local_build.sh`
 
-This script is used to build a custom OpenTelemetry Collector distribution using a local Docker container:
+Build a custom OpenTelemetry Collector distribution using a local Docker container (single or custom platform):
 
 ```bash
-./scripts/run_local_build.sh -m manifest.yaml [-o output_dir] [-v ocb_version] [-g go_version]
+# Basic build (host platform)
+./scripts/run_local_build.sh -m manifest.yaml
 
-# Optionally, run it with
-make build-local # to get the latest version of the otelcol and ocb
-# Or
-make build output_dir=./artifacts ocb_version=0.121.0 go_version=1.22.1 supervisor_version=0.122.0
+# Custom output directory and versions
+./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+
+# Build Docker image for a specific platform (e.g. Apple Silicon / arm64)
+./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64
+
+# Multiple platforms for Docker image (comma-delimited)
+./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64,linux/amd64
 ```
 
-Options:
+Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version), `-g` (Go version), `-s` (Supervisor version). When running the container directly, you can also pass `--parallelism N` to the builder (default 4; lower for less memory use).
 
-- `-m`: Path to manifest file (required)
-- `-o`: Directory to store build artifacts (default: ./artifacts)
-- `-v`: OpenTelemetry Collector Builder version (default: auto-detected from manifest)
-- `-g`: Go version to use for building (default: 1.24.1)
+Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
-The artifacts will be saved to the specified output directory (default: `./artifacts`).
+#### `run_local_multiarch_build.sh`
+
+Build collector binaries for multiple architectures in one run (default: linux/amd64, linux/arm64, darwin/arm64):
+
+```bash
+# Default: collector for linux/amd64, linux/arm64, darwin/arm64
+./scripts/run_local_multiarch_build.sh -m manifest.yaml
+
+# Custom platforms only
+./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
+
+# With output dir and versions
+./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+```
+
+Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 4).
+
+Via Make: `make build-multiarch`, `make build-multiarch-local`.
+
+Artifacts are written to the specified output directory (default: `./artifacts`).
 
 ## 📁 Project Structure
 

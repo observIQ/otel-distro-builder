@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild build-local scan-fs scan-image scan-all security-update unit-test build-test
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test
 
 # Variables
 VENV_DIR := builder/.venv
@@ -38,10 +38,11 @@ help: ## Show this help
 	@echo "$(CYAN)Docker Operations:$(NC)"
 	@echo "  $(GREEN)docker-build**$(NC)  Build the builder Docker image"
 	@echo "    docker-rebuild   Force rebuild the Docker image without cache"
+	@echo "    docker-multiarch-build  Build multi-arch image (usage: make docker-multiarch-build platforms=linux/amd64,linux/arm64)"
 	@echo ""
 	@echo "$(CYAN)Building & Release:$(NC)"
 	@echo "  $(GREEN)build**$(NC)         Build distribution using manifest.yaml"
-	@echo "    build-local      Build with specific versions"
+	@echo "    build-local      Build with specific versions (run_local_build.sh)"
 	@echo "  $(GREEN)release**$(NC)       Create a new release (usage: make release v=X.Y.Z)"
 	@echo ""
 	@echo "$(CYAN)Security Scanning:$(NC)"
@@ -134,25 +135,59 @@ docker-rebuild: ## Force rebuild the Docker image without cache
 	@echo "$(BLUE)Rebuilding Docker image from scratch...$(NC)"
 	cd builder && docker build --no-cache -t $(DOCKER_IMAGE) .
 
+DEFAULT_PLATFORMS ?= linux/amd64,linux/arm64
+
+docker-multiarch-build: ## Build multi-arch Docker image (usage: make docker-multiarch-build platforms=linux/amd64,linux/arm64)
+	@echo "$(BLUE)Building multi-arch Docker image...$(NC)"
+	@docker buildx inspect multiarch >/dev/null 2>&1 || docker buildx create --name multiarch --driver docker-container
+	cd builder && docker buildx build --builder multiarch --platform $(or $(platforms),$(DEFAULT_PLATFORMS)) -t $(DOCKER_IMAGE) .
+
+docker-multiarch-rebuild: ## Rebuild multi-arch Docker image (usage: make docker-multiarch-rebuild platforms=linux/amd64,linux/arm64)
+	@echo "$(BLUE)Rebuilding multi-arch Docker image from scratch...$(NC)"
+	@docker buildx inspect multiarch >/dev/null 2>&1 || docker buildx create --name multiarch --driver docker-container
+	cd builder && docker buildx build --builder multiarch --platform $(or $(platforms),$(DEFAULT_PLATFORMS)) --no-cache -t $(DOCKER_IMAGE) .
+
 #######################
 # Building & Release #
 #######################
 
-build: docker-build ## Build distribution using manifest.yaml
+build: ## Build distribution using manifest.yaml
 	@echo "$(BLUE)Building distribution...$(NC)"
 	./scripts/run_local_build.sh -m manifest.yaml \
 		$(if $(output_dir),-o $(output_dir)) \
+		$(if $(platforms),-p $(platforms)) \
 		$(if $(ocb_version),-v $(ocb_version)) \
 		$(if $(supervisor_version),-s $(supervisor_version)) \
 		$(if $(build_id),-i $(build_id)) \
-		$(if $(go_version),-g $(go_version))
+		$(if $(go_version),-g $(go_version)) \
+		$(if $(parallelism),-n $(parallelism))
 
-build-local: docker-build ## Build distribution with specific versions
+build-local: ## Build distribution with specific versions
 	@if [ ! -f manifest.yaml ]; then \
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+
+multiarch-build: ## Build multi-arch distribution using manifest.yaml
+	@if [ ! -f manifest.yaml ]; then \
+		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
+		exit 1; \
+	fi
+	./scripts/run_local_multiarch_build.sh -m manifest.yaml \
+		$(if $(output_dir),-o $(output_dir)) \
+		$(if $(platforms),-p $(platforms)) \
+		$(if $(ocb_version),-v $(ocb_version)) \
+		$(if $(supervisor_version),-s $(supervisor_version)) \
+		$(if $(go_version),-g $(go_version)) \
+		$(if $(parallelism),-n $(parallelism))
+
+multiarch-build-local: ## Build multi-arch distribution with specific versions using manifest.yaml
+	@if [ ! -f manifest.yaml ]; then \
+		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
+		exit 1; \
+	fi
+	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
 
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"
