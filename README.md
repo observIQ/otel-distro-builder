@@ -142,10 +142,10 @@ docker run --rm \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
   --go-version 1.24.1 \
-  --parallelism 14
+  --parallelism 4
 ```
 
-Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 14; lower to reduce memory use).
+Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
 
 > Read more details in the [Docker documentation](./docs/docker.md).
 
@@ -228,7 +228,7 @@ Build a custom OpenTelemetry Collector distribution using a local Docker contain
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64,linux/amd64
 ```
 
-Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version), `-g` (Go version), `-s` (Supervisor version). When running the container directly, you can also pass `--parallelism N` to the builder (default 14; lower for less memory use).
+Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version), `-g` (Go version), `-s` (Supervisor version). When running the container directly, you can also pass `--parallelism N` to the builder (default 4; lower for less memory use).
 
 Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
@@ -247,7 +247,7 @@ Build collector binaries for multiple architectures in one run (default: linux/a
 ./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
 ```
 
-Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 14).
+Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 4).
 
 Via Make: `make build-multiarch`, `make build-multiarch-local`.
 

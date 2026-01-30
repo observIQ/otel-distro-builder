@@ -57,7 +57,7 @@ This builds the collector for the default platforms (linux/amd64, darwin/amd64, 
 | `-m` | Path to manifest file | None | Yes |
 | `-o` | Output directory for artifacts | `./artifacts` | No |
 | `-p` | Comma-delimited GOOS/GOARCH for collector binaries | `linux/amd64,darwin/amd64,linux/arm64,darwin/arm64` | No |
-| `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (14) | No |
+| `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | From manifest | No |
 | `-g` | Go version to use | `1.24.1` | No |
 | `-s` | Supervisor version | From manifest | No |

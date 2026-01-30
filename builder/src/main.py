@@ -65,8 +65,8 @@ def main() -> None:
     parser.add_argument(
         "--parallelism",
         type=int,
-        default=14,
-        help="Number of parallel builds to run (default: 14)",
+        default=4,
+        help="Number of parallel builds to run (default: 4)",
     )
     args = parser.parse_args()
 

@@ -61,7 +61,7 @@ The Docker container accepts the following command-line options:
 | `--ocb-version`        | OpenTelemetry Collector Builder version | `0.122.0`    |
 | `--go-version`         | Go version to use                       | `1.24.1`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
-| `--parallelism`        | Number of parallel Goreleaser build tasks (lower to reduce memory) | `14` |
+| `--parallelism`        | Number of parallel Goreleaser build tasks (lower to reduce memory) | `4` |
 
 ## Volume Mounts
 
@@ -151,7 +151,7 @@ docker run --rm \
   --artifacts /artifacts \
   --parallelism 1
 
-# Use more parallelism when you have sufficient memory (default is 14)
+# Use more parallelism when you have sufficient memory (default is 4)
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
@@ -182,7 +182,7 @@ docker run --rm \
 
    If the release step fails with errors like *`/usr/local/go-versions/go1.x/pkg/tool/linux_arm64/compile: signal: killed`* when building large dependencies (e.g. elasticsearch, datadog, aws-sdk), the Go compiler process was likely killed by the system OOM killer due to memory limits.
 
-   The builder accepts `--parallelism N` (default 14). Use a lower value (e.g. `--parallelism 1`) to reduce peak memory and avoid OOM. If you still hit OOM:
+   The builder accepts `--parallelism N` (default 4). Use a lower value (e.g. `--parallelism 1`) to reduce peak memory and avoid OOM. If you still hit OOM:
 
    - **Docker:** Increase memory for the Docker engine (e.g. Docker Desktop → Settings → Resources → Memory). Try at least 4–6 GB for collector builds with many components.
    - **Local / CI:** Ensure the environment has enough RAM; cross-compiling multiple targets with large dependencies can use several GB.
@@ -192,7 +192,7 @@ docker run --rm \
      - Multi architecture build for `linux/arm64,linux/amd64` took **10min 9s** with `--parallelism 1`
      - Multi architecture build for `darwin/arm64,linux/arm64,linux/amd64` took **14min 16s** with `--parallelism 1`
      - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **10min 55s** with `--parallelism 16`
-     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **11min 21s** with `--parallelism 14`
+     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **11min 21s** with `--parallelism 4`
 
 ## Best Practices
 

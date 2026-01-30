@@ -43,7 +43,7 @@ providers:
 | `-m` | Path to manifest file | None | Yes |
 | `-o` | Output directory for artifacts | `./artifacts` | No |
 | `-p` | Docker build platform(s), comma-delimited (e.g. linux/arm64,linux/amd64) | None | No |
-| `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (14) | No |
+| `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | `0.121.0` | No |
 | `-g` | Go version to use | `1.24.1` | No |
 | `-s` | Supervisor version | `0.122.0` | No |

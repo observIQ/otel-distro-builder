@@ -177,14 +177,15 @@ multiarch-build: docker-multiarch-build ## Build multi-arch distribution using m
 		$(if $(platforms),-p $(platforms)) \
 		$(if $(ocb_version),-v $(ocb_version)) \
 		$(if $(supervisor_version),-s $(supervisor_version)) \
-		$(if $(go_version),-g $(go_version))
+		$(if $(go_version),-g $(go_version)) \
+		$(if $(parallelism),-n $(parallelism))
 
 multiarch-build-local: docker-multiarch-build ## Build multi-arch distribution with specific versions using manifest.yaml
 	@if [ ! -f manifest.yaml ]; then \
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1
+	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
 
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"

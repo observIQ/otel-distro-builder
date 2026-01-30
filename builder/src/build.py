@@ -126,7 +126,7 @@ class BuildContext:
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = "1.24.1",
-        parallelism: int = 14,
+        parallelism: int = 4,
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
@@ -447,7 +447,7 @@ def build(
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = DEFAULT_GO_VERSION,
-    parallelism: int = 14,
+    parallelism: int = 4,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -459,7 +459,7 @@ def build(
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
         go_version: Version of Go to use for building
-        parallelism: Number of parallel Goreleaser build tasks (default 14)
+        parallelism: Number of parallel Goreleaser build tasks (default 4)
 
     Returns:
         bool: True if build succeeded, False otherwise

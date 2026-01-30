@@ -22,7 +22,7 @@ usage() {
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
     echo "  -p <platforms>             Comma-delimited GOOS/GOARCH for collector binaries"
     echo "                              (default: linux/amd64,linux/arm64,darwin/arm64)"
-    echo "  -n <parallelism>            Number of parallel Goreleaser build tasks (default: builder default 14; use 1 to reduce memory)"
+    echo "  -n <parallelism>            Number of parallel Goreleaser build tasks (default: builder default 4; use 1 to reduce memory)"
     echo "  -v <ocb_version>            OCB version (passed to builder)"
     echo "  -g <go_version>             Go version (passed to builder)"
     echo "  -s <supervisor_version>     Supervisor version (passed to builder)"

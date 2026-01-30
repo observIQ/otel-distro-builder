@@ -18,7 +18,7 @@ usage() {
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
     echo "  -p <platform>               Docker build platform(s), comma-delimited (e.g. linux/arm64,linux/amd64)."
     echo "                              Use host platform to avoid emulation (e.g. linux/arm64 on Apple Silicon)."
-    echo "  -n <parallelism>            Number of parallel Goreleaser build tasks (default: builder default 14; use 1 to reduce memory)"
+    echo "  -n <parallelism>            Number of parallel Goreleaser build tasks (default: builder default 4; use 1 to reduce memory)"
     echo "  -v <ocb_version>            OCB version (passed to builder)"
     echo "  -g <go_version>             Go version (passed to builder)"
     echo "  -s <supervisor_version>     Supervisor version (passed to builder)"
