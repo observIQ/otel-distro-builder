@@ -54,9 +54,9 @@ jobs:
           docker system prune -af
           df -h
 
-      - name: Run Base Tests
+      - name: Run Unit Tests
         run: |
-          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "base"
+          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "unit"
 
       - name: Run Comprehensive Tests
         run: |

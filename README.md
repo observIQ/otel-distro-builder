@@ -104,6 +104,46 @@ on:
      --manifest /workspace/manifest.yaml
    ```
 
+## 🔄 Generate Manifest from Existing Config
+
+Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need:
+
+```bash
+# Generate manifest only (prints to stdout)
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+  --from-config /workspace/config.yaml \
+  --generate-only
+
+# Generate manifest and save to file
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+  --from-config /workspace/config.yaml \
+  --output-manifest /workspace/manifest.yaml \
+  --generate-only
+
+# Generate manifest and build in one step
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+  --from-config /workspace/config.yaml \
+  --artifacts /workspace/dist \
+  --platforms linux/amd64,linux/arm64
+```
+
+### Config-to-Manifest Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--from-config` | Path to collector config.yaml | Required |
+| `--output-manifest` | Path to write generated manifest | None |
+| `--generate-only` | Only generate manifest, don't build | `false` |
+| `--otel-version` | Target OpenTelemetry version | Latest from `versions.yaml` |
+| `--dist-name` | Distribution name | `otelcol-custom` |
+| `--dist-module` | Go module path | `github.com/custom/otelcol-distribution` |
+| `--dist-version` | Distribution version | `1.0.0` |
+| `--no-bindplane` | Exclude Bindplane/observIQ components | `false` (included) |
+
+> **Note:** By default, generated manifests include all Bindplane/observIQ components. Use `--no-bindplane` to exclude them.
+
+> See [Config to Manifest documentation](./docs/config-to-manifest.md) for detailed usage and examples.
+
 ## 📚 Documentation
 
 To view detailed guides, see the [docs](./docs) directory.

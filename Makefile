@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test generate-manifest generate-manifest-docker build-from-config
 
 # Variables
 VENV_DIR := builder/.venv
@@ -43,6 +43,9 @@ help: ## Show this help
 	@echo "$(CYAN)Building & Release:$(NC)"
 	@echo "  $(GREEN)build**$(NC)         Build distribution using manifest.yaml"
 	@echo "    build-local      Build with specific versions (run_local_build.sh)"
+	@echo "  $(GREEN)generate-manifest**$(NC)  Generate manifest from collector config"
+	@echo "    generate-manifest-docker  Generate manifest using Docker"
+	@echo "  $(GREEN)build-from-config**$(NC)  Generate manifest and build from collector config"
 	@echo "  $(GREEN)release**$(NC)       Create a new release (usage: make release v=X.Y.Z)"
 	@echo ""
 	@echo "$(CYAN)Security Scanning:$(NC)"
@@ -188,6 +191,45 @@ multiarch-build-local: ## Build multi-arch distribution with specific versions u
 		exit 1; \
 	fi
 	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+
+generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [output=manifest.yaml] [version=0.144.0] [name=my-collector])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make generate-manifest config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Generating manifest from config...$(NC)"
+	./scripts/generate_manifest.sh -c $(config) \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module))
+
+generate-manifest-docker: ## Generate manifest using Docker (make generate-manifest-docker config=config.yaml [output=manifest.yaml])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make generate-manifest-docker config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Generating manifest from config using Docker...$(NC)"
+	./scripts/generate_manifest.sh -c $(config) -d \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module))
+
+build-from-config: ## Generate manifest and build from collector config (make build-from-config config=config.yaml [version=0.144.0] [name=my-collector] [platforms=linux/amd64])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make build-from-config config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Building distribution from collector config...$(NC)"
+	./scripts/build_from_config.sh -c $(config) \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module)) \
+		$(if $(platforms),-p $(platforms)) \
+		$(if $(parallelism),-P $(parallelism)) \
+		$(if $(keep),-k)
 
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"

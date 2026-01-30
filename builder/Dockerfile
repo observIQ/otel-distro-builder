@@ -3,11 +3,13 @@ FROM python:3.13.5-slim-bookworm
 
 
 # Version definitions for easy updates
+# OCB versions are downloaded on-demand at runtime (see ocb_downloader.py)
+# Only pre-install a few common versions for faster builds
 ENV GORELEASER_VERSION=2.8.1
 ENV SYFT_VERSION=1.21.0
-ENV OCB_VERSIONS="0.120.0 0.121.0 0.122.0"
-ENV GO_VERSIONS="1.24.1"
-ENV DEFAULT_GO_VERSION="1.24.1"
+ENV OCB_VERSIONS="0.144.0"
+ENV GO_VERSIONS="1.23.0 1.24.0"
+ENV DEFAULT_GO_VERSION="1.24.0"
 
 # Install essential libraries for Go, glibc compatibility, and ARM support
 RUN apt-get update && \
@@ -68,7 +70,8 @@ ENV PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 # Set up directories for application code
 WORKDIR /app
 
-# Pre-install OpenTelemetry Collector Builder versions
+# Pre-install common OpenTelemetry Collector Builder versions for faster builds
+# Additional versions are downloaded on-demand by ocb_downloader.py
 RUN mkdir -p /app/ocb
 RUN for OCB_VERSION in $OCB_VERSIONS; do \
     wget -O ocb/ocb_${OCB_VERSION}_linux_${TARGETARCH} \

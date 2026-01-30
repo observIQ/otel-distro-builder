@@ -1,0 +1,58 @@
+# Bindplane Collector Components
+# These components are included by default in generated manifests.
+# Use --no-bindplane to exclude them.
+#
+# __BINDPLANE_VERSION__ is replaced at runtime with the appropriate version.
+
+# Latest Bindplane collector version
+version: "1.72.0"
+
+extensions:
+  - gomod: "github.com/observiq/bindplane-otel-collector/extension/bindplaneextension __BINDPLANE_VERSION__"
+
+receivers:
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/awss3rehydrationreceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/azureblobrehydrationreceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/httpreceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/m365receiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/oktareceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/pluginreceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/routereceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/sapnetweaverreceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/splunksearchapireceiver __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/telemetrygeneratorreceiver __BINDPLANE_VERSION__"
+
+processors:
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/datapointcountprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/logcountprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/lookupprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/maskprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/metricextractprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/metricstatsprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/removeemptyvaluesprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/resourceattributetransposerprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/samplingprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/snapshotprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/spancountprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/throughputmeasurementprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/topologyprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/processor/unrollprocessor __BINDPLANE_VERSION__"
+
+exporters:
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/azureblobexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/chronicleexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/chronicleforwarderexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudstorageexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/qradar __BINDPLANE_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/snowflakeexporter __BINDPLANE_VERSION__"
+
+# Additional replaces needed for Bindplane components
+replaces:
+  - old: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter"
+    new: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter v1.72.1-0.20250306153219-6fe3f849c29f"
+  - old: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter"
+    new: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter v1.72.1-0.20250306153219-6fe3f849c29f"
+  - old: "github.com/observiq/bindplane-otel-collector/internal/version"
+    new: "github.com/observiq/bindplane-otel-collector/internal/version v0.0.0-20250306153219-6fe3f849c29f"
