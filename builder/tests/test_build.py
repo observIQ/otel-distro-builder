@@ -129,7 +129,7 @@ def run_build_test(
     workspace_root = Path(__file__).parent.parent.parent
     artifact_dir = workspace_root / "artifacts"
     if artifact_dir.exists():
-        shutil.rmtree(artifact_dir, onexc=remove_readonly)
+        shutil.rmtree(artifact_dir, onerror=remove_readonly)
     artifact_dir.mkdir(exist_ok=True)
 
     try:
@@ -218,7 +218,7 @@ def run_build_test(
         # Clean up the artifacts directory after the test
         if artifact_dir.exists():
             try:
-                shutil.rmtree(artifact_dir, onexc=remove_readonly)
+                shutil.rmtree(artifact_dir, onerror=remove_readonly)
             except (OSError, PermissionError) as e:
                 print(f"Failed to clean up {artifact_dir}: {e}")
 
