@@ -158,14 +158,15 @@ build: docker-build ## Build distribution using manifest.yaml
 		$(if $(ocb_version),-v $(ocb_version)) \
 		$(if $(supervisor_version),-s $(supervisor_version)) \
 		$(if $(build_id),-i $(build_id)) \
-		$(if $(go_version),-g $(go_version))
+		$(if $(go_version),-g $(go_version)) \
+		$(if $(parallelism),-n $(parallelism))
 
 build-local: docker-build ## Build distribution with specific versions
 	@if [ ! -f manifest.yaml ]; then \
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
 
 multiarch-build: docker-multiarch-build ## Build multi-arch distribution using manifest.yaml
 	@if [ ! -f manifest.yaml ]; then \
