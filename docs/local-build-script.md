@@ -68,6 +68,15 @@ The `-n` (parallelism) option is passed to the builder as `--parallelism` and co
   -o ./dist
 ```
 
+### Custom Platforms
+
+Build for `linux/amd64` or `darwin/arm64`:
+
+```bash
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64
+./scripts/run_local_build.sh -m manifest.yaml -p darwin/arm64
+```
+
 ### Specific Versions
 
 ```bash

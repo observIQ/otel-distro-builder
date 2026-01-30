@@ -187,13 +187,6 @@ docker run --rm \
    - **Docker:** Increase memory for the Docker engine (e.g. Docker Desktop → Settings → Resources → Memory). Try at least 4–6 GB for collector builds with many components.
    - **Local / CI:** Ensure the environment has enough RAM; cross-compiling multiple targets with large dependencies can use several GB.
 
-   - **Benchmarks (MacBook Pro M4 Pro 48GB RAM; Docker Engine 14 CPU + 24GB RAM)**:
-     - Single architecture build for `darwin/arm64` took **5min 56s** with `--parallelism 1`
-     - Multi architecture build for `linux/arm64,linux/amd64` took **10min 9s** with `--parallelism 1`
-     - Multi architecture build for `darwin/arm64,linux/arm64,linux/amd64` took **14min 16s** with `--parallelism 1`
-     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **10min 55s** with `--parallelism 16`
-     - Multi architecture build for `darwin/arm64,darwin/amd64,linux/arm64,linux/amd64` took **11min 21s** with `--parallelism 4`
-
 ## Best Practices
 
 1. **Version Pinning**

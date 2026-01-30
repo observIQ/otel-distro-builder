@@ -72,18 +72,33 @@ echo "Artifacts will be saved to: $OUTPUT_DIR"
 [ -n "$PARALLELISM" ] && echo "Parallelism: $PARALLELISM"
 echo
 
+# Determine the Docker platform for building the image
+# Docker containers run Linux, so we need to map darwin platforms to linux
+# or use the host's native Linux platform
+get_docker_platform() {
+    local arch
+    arch=$(uname -m)
+    case "$arch" in
+        x86_64) echo "linux/amd64" ;;
+        arm64|aarch64) echo "linux/arm64" ;;
+        *) echo "linux/amd64" ;;  # default fallback
+    esac
+}
+
 # Always build the latest version of the image
 echo "Building Docker image..."
-DOCKER_BUILD_CMD="docker build -t $DOCKER_IMAGE"
-[ -n "$PLATFORM" ] && DOCKER_BUILD_CMD="$DOCKER_BUILD_CMD --platform $PLATFORM"
-DOCKER_BUILD_CMD="$DOCKER_BUILD_CMD ."
+DOCKER_PLATFORM=$(get_docker_platform)
+echo "Docker platform: $DOCKER_PLATFORM"
+DOCKER_BUILD_CMD="docker build -t $DOCKER_IMAGE --platform $DOCKER_PLATFORM ."
 if ! (cd builder && eval "$DOCKER_BUILD_CMD"); then
     echo "Error: Failed to build Docker image."
     exit 1
 fi
 
 # Run the builder with mounted volumes
+# Use the same Docker platform, but pass target platforms to the Go builder
 docker run --rm \
+    --platform "$DOCKER_PLATFORM" \
     -v "$MANIFEST_PATH:/manifest.yaml:ro" \
     -v "$OUTPUT_DIR:/artifacts" \
     "$DOCKER_IMAGE" \

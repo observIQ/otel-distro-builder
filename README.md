@@ -153,21 +153,36 @@ Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`
 
 When building for multiple architectures or large manifests, the number of parallel Goreleaser build tasks (`--parallelism`) directly affects memory usage and build time. Here are real-world benchmarks for different parallelism settings (measured on a MacBook Pro M4 Pro with 48GB RAM, Docker Engine set to 14 CPUs + 24GB RAM):
 
-| Build Targets                                           | Parallelism | Duration    |
-| ------------------------------------------------------- | ----------- | ----------- |
-| Single architecture (`darwin/arm64`)                    | 1           | 5m 56s      |
-| Multi-architecture (`linux/arm64,linux/amd64`)          | 1           | 10m 9s      |
-| Multi-architecture (`darwin/arm64,linux/arm64,linux/amd64`) | 1           | 14m 16s     |
-| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 16          | 10m 55s     |
+| Build Targets                                                            | Parallelism | Duration    |
+| ------------------------------------------------------------------------ | ----------- | ----------- |
+| Single architecture (`darwin/arm64`)                                     | 1           | 05m 56s     |
+| Single architecture (`darwin/arm64`)                                     | 4           | 04m 44s     |
+| Single architecture (`darwin/arm64`)                                     | 14          | 05m 26s     |
+| Single architecture (`linux/arm64`)                                      | 1           | 05m 23s     |
+| Single architecture (`linux/arm64`)                                      | 4           | 05m 45s     |
+| Single architecture (`linux/arm64`)                                      | 14          | 04m 38s     |
+| Single architecture (`linux/amd64`)                                      | 14          | 05m 06s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 1           | 07m 12s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 4           | 08m 04s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64`)                         | 14          | 06m 56s     |
+| Multi-architecture (`linux/arm64,linux/amd64`)                           | 1           | 10m 09s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 1           | 08m 27s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 4           | 07m 19s     |
+| Multi-architecture (`darwin/arm64,linux/arm64`)                          | 14          | 07m 32s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 1           | 14m 02s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 4           | 12m 14s     |
+| Multi-architecture (`darwin/arm64,linux/amd64`)                          | 14          | 11m 13s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 1           | 14m 06s     |
 | Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 14          | 11m 21s     |
+| Multi-architecture (`darwin/arm64,darwin/amd64,linux/arm64,linux/amd64`) | 16          | 10m 55s     |
+| Single architecture (`darwin/arm64`)                                     | 48          | 03m 43s     |
+| Single architecture (`linux/amd64`)                                      | 48          | 04m 36s     |
 
 - Lower `--parallelism` reduces peak memory use and may be required for constrained environments or very large builds, at the expense of longer build times.
-- Higher `--parallelism` can speed up builds if you have sufficient memory, but may cause OOM failures on systems with limited RAM.
+- Higher `--parallelism` can speed up builds if you have sufficient memory, but may cause OOM failures on systems with limited RAM. In particular for multi-architecture builds for multiple platforms.
 - For collector builds with many components, ensure Docker/host RAM is at least 4–6 GB (more for larger/parallel builds).
 
 > See [Docker documentation](./docs/docker.md) for more details and troubleshooting tips.
-
-
 
 ## 🛠️ Development
 
