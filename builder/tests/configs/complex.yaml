@@ -1,0 +1,95 @@
+# Complex collector config with multiple components for testing
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'otel-collector'
+          scrape_interval: 10s
+          static_configs:
+            - targets: ['0.0.0.0:8888']
+  
+  filelog:
+    include:
+      - /var/log/*.log
+    start_at: beginning
+  
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  
+  memorylimiter:
+    check_interval: 1s
+    limit_mib: 512
+  
+  attributes:
+    actions:
+      - key: environment
+        value: production
+        action: insert
+  
+  resourcedetection:
+    detectors: [env, system]
+
+exporters:
+  debug:
+    verbosity: detailed
+  
+  otlp:
+    endpoint: backend:4317
+    tls:
+      insecure: true
+  
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [1ms, 10ms, 100ms, 1s]
+
+service:
+  extensions: [health_check, pprof, zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memorylimiter, batch]
+      exporters: [otlp, debug]
+    
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [memorylimiter, batch, attributes]
+      exporters: [prometheusremotewrite, debug]
+    
+    metrics/spanmetrics:
+      receivers: [spanmetrics]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+    
+    logs:
+      receivers: [otlp, filelog]
+      processors: [memorylimiter, batch, resourcedetection]
+      exporters: [otlp, debug]

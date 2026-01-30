@@ -1,12 +1,11 @@
 name: Comprehensive Tests
 
 on:
-  schedule:
-    - cron: "0 0 * * *" # Run daily at midnight UTC
-  workflow_dispatch: # Allow manual trigger
   push:
-    tags:
-      - "v*" # Run on version tags
+    branches: [main]
+  pull_request:
+    branches: [main]
+  merge_group:
 
 jobs:
   comprehensive-tests:
@@ -54,9 +53,9 @@ jobs:
           docker system prune -af
           df -h
 
-      - name: Run Base Tests
+      - name: Run Unit Tests
         run: |
-          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "base"
+          PYTHONPATH=builder/src python -m pytest builder/tests/ -v -m "unit"
 
       - name: Run Comprehensive Tests
         run: |
