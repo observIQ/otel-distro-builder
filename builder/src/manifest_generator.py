@@ -271,28 +271,12 @@ class ManifestGenerator:
     def _format_providers(self) -> list[dict]:
         """Format providers for the manifest.
 
-        Returns:
-            List of provider gomod entries
+        Providers (confmap/provider/*) are from the core collector and use the
+        same version as the target OpenTelemetry Collector (e.g. v0.144.0).
         """
-        # Determine provider version based on otel version
-        # Provider versions follow a different scheme (1.x.x vs 0.x.x)
-        otel_version = self._config.otel_version
-        # Extract minor version and convert to provider version
-        # e.g., 0.121.0 -> 1.27.0 (roughly)
-        parts = otel_version.split(".")
-        if len(parts) >= 2:
-            minor = int(parts[1])
-            # Provider version is typically ~94 versions behind
-            provider_minor = minor - 94
-            if provider_minor > 0:
-                provider_version = f"1.{provider_minor}.0"
-            else:
-                provider_version = "1.0.0"
-        else:
-            provider_version = "1.0.0"
-
+        version = self._config.otel_version
         return [
-            {"gomod": f"{p} v{provider_version}"}
+            {"gomod": f"{p} v{version}"}
             for p in DEFAULT_PROVIDERS
         ]
 
