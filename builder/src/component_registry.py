@@ -7,6 +7,7 @@ from typing import Optional
 import yaml
 
 from .logger import BuildLogger, get_logger
+from .version import DEFAULT_VERSION
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -63,7 +64,7 @@ class ComponentRegistry:
                     )
 
     def lookup(
-        self, component_type: str, name: str, version: str = "0.121.0"
+        self, component_type: str, name: str, version: str = DEFAULT_VERSION
     ) -> Optional[ComponentInfo]:
         """Look up a component by type and name.
 

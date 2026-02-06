@@ -13,7 +13,7 @@ import yaml
 from . import ocb_downloader as ocb
 from . import supervisor_downloader as supervisor
 from .logger import BuildLogger, get_logger
-from .version import determine_build_versions
+from .version import DEFAULT_VERSION, determine_build_versions
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -21,9 +21,9 @@ logger: BuildLogger = get_logger(__name__)
 BUILD_DIR = "/build"
 
 # Default versions
-DEFAULT_OTEL_CONTRIB_VERSION = "0.122.0"  # Default OpenTelemetry Contrib version to use if not detected from manifest
+DEFAULT_OTEL_CONTRIB_VERSION = DEFAULT_VERSION  # Default OpenTelemetry Contrib version to use if not detected from manifest
 MIN_SUPERVISOR_VERSION = "0.122.0"  # Minimum required version for the supervisor
-DEFAULT_GO_VERSION = "1.24.1"  # Default Go version to use for building
+DEFAULT_GO_VERSION = "1.24.0"  # Default Go version (must match Dockerfile GO_VERSIONS / DEFAULT_GO_VERSION)
 
 CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
 EXCLUDED_FILES = ["artifacts.json", "metadata.json", "config.yaml"]
@@ -107,6 +107,8 @@ class BuildContext:
     ocb_dir: str  # OCB binaries directory
     templates_dir: str  # Template files directory
     distribution: str  # Name of the distribution
+    goos: list[str]  # Target OS list (e.g. ["linux", "darwin"])
+    goarch: list[str]  # Target architecture list (e.g. ["amd64", "arm64"])
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
     ocb_version: str  # Version of OCB to use
@@ -125,14 +127,12 @@ class BuildContext:
         goarch: Optional[list[str]] = None,
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
-        go_version: Optional[str] = "1.24.1",
+        go_version: Optional[str] = None,
         parallelism: int = 4,
     ):
         """Create a BuildContext from manifest content."""
         goos = goos or ["linux"]
         goarch = goarch or ["arm64"]
-        # Ensure go_version is always a string
-        go_version = go_version or "1.24.1"
 
         # Parse manifest
         manifest = yaml.safe_load(manifest_content)
@@ -151,9 +151,14 @@ class BuildContext:
         )
         ocb_version = versions.ocb
         supervisor_version = versions.supervisor
+        # Use manifest-derived Go version when caller did not specify one
+        if go_version is None:
+            go_version = versions.go
+        go_version = go_version or DEFAULT_GO_VERSION
 
         logger.info(f"Using version {ocb_version} for OCB")
         logger.info(f"Using version {supervisor_version} for Supervisor")
+        logger.info(f"Using Go version {go_version}")
 
         # Format as YAML array
         goos_yaml = "[" + ", ".join(goos) + "]"
@@ -187,6 +192,8 @@ class BuildContext:
             ocb_dir=ocb_dir,
             templates_dir=templates_dir,
             distribution=distribution,
+            goos=goos,
+            goarch=goarch,
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
             ocb_version=ocb_version,
@@ -272,9 +279,14 @@ def generate_sources(ctx: BuildContext) -> None:
 
 
 def download_supervisor(ctx: BuildContext):
-    # Download supervisor
+    # Download supervisor only for requested (goos, goarch) platforms
+    platforms = [
+        (os_name, arch) for os_name in ctx.goos for arch in ctx.goarch
+    ]
     supervisor.download_supervisor(
-        os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version
+        os.path.join(ctx.build_dir, "_contrib"),
+        ctx.supervisor_version,
+        platforms=platforms,
     )
     logger.success("Supervisor binaries downloaded")
 
@@ -446,7 +458,7 @@ def build(
     goarch: Optional[list[str]] = None,
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
-    go_version: Optional[str] = DEFAULT_GO_VERSION,
+    go_version: Optional[str] = None,
     parallelism: int = 4,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
@@ -458,7 +470,7 @@ def build(
         goarch: Comma-separated list of target architectures
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
-        go_version: Version of Go to use for building
+        go_version: Version of Go to use for building (default: from manifest/versions.yaml when not provided)
         parallelism: Number of parallel Goreleaser build tasks (default 4)
 
     Returns:

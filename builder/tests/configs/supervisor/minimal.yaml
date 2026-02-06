@@ -1,0 +1,18 @@
+# Minimal supervisor config for testing (no remote server)
+server:
+  endpoint: wss://localhost:4321
+  tls:
+    insecure_skip_verify: true
+
+capabilities:
+  accepts_remote_config: false
+  reports_remote_config: false
+  reports_available_components: false
+
+agent:
+  executable: ./otelcol-custom
+  config_apply_timeout: 30s
+  bootstrap_timeout: 5s
+
+storage:
+  directory: "./supervisor_storage"

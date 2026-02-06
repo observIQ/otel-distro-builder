@@ -53,7 +53,7 @@ steps:
       - '--ocb-version'
       - '0.121.0'
       - '--go-version'
-      - '1.24.1'
+      - '1.24.0'
       - '--supervisor-version'
       - '0.122.0'
 
@@ -92,7 +92,7 @@ substitutions:
 |-----------|-------------|---------|
 | `-i` | Build ID | Auto-generated |
 | `-v` | OCB version | 0.121.0 |
-| `-g` | Go version | 1.24.1 |
+| `-g` | Go version | 1.24.0 |
 | `-s` | Supervisor version | 0.122.0 |
 
 ## Artifact Storage
@@ -176,7 +176,7 @@ The following artifacts are generated and stored:
   -p my-project \
   -b my-bucket \
   -v 0.121.0 \
-  -g 1.24.1 \
+  -g 1.24.0 \
   -s 0.122.0
 ```
 

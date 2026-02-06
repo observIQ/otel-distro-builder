@@ -5,10 +5,11 @@
 # __BINDPLANE_VERSION__ is replaced at runtime with the appropriate version.
 
 # Latest Bindplane collector version
-version: "1.72.0"
+version: "1.92.1"
 
 extensions:
   - gomod: "github.com/observiq/bindplane-otel-collector/extension/bindplaneextension __BINDPLANE_VERSION__"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension __OTEL_VERSION__"
 
 receivers:
   - gomod: "github.com/observiq/bindplane-otel-collector/receiver/awss3rehydrationreceiver __BINDPLANE_VERSION__"
@@ -36,23 +37,19 @@ processors:
   - gomod: "github.com/observiq/bindplane-otel-collector/processor/spancountprocessor __BINDPLANE_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/processor/throughputmeasurementprocessor __BINDPLANE_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/processor/topologyprocessor __BINDPLANE_VERSION__"
-  - gomod: "github.com/observiq/bindplane-otel-collector/processor/unrollprocessor __BINDPLANE_VERSION__"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/processor/unrollprocessor __OTEL_VERSION__"
 
 exporters:
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/azureblobexporter __BINDPLANE_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/chronicleexporter __BINDPLANE_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/chronicleforwarderexporter __BINDPLANE_VERSION__"
-  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter __OTEL_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudstorageexporter __BINDPLANE_VERSION__"
-  - gomod: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter __BINDPLANE_VERSION__"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlemanagedprometheusexporter __OTEL_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/qradar __BINDPLANE_VERSION__"
   - gomod: "github.com/observiq/bindplane-otel-collector/exporter/snowflakeexporter __BINDPLANE_VERSION__"
 
 # Additional replaces needed for Bindplane components
 replaces:
-  - old: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter"
-    new: "github.com/observiq/bindplane-otel-collector/exporter/googlecloudexporter v1.72.1-0.20250306153219-6fe3f849c29f"
-  - old: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter"
-    new: "github.com/observiq/bindplane-otel-collector/exporter/googlemanagedprometheusexporter v1.72.1-0.20250306153219-6fe3f849c29f"
   - old: "github.com/observiq/bindplane-otel-collector/internal/version"
-    new: "github.com/observiq/bindplane-otel-collector/internal/version v0.0.0-20250306153219-6fe3f849c29f"
+    new: "github.com/observiq/bindplane-otel-collector/internal/version __BINDPLANE_VERSION__"

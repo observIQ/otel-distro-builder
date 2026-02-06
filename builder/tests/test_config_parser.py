@@ -13,8 +13,9 @@ from builder.src.config_parser import (
 from builder.src.component_registry import get_registry
 
 
-# Get the path to test configs
+# Get the path to test configs (collector configs live under otelcol/)
 TEST_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
+TEST_OTELCOL_CONFIGS_DIR = os.path.join(TEST_CONFIGS_DIR, "otelcol")
 
 
 @pytest.mark.unit
@@ -198,7 +199,7 @@ class TestParseConfigFile:
 
     def test_parse_simple_file(self):
         """Test parsing the simple test config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
         result = parse_config_file(config_path)
 
         assert "otlp" in result.receivers
@@ -207,7 +208,7 @@ class TestParseConfigFile:
 
     def test_parse_complex_file(self):
         """Test parsing the complex test config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "complex.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "complex.yaml")
         result = parse_config_file(config_path)
 
         # Check receivers
@@ -236,7 +237,7 @@ class TestParseConfigFile:
 
     def test_parse_named_instances_file(self):
         """Test parsing the named instances test config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "named_instances.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "named_instances.yaml")
         result = parse_config_file(config_path)
 
         # Should only have unique base names
@@ -247,7 +248,7 @@ class TestParseConfigFile:
 
     def test_parse_minimal_file(self):
         """Test parsing the minimal test config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "minimal.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "minimal.yaml")
         result = parse_config_file(config_path)
 
         assert "nop" in result.receivers
@@ -360,7 +361,7 @@ class TestParseAndResolve:
 
     def test_parse_and_resolve_simple(self):
         """Test parsing and resolving a simple config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
         resolved = parse_and_resolve(config_path, version="0.121.0")
 
         assert len(resolved.receivers) > 0
@@ -370,7 +371,7 @@ class TestParseAndResolve:
 
     def test_parse_and_resolve_complex(self):
         """Test parsing and resolving a complex config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "complex.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "complex.yaml")
         resolved = parse_and_resolve(config_path, version="0.121.0")
 
         # Should resolve all known components

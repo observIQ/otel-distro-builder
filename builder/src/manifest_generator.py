@@ -8,6 +8,7 @@ import yaml
 
 from .config_parser import ResolvedComponents
 from .logger import BuildLogger, get_logger
+from .version import DEFAULT_VERSION
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -65,7 +66,7 @@ class ManifestConfig:
     description: str = DEFAULT_DESCRIPTION
     version: str = "1.0.0"
     output_path: str = DEFAULT_OUTPUT_PATH
-    otel_version: str = "0.121.0"
+    otel_version: str = DEFAULT_VERSION
     include_providers: bool = True
     include_replaces: bool = True
     include_bindplane: bool = True
@@ -113,9 +114,16 @@ class ManifestGenerator:
             with open(BINDPLANE_COMPONENTS_FILE, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
-            # Get the version and apply it to all components
-            version = data.get("version", "1.72.0")
+            # Get the version from the file (single source of truth; no hardcoded default)
+            version = data.get("version")
+            if not version:
+                raise ValueError(
+                    f"{BINDPLANE_COMPONENTS_FILE} must specify a 'version' key at the top level"
+                )
             version_str = f"v{version}"
+
+            # OTel version for contrib components
+            otel_version_str = f"v{self._config.otel_version}"
 
             # Process each component type
             for comp_type in ["extensions", "receivers", "processors", "exporters"]:
@@ -124,6 +132,19 @@ class ManifestGenerator:
                         if "gomod" in item:
                             data[comp_type][i]["gomod"] = item["gomod"].replace(
                                 "__BINDPLANE_VERSION__", version_str
+                            ).replace(
+                                "__OTEL_VERSION__", otel_version_str
+                            )
+
+            # Process replaces section
+            if "replaces" in data:
+                for i, item in enumerate(data["replaces"]):
+                    for key in ["old", "new"]:
+                        if key in item:
+                            data["replaces"][i][key] = item[key].replace(
+                                "__BINDPLANE_VERSION__", version_str
+                            ).replace(
+                                "__OTEL_VERSION__", otel_version_str
                             )
 
             logger.info(f"Loaded Bindplane components (version {version})")
@@ -342,7 +363,7 @@ def generate_manifest(
     name: str = DEFAULT_NAME,
     description: str = DEFAULT_DESCRIPTION,
     version: str = "1.0.0",
-    otel_version: str = "0.121.0",
+    otel_version: str = DEFAULT_VERSION,
     output_path: Optional[str] = None,
     include_bindplane: bool = True,
 ) -> GeneratedManifest:
@@ -382,7 +403,7 @@ def generate_manifest_from_config(
     name: str = DEFAULT_NAME,
     description: str = DEFAULT_DESCRIPTION,
     version: str = "1.0.0",
-    otel_version: str = "0.121.0",
+    otel_version: str = DEFAULT_VERSION,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
     include_bindplane: bool = True,
 ) -> GeneratedManifest:

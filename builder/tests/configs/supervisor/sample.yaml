@@ -1,0 +1,27 @@
+# Sample supervisor config (OpAMP) for testing
+# Replace server.endpoint and headers with your Bindplane/OpAMP server details.
+server:
+  endpoint: wss://app.bindplane.com/v1/opamp
+  headers:
+    Authorization: "Secret-Key YOUR_KEY_HERE"
+  tls:
+    insecure: false
+    insecure_skip_verify: false
+
+capabilities:
+  accepts_remote_config: true
+  reports_remote_config: true
+  reports_available_components: true
+
+agent:
+  executable: ./otelcol-custom
+  config_apply_timeout: 30s
+  bootstrap_timeout: 5s
+
+storage:
+  directory: "./supervisor_storage"
+
+telemetry:
+  logs:
+    level: 0
+    output_paths: ["./supervisor.log"]

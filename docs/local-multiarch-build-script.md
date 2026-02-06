@@ -59,7 +59,7 @@ This builds the collector for the default platforms (linux/amd64, darwin/amd64, 
 | `-p` | Comma-delimited GOOS/GOARCH for collector binaries | `linux/amd64,darwin/amd64,linux/arm64,darwin/arm64` | No |
 | `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | From manifest | No |
-| `-g` | Go version to use | `1.24.1` | No |
+| `-g` | Go version to use | `1.24.0` | No |
 | `-s` | Supervisor version | From manifest | No |
 | `-h` | Show help message | N/A | No |
 
@@ -101,7 +101,7 @@ Build for linux and darwin, both amd64 and arm64:
 ./scripts/run_local_multiarch_build.sh -m manifest.yaml \
   -v 0.121.0 \
   -s 0.122.0 \
-  -g 1.24.1
+  -g 1.24.0
 ```
 
 ### Reduce Memory Use (Parallelism)
@@ -119,7 +119,7 @@ If the build runs out of memory, lower parallelism (e.g. `-n 1`):
   -o ./dist \
   -p linux/amd64,linux/arm64,darwin/arm64 \
   -n 4 \
-  -v 0.121.0 -s 0.122.0 -g 1.24.1
+  -v 0.121.0 -s 0.122.0 -g 1.24.0
 ```
 
 ## Using Make Commands
@@ -184,6 +184,14 @@ All are written to the directory specified with `-o` (default: `./artifacts`).
 
 4. **Wrong platforms**
    - Confirm `-p` is a comma-separated list of `GOOS/GOARCH` (e.g. `linux/amd64,darwin/arm64`). No spaces.
+
+## Testing the Scripts
+
+To verify the scripts work without running a full Docker build:
+
+1. **Script smoke tests** (no Docker): run `make script-test`. This checks that each script prints help, enforces required arguments, and that `generate_manifest.sh` can produce a manifest from the test config.
+2. **Unit tests**: run `make unit-test` to test platform parsing and main CLI logic used by the builder.
+3. **Full integration**: with Docker running, use a small manifest and one platform to confirm the pipeline end-to-end, e.g. `./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64 -o ./artifacts-test`.
 
 ## Additional Resources
 

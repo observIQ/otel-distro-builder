@@ -199,8 +199,8 @@ def main() -> None:
     parser.add_argument(
         "--go-version",
         type=str,
-        default="1.24.1",
-        help="Version of Go to use for building",
+        default=None,
+        help="Version of Go to use for building (default: from manifest/versions.yaml; must be in Dockerfile GO_VERSIONS)",
     )
     parser.add_argument(
         "--parallelism",

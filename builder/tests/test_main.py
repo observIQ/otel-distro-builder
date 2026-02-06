@@ -88,7 +88,7 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
             goarch=expected_goarch,
             ocb_version=None,
             supervisor_version=None,
-            go_version="1.24.1",
+            go_version=None,
             parallelism=4,
         )
 

@@ -1,12 +1,23 @@
 """Utility for downloading OpenTelemetry OpAMP Supervisor releases."""
 
 import os
+from typing import Optional
 
 import requests
 
 from .logger import BuildLogger, get_logger
 
 logger: BuildLogger = get_logger(__name__)
+
+# All platform combinations supported by the supervisor release artifacts
+ALL_PLATFORMS = [
+    ("darwin", "arm64"),
+    ("darwin", "amd64"),
+    ("linux", "arm64"),
+    ("linux", "amd64"),
+    ("linux", "ppc64le"),
+    ("windows", "amd64"),
+]
 
 
 def download_file(url, output_file):
@@ -34,27 +45,36 @@ def set_permissions(file_path, os_name):
         logger.info(f"Set executable permissions for: {file_path}", indent=1)
 
 
-def download_supervisor(output_dir, version):
-    """Download the OpAMP Supervisor release artifacts."""
+def download_supervisor(
+    output_dir: str,
+    version: str,
+    platforms: Optional[list[tuple[str, str]]] = None,
+):
+    """Download the OpAMP Supervisor release artifacts.
+
+    Args:
+        output_dir: Directory to write supervisor binaries.
+        version: Supervisor version (e.g. "0.144.0").
+        platforms: List of (os_name, arch) to download. If None, downloads all
+            supported platforms (darwin/linux/windows × arm64/amd64/ppc64le as available).
+    """
     base_url = f"https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fopampsupervisor%2Fv{version}"
 
-    # Define supported platform combinations
-    platforms = [
-        ("darwin", "arm64"),
-        ("darwin", "amd64"),
-        ("linux", "arm64"),
-        ("linux", "amd64"),
-        ("linux", "ppc64le"),
-        ("windows", "amd64"),
-    ]
+    if platforms is not None:
+        # Only download combinations that exist in the release
+        supported = set(ALL_PLATFORMS)
+        to_download = [(os_name, arch) for os_name, arch in platforms if (os_name, arch) in supported]
+    else:
+        to_download = ALL_PLATFORMS
 
     logger.section("Supervisor Download")
     logger.info("Download Details:", indent=1)
     logger.info(f"Version: {version}", indent=2)
     logger.info(f"Output: {output_dir}", indent=2)
+    logger.info(f"Platforms: {to_download}", indent=2)
 
     try:
-        for os_name, arch in platforms:
+        for os_name, arch in to_download:
             # Generate artifact name, output file, and download URL
             artifact_name = f"opampsupervisor_{version}_{os_name}_{arch}"
             output_file = os.path.join(output_dir, f"supervisor_{os_name}_{arch}")

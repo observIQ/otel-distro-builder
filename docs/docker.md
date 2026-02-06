@@ -59,7 +59,7 @@ The Docker container accepts the following command-line options:
 | `--goos`               | Target operating system                 | `linux`      |
 | `--goarch`             | Target architecture                     | `amd64`      |
 | `--ocb-version`        | OpenTelemetry Collector Builder version | `0.122.0`    |
-| `--go-version`         | Go version to use                       | `1.24.1`     |
+| `--go-version`         | Go version to use                       | `1.24.0`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
 | `--parallelism`        | Number of parallel Goreleaser build tasks (lower to reduce memory) | `4` |
 
@@ -133,7 +133,7 @@ docker run --rm \
   ghcr.io/observiq/otel-distro-builder:main \
   --manifest /workspace/manifest.yaml \
   --ocb-version 0.121.0 \
-  --go-version 1.24.1 \
+  --go-version 1.24.0 \
   --supervisor-version 0.122.0
 ```
 

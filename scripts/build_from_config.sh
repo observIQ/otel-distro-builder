@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
+source "${SCRIPT_DIR}/common.sh"
+
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OTEL_VERSION=""
@@ -10,6 +14,8 @@ DIST_VERSION="1.0.0"
 PLATFORM=""
 PARALLELISM=""
 NO_BINDPLANE=false
+# Default platforms when -p is omitted (same as run_local_multiarch_build.sh)
+DEFAULT_PLATFORMS="linux/amd64,darwin/amd64,linux/arm64,darwin/arm64"
 
 # Help message
 usage() {
@@ -29,7 +35,7 @@ usage() {
     echo
     echo "Build options:"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
-    echo "  -p <platform>               Target platform(s), comma-delimited (e.g. linux/amd64,linux/arm64)"
+    echo "  -p <platforms>              Comma-delimited GOOS/GOARCH (default: $DEFAULT_PLATFORMS)"
     echo "  -P <parallelism>            Number of parallel Goreleaser build tasks (default: 4)"
     echo
     echo "Other options:"
@@ -37,17 +43,23 @@ usage() {
     echo "  -h                          Show this help message"
     echo
     echo "Examples:"
-    echo "  # Build from config with defaults"
+    echo "  # Build from config (default: multi-arch for linux/darwin amd64 and arm64)"
     echo "  $0 -c config.yaml"
     echo
     echo "  # Build with specific OTel version and output directory"
     echo "  $0 -c config.yaml -v 0.144.0 -o ./dist"
     echo
-    echo "  # Build for multiple platforms"
+    echo "  # Build for specific platforms only"
     echo "  $0 -c config.yaml -p linux/amd64,linux/arm64"
     echo
     echo "  # Build with custom distribution name"
     echo "  $0 -c config.yaml -n my-collector -v 0.144.0"
+    echo
+    echo "  # Reduce memory use (fewer parallel Goreleaser tasks)"
+    echo "  $0 -c config.yaml -P 1"
+    echo
+    echo "  # Exclude Bindplane components (use when config does not use them; avoids version compatibility issues)"
+    echo "  $0 -c config.yaml -B -n my-collector"
     echo
     echo "  # Keep the generated manifest"
     echo "  $0 -c config.yaml -k"
@@ -91,9 +103,6 @@ CONFIG_PATH=$(cd "$(dirname "$CONFIG_PATH")" && pwd)/$(basename "$CONFIG_PATH")
 mkdir -p "$OUTPUT_DIR"
 OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd)
 
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # Create temp manifest path or use persistent path
 if [ "$KEEP_MANIFEST" = true ]; then
     MANIFEST_PATH="${OUTPUT_DIR}/manifest.yaml"
@@ -105,12 +114,15 @@ else
     trap 'rm -rf "$TEMP_DIR"' EXIT
 fi
 
+# Resolve platforms for display and build (multi-arch default when -p omitted)
+PLATFORMS_FOR_BUILD="${PLATFORM:-$DEFAULT_PLATFORMS}"
+
 echo "=== Build from Config ==="
 echo "Config: $CONFIG_PATH"
 echo "Output: $OUTPUT_DIR"
 [ -n "$OTEL_VERSION" ] && echo "OTel Version: $OTEL_VERSION"
 echo "Distribution: $DIST_NAME"
-[ -n "$PLATFORM" ] && echo "Platform(s): $PLATFORM"
+echo "Platform(s): $PLATFORMS_FOR_BUILD"
 echo
 
 # Step 1: Generate manifest
@@ -131,16 +143,24 @@ if [ ! -f "$MANIFEST_PATH" ]; then
 fi
 
 echo
-echo "=== Step 2: Building Distribution ==="
+echo "=== Step 2: Building Distribution (multi-arch) ==="
 
-# Build Docker args
-BUILD_ARGS="-m $MANIFEST_PATH -o $OUTPUT_DIR"
-[ -n "$PLATFORM" ] && BUILD_ARGS="$BUILD_ARGS -p $PLATFORM"
+# Resolve effective OTel version for OCB/Supervisor.
+# If the user didn't pass -v, read the version that was used during manifest
+# generation from the generated manifest header comment (e.g. "# Target version: 0.144.0").
+# This ensures OCB and Supervisor versions stay in sync with the manifest.
+EFFECTIVE_VERSION="$OTEL_VERSION"
+if [ -z "$EFFECTIVE_VERSION" ] && [ -f "$MANIFEST_PATH" ]; then
+    EFFECTIVE_VERSION=$(grep -m1 '^# Target version:' "$MANIFEST_PATH" | sed 's/.*: *//')
+fi
+
+# Build Docker args (use run_local_multiarch_build.sh; -p uses PLATFORMS_FOR_BUILD which has default)
+BUILD_ARGS="-m $MANIFEST_PATH -o $OUTPUT_DIR -p $PLATFORMS_FOR_BUILD"
 [ -n "$PARALLELISM" ] && BUILD_ARGS="$BUILD_ARGS -n $PARALLELISM"
-[ -n "$OTEL_VERSION" ] && BUILD_ARGS="$BUILD_ARGS -v $OTEL_VERSION"
+[ -n "$EFFECTIVE_VERSION" ] && BUILD_ARGS="$BUILD_ARGS -v $EFFECTIVE_VERSION"
 
 # shellcheck disable=SC2086
-"$SCRIPT_DIR/run_local_build.sh" $BUILD_ARGS
+"$SCRIPT_DIR/run_local_multiarch_build.sh" $BUILD_ARGS
 
 echo
 echo "=== Build Complete ==="

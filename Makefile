@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test generate-manifest generate-manifest-docker build-from-config
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
 
 # Variables
 VENV_DIR := builder/.venv
@@ -33,6 +33,7 @@ help: ## Show this help
 	@echo "    quicktest        Run quick tests (simple build and version tests)"
 	@echo "    unit-test        Run unit tests only"
 	@echo "    build-test       Run build tests only"
+	@echo "    script-test     Run script smoke tests (no Docker)"
 	@echo "  $(GREEN)check-all**$(NC)     Run all checks (quality, shell-check, test)"
 	@echo ""
 	@echo "$(CYAN)Docker Operations:$(NC)"
@@ -123,6 +124,23 @@ build-test: deps ## Run build tests only
 	@echo "$(BLUE)Running build tests...$(NC)"
 	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "build"
 
+script-test: ## Run script smoke tests (help, validation; no Docker required)
+	@echo "$(BLUE)Running script smoke tests...$(NC)"
+	@echo "  Checking run_local_build.sh -h..."
+	@./scripts/run_local_build.sh -h | grep -q "manifest_path" || (echo "run_local_build.sh -h failed"; exit 1)
+	@echo "  Checking run_local_multiarch_build.sh -h..."
+	@./scripts/run_local_multiarch_build.sh -h | grep -q "manifest_path" || (echo "run_local_multiarch_build.sh -h failed"; exit 1)
+	@echo "  Checking build_from_config.sh -h..."
+	@./scripts/build_from_config.sh -h | grep -q "config_path" || (echo "build_from_config.sh -h failed"; exit 1)
+	@echo "  Checking run_local_build.sh requires -m..."
+	@./scripts/run_local_build.sh 2>&1 | grep -q "Manifest path is required" || (echo "run_local_build.sh should require -m"; exit 1)
+	@echo "  Checking run_local_multiarch_build.sh requires -m..."
+	@./scripts/run_local_multiarch_build.sh 2>&1 | grep -q "Manifest path is required" || (echo "run_local_multiarch_build.sh should require -m"; exit 1)
+	@echo "  Checking build_from_config.sh requires -c..."
+	@./scripts/build_from_config.sh 2>&1 | grep -q "Config path is required" || (echo "build_from_config.sh should require -c"; exit 1)
+	@echo "  Checking generate_manifest.sh with test config..."
+	@OUT=$$(mktemp); ./scripts/generate_manifest.sh -c builder/tests/configs/otelcol/simple.yaml -o "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; echo "generate_manifest.sh failed"; exit 1)
+	@echo "$(GREEN)Script smoke tests passed.$(NC)"
 
 check-all: quality shell-check test scan-all ## Run all checks including security scans
 
@@ -170,7 +188,7 @@ build-local: ## Build distribution with specific versions
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
 multiarch-build: ## Build multi-arch distribution using manifest.yaml
 	@if [ ! -f manifest.yaml ]; then \
@@ -190,7 +208,7 @@ multiarch-build-local: ## Build multi-arch distribution with specific versions u
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
 generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [output=manifest.yaml] [version=0.144.0] [name=my-collector])
 	@if [ -z "$(config)" ]; then \
@@ -229,6 +247,7 @@ build-from-config: ## Generate manifest and build from collector config (make bu
 		$(if $(module),-m $(module)) \
 		$(if $(platforms),-p $(platforms)) \
 		$(if $(parallelism),-P $(parallelism)) \
+		$(if $(no_bindplane),-B) \
 		$(if $(keep),-k)
 
 release: test ## Create a new release (make release v=X.Y.Z)

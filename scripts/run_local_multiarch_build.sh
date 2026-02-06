@@ -1,28 +1,30 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=common.sh
+source "${SCRIPT_DIR}/common.sh"
+
 # Default values for multi-arch build
 OUTPUT_DIR="$(pwd)/artifacts"
 DOCKER_IMAGE="otel-distro-builder"
-# Default platforms: collector targets (GOOS/GOARCH). Image is built for first platform only.
+# Default platforms: GOOS/GOARCH targets for collector binaries (image is built for host only)
 DEFAULT_PLATFORMS="linux/amd64,darwin/amd64,linux/arm64,darwin/arm64"
 
-# Help message
 usage() {
-    echo "Usage: $0 -m <manifest_path> [-o <output_dir>] [-p <platforms>] [-n <parallelism>]"
+    echo "Usage: $0 -m <manifest_path> [-o <output_dir>] [-p <platforms>] [-n <parallelism>] [version options]"
     echo
-    echo "Build an OpenTelemetry Collector Distribution for multiple architectures."
-    echo "The Docker image is built for the first platform; the collector binaries"
-    echo "are built for all specified platforms (linux/amd64, linux/arm64, darwin/arm64, etc.)."
+    echo "Build an OpenTelemetry Collector distribution for multiple architectures."
+    echo "The Docker image is built for the host architecture; collector binaries are"
+    echo "built for all platforms given by -p."
     echo
     echo "Required arguments:"
     echo "  -m <manifest_path>          Path to manifest.yaml/yml file"
     echo
     echo "Optional arguments:"
-    echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
-    echo "  -p <platforms>             Comma-delimited GOOS/GOARCH for collector binaries"
-    echo "                              (default: linux/amd64,linux/arm64,darwin/arm64)"
-    echo "  -n <parallelism>            Number of parallel Goreleaser build tasks (default: builder default 4; use 1 to reduce memory)"
+    echo "  -o <output_dir>             Directory for build artifacts (default: ./artifacts)"
+    echo "  -p <platforms>             Comma-delimited GOOS/GOARCH (default: $DEFAULT_PLATFORMS)"
+    echo "  -n <parallelism>           Parallel Goreleaser tasks (default: 4; use 1 to reduce memory)"
     echo "  -v <ocb_version>            OCB version (passed to builder)"
     echo "  -g <go_version>             Go version (passed to builder)"
     echo "  -s <supervisor_version>     Supervisor version (passed to builder)"
@@ -32,12 +34,12 @@ usage() {
     echo "  $0 -m manifest.yaml"
     echo "  $0 -m manifest.yaml -p linux/amd64,linux/arm64,darwin/arm64"
     echo "  $0 -m manifest.yaml -n 1 -o ./artifacts"
-    echo "  $0 -m manifest.yaml -n 8 -o ./artifacts -v 0.121.0 -s 0.122.0 -g 1.24.1"
+    echo "  $0 -m manifest.yaml -n 8 -o ./artifacts -v 0.121.0 -s 0.122.0 -g 1.24.0"
     exit 1
 }
 
 # Parse command line arguments
-while getopts "m:p:i:o:n:v:g:s:h" opt; do
+while getopts "m:o:p:n:v:g:s:h" opt; do
     case $opt in
     m) MANIFEST_PATH="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
@@ -72,14 +74,8 @@ mkdir -p "$OUTPUT_DIR"
 MANIFEST_PATH=$(realpath "$MANIFEST_PATH")
 OUTPUT_DIR=$(realpath "$OUTPUT_DIR")
 
-# Use host-native platform for Docker image to avoid QEMU emulation (which can cause OCB SIGSEGV on arm64)
-# On Apple Silicon / arm64 hosts, building linux/amd64 would run under emulation and OCB may crash.
-HOST_ARCH=$(uname -m)
-case "$HOST_ARCH" in
-    arm64|aarch64) IMAGE_PLATFORM="linux/arm64" ;;
-    x86_64|amd64) IMAGE_PLATFORM="linux/amd64" ;;
-    *)             IMAGE_PLATFORM="linux/arm64" ;;  # default to arm64 for other (e.g. arm)
-esac
+# Docker image is built for host architecture to avoid QEMU emulation (OCB can crash under emulation)
+IMAGE_PLATFORM=$(get_docker_platform)
 
 echo "=== Running local multi-arch build ==="
 echo "Manifest: $MANIFEST_PATH"
@@ -89,14 +85,20 @@ echo "Docker image platform: $IMAGE_PLATFORM"
 [ -n "$PARALLELISM" ] && echo "Parallelism: $PARALLELISM"
 echo
 
-# Build Docker image for one linux platform (so we can run it locally)
+# Build Docker image for host platform
 echo "Building Docker image for platform: $IMAGE_PLATFORM..."
 if ! (cd builder && docker build --platform "$IMAGE_PLATFORM" -t "$DOCKER_IMAGE" .); then
     echo "Error: Failed to build Docker image."
     exit 1
 fi
 
-# Run the builder: pass --platforms so it builds collector binaries for all requested platforms
+# Optional builder arguments (passed as separate args to avoid word-split issues)
+EXTRA_ARGS=()
+[ -n "$PARALLELISM" ] && EXTRA_ARGS+=(--parallelism "$PARALLELISM")
+[ -n "$OCB_VERSION" ] && EXTRA_ARGS+=(--ocb-version "$OCB_VERSION")
+[ -n "$GO_VERSION" ] && EXTRA_ARGS+=(--go-version "$GO_VERSION")
+[ -n "$SUPERVISOR_VERSION" ] && EXTRA_ARGS+=(--supervisor-version "$SUPERVISOR_VERSION")
+
 echo "Running builder (collector targets: $PLATFORMS)..."
 docker run --rm \
     --platform "$IMAGE_PLATFORM" \
@@ -106,10 +108,7 @@ docker run --rm \
     --manifest /manifest.yaml \
     --artifacts /artifacts \
     --platforms "$PLATFORMS" \
-    ${PARALLELISM:+"--parallelism $PARALLELISM"} \
-    ${OCB_VERSION:+"--ocb-version $OCB_VERSION"} \
-    ${GO_VERSION:+"--go-version $GO_VERSION"} \
-    ${SUPERVISOR_VERSION:+"--supervisor-version $SUPERVISOR_VERSION"}
+    "${EXTRA_ARGS[@]}"
 
 echo "=== Multi-arch build complete ==="
 echo "Artifacts are available in: $OUTPUT_DIR"

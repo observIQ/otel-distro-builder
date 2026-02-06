@@ -7,6 +7,7 @@ import yaml
 
 from .component_registry import ComponentInfo, get_registry
 from .logger import BuildLogger, get_logger
+from .version import DEFAULT_VERSION
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -191,7 +192,7 @@ class ConfigParser:
 
 def resolve_components(
     parsed: ParsedComponents,
-    version: str = "0.121.0",
+    version: str = DEFAULT_VERSION,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
 ) -> ResolvedComponents:
     """Resolve parsed component names to their Go module paths.
@@ -282,7 +283,7 @@ def parse_config_file(config_path: str) -> ParsedComponents:
 
 def parse_and_resolve(
     config_path: str,
-    version: str = "0.121.0",
+    version: str = DEFAULT_VERSION,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
 ) -> ResolvedComponents:
     """Parse a config file and resolve components to Go modules.

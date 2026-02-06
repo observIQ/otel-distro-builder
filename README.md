@@ -138,9 +138,9 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
 | `--dist-name` | Distribution name | `otelcol-custom` |
 | `--dist-module` | Go module path | `github.com/custom/otelcol-distribution` |
 | `--dist-version` | Distribution version | `1.0.0` |
-| `--no-bindplane` | Exclude Bindplane/observIQ components | `false` (included) |
+| `--no-bindplane` | Exclude Bindplane components | `false` (included) |
 
-> **Note:** By default, generated manifests include all Bindplane/observIQ components. Use `--no-bindplane` to exclude them.
+> **Note:** By default, generated manifests include all Bindplane components. Use `--no-bindplane` to exclude them.
 
 > See [Config to Manifest documentation](./docs/config-to-manifest.md) for detailed usage and examples.
 
@@ -181,7 +181,7 @@ docker run --rm \
   --goarch amd64,arm64 \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
-  --go-version 1.24.1 \
+  --go-version 1.24.0 \
   --parallelism 4
 ```
 
@@ -274,7 +274,7 @@ Build a custom OpenTelemetry Collector distribution using a local Docker contain
 ./scripts/run_local_build.sh -m manifest.yaml
 
 # Custom output directory and versions
-./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
 
 # Build Docker image for a specific platform (e.g. Apple Silicon / arm64)
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64
@@ -299,7 +299,7 @@ Build collector binaries for multiple architectures in one run (default: linux/a
 ./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
 
 # With output dir and versions
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
 ```
 
 Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 4).

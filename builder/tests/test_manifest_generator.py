@@ -15,8 +15,9 @@ from builder.src.manifest_generator import (
 )
 
 
-# Get the path to test configs
+# Get the path to test configs (collector configs live under otelcol/)
 TEST_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
+TEST_OTELCOL_CONFIGS_DIR = os.path.join(TEST_CONFIGS_DIR, "otelcol")
 
 
 @pytest.mark.unit
@@ -229,7 +230,7 @@ class TestGenerateManifestFromConfig:
 
     def test_generate_from_simple_config(self):
         """Test generating manifest from simple config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,
@@ -246,7 +247,7 @@ class TestGenerateManifestFromConfig:
 
     def test_generate_from_complex_config(self):
         """Test generating manifest from complex config file."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "complex.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "complex.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,
@@ -263,7 +264,7 @@ class TestGenerateManifestFromConfig:
 
     def test_generate_writes_to_file(self):
         """Test that manifest is written to file when output_path specified."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = os.path.join(tmpdir, "manifest.yaml")
@@ -286,7 +287,7 @@ class TestGenerateManifestFromConfig:
 
     def test_generate_header_comment(self):
         """Test that generated manifest has header comment."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,
@@ -369,7 +370,7 @@ class TestManifestValidity:
 
     def test_manifest_has_required_sections(self):
         """Test that manifest has all required sections for OCB."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,
@@ -390,7 +391,7 @@ class TestManifestValidity:
 
     def test_gomod_format_is_correct(self):
         """Test that gomod entries have correct format."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,
@@ -408,7 +409,7 @@ class TestManifestValidity:
 
     def test_conf_resolver_present(self):
         """Test that conf_resolver section is present."""
-        config_path = os.path.join(TEST_CONFIGS_DIR, "simple.yaml")
+        config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
 
         result = generate_manifest_from_config(
             config_path=config_path,

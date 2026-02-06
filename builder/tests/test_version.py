@@ -27,6 +27,8 @@ extensions:
     assert isinstance(versions, BuildVersions)
     assert versions.ocb == "0.123.0"
     assert versions.supervisor == "0.123.0"
+    # Go must come from version_mappings (0.123.0 -> 1.23.0), not hardcoded
+    assert versions.go == "1.23.0"
 
 
 @pytest.mark.unit
