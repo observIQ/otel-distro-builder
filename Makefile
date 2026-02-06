@@ -107,7 +107,7 @@ type-check: deps ## Run type checking
 
 shell-check: ## Check shell scripts
 	@echo "$(BLUE)Checking shell scripts...$(NC)"
-	shellcheck scripts/*.sh
+	shellcheck -x -e SC1091 scripts/*.sh
 
 quality: format lint type-check shell-check ## Run all code quality checks
 	@echo "$(GREEN)All quality checks passed!$(NC)"

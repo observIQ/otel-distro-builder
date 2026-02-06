@@ -130,10 +130,10 @@ class ManifestGenerator:
                 if comp_type in data:
                     for i, item in enumerate(data[comp_type]):
                         if "gomod" in item:
-                            data[comp_type][i]["gomod"] = item["gomod"].replace(
-                                "__BINDPLANE_VERSION__", version_str
-                            ).replace(
-                                "__OTEL_VERSION__", otel_version_str
+                            data[comp_type][i]["gomod"] = (
+                                item["gomod"]
+                                .replace("__BINDPLANE_VERSION__", version_str)
+                                .replace("__OTEL_VERSION__", otel_version_str)
                             )
 
             # Process replaces section
@@ -141,17 +141,19 @@ class ManifestGenerator:
                 for i, item in enumerate(data["replaces"]):
                     for key in ["old", "new"]:
                         if key in item:
-                            data["replaces"][i][key] = item[key].replace(
-                                "__BINDPLANE_VERSION__", version_str
-                            ).replace(
-                                "__OTEL_VERSION__", otel_version_str
+                            data["replaces"][i][key] = (
+                                item[key]
+                                .replace("__BINDPLANE_VERSION__", version_str)
+                                .replace("__OTEL_VERSION__", otel_version_str)
                             )
 
             logger.info(f"Loaded Bindplane components (version {version})")
             return data
 
         except FileNotFoundError:
-            logger.warning(f"Bindplane components file not found: {BINDPLANE_COMPONENTS_FILE}")
+            logger.warning(
+                f"Bindplane components file not found: {BINDPLANE_COMPONENTS_FILE}"
+            )
             return None
         except yaml.YAMLError as e:
             logger.warning(f"Failed to parse Bindplane components: {e}")
@@ -197,9 +199,7 @@ class ManifestGenerator:
         )
 
         if self._resolved.connectors:
-            manifest["connectors"] = self._format_components(
-                self._resolved.connectors
-            )
+            manifest["connectors"] = self._format_components(self._resolved.connectors)
 
         # Remove empty sections
         for key in ["extensions", "receivers", "processors", "exporters"]:
@@ -275,10 +275,7 @@ class ManifestGenerator:
         same version as the target OpenTelemetry Collector (e.g. v0.144.0).
         """
         version = self._config.otel_version
-        return [
-            {"gomod": f"{p} v{version}"}
-            for p in DEFAULT_PROVIDERS
-        ]
+        return [{"gomod": f"{p} v{version}"} for p in DEFAULT_PROVIDERS]
 
     def _format_replaces(self) -> list[str]:
         """Format replaces for the manifest.
@@ -306,15 +303,14 @@ class ManifestGenerator:
         Returns:
             YAML string with comments
         """
+
         # Use a custom representer for cleaner output
         class CleanDumper(yaml.SafeDumper):
             pass
 
         def str_representer(dumper, data):
             if "\n" in data:
-                return dumper.represent_scalar(
-                    "tag:yaml.org,2002:str", data, style="|"
-                )
+                return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
             return dumper.represent_scalar("tag:yaml.org,2002:str", data)
 
         CleanDumper.add_representer(str, str_representer)

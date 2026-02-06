@@ -27,9 +27,7 @@ def get_latest_otel_version() -> str:
     fallback_version = "0.144.0"
 
     try:
-        versions_path = os.path.join(
-            os.path.dirname(__file__), "..", "versions.yaml"
-        )
+        versions_path = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
         with open(versions_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
@@ -114,9 +112,7 @@ def main() -> None:
 
     # Manifest source - either direct manifest or generate from config
     source_group = parser.add_mutually_exclusive_group(required=True)
-    source_group.add_argument(
-        "--manifest", type=str, help="Path to the manifest file"
-    )
+    source_group.add_argument("--manifest", type=str, help="Path to the manifest file")
     source_group.add_argument(
         "--from-config",
         type=str,

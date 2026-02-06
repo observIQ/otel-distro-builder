@@ -63,7 +63,11 @@ def download_supervisor(
     if platforms is not None:
         # Only download combinations that exist in the release
         supported = set(ALL_PLATFORMS)
-        to_download = [(os_name, arch) for os_name, arch in platforms if (os_name, arch) in supported]
+        to_download = [
+            (os_name, arch)
+            for os_name, arch in platforms
+            if (os_name, arch) in supported
+        ]
     else:
         to_download = ALL_PLATFORMS
 

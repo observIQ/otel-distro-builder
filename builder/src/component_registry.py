@@ -33,9 +33,7 @@ class ComponentRegistry:
                            uses the default file in the same directory.
         """
         if components_file is None:
-            components_file = os.path.join(
-                os.path.dirname(__file__), "components.yaml"
-            )
+            components_file = os.path.join(os.path.dirname(__file__), "components.yaml")
 
         self._components: dict[str, dict[str, ComponentInfo]] = {
             "receivers": {},

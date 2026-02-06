@@ -280,9 +280,7 @@ def generate_sources(ctx: BuildContext) -> None:
 
 def download_supervisor(ctx: BuildContext):
     # Download supervisor only for requested (goos, goarch) platforms
-    platforms = [
-        (os_name, arch) for os_name in ctx.goos for arch in ctx.goarch
-    ]
+    platforms = [(os_name, arch) for os_name in ctx.goos for arch in ctx.goarch]
     supervisor.download_supervisor(
         os.path.join(ctx.build_dir, "_contrib"),
         ctx.supervisor_version,
@@ -376,7 +374,9 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
 def build_release(ctx: BuildContext) -> bool:
     """Build the final release using goreleaser."""
     logger.section("Release Building")
-    logger.info(f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs")
+    logger.info(
+        f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs"
+    )
 
     cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean --parallelism {ctx.parallelism}"
     logger.command(cmd)

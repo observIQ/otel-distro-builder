@@ -1,17 +1,13 @@
 """Tests for the config parser module."""
 
 import os
+
 import pytest
 
-from builder.src.config_parser import (
-    ConfigParser,
-    ParsedComponents,
-    parse_config_file,
-    parse_and_resolve,
-    resolve_components,
-)
 from builder.src.component_registry import get_registry
-
+from builder.src.config_parser import (ConfigParser, ParsedComponents,
+                                       parse_and_resolve, parse_config_file,
+                                       resolve_components)
 
 # Get the path to test configs (collector configs live under otelcol/)
 TEST_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")

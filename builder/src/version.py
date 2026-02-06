@@ -23,9 +23,7 @@ def _get_latest_version() -> str:
         fallback if the file cannot be read.
     """
     try:
-        versions_file = os.path.join(
-            os.path.dirname(__file__), "..", "versions.yaml"
-        )
+        versions_file = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
         with open(versions_file, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if data and "versions" in data:
@@ -77,7 +75,7 @@ def determine_build_versions(
         version_mappings = load_version_mappings()
         # Find the Go version for this OCB (builder) version
         final_go = None
-        for _contrib_version, mapping in version_mappings.items():
+        for mapping in version_mappings.values():
             if mapping.get("builder") == ocb_version:
                 final_go = mapping.get("go")
                 break

@@ -7,13 +7,9 @@ import pytest
 import yaml
 
 from builder.src.config_parser import ParsedComponents, resolve_components
-from builder.src.manifest_generator import (
-    ManifestConfig,
-    ManifestGenerator,
-    generate_manifest,
-    generate_manifest_from_config,
-)
-
+from builder.src.manifest_generator import (ManifestConfig, ManifestGenerator,
+                                            generate_manifest,
+                                            generate_manifest_from_config)
 
 # Get the path to test configs (collector configs live under otelcol/)
 TEST_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
@@ -385,7 +381,13 @@ class TestManifestValidity:
         assert "name" in manifest["dist"]
 
         # At least one component type should be present
-        component_types = ["receivers", "processors", "exporters", "extensions", "connectors"]
+        component_types = [
+            "receivers",
+            "processors",
+            "exporters",
+            "extensions",
+            "connectors",
+        ]
         has_components = any(t in manifest for t in component_types)
         assert has_components
 

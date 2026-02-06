@@ -24,13 +24,15 @@ class ParsedComponents:
 
     def is_empty(self) -> bool:
         """Check if no components were found."""
-        return not any([
-            self.receivers,
-            self.processors,
-            self.exporters,
-            self.extensions,
-            self.connectors,
-        ])
+        return not any(
+            [
+                self.receivers,
+                self.processors,
+                self.exporters,
+                self.extensions,
+                self.connectors,
+            ]
+        )
 
     def all_components(self) -> dict[str, list[str]]:
         """Return all components as a dictionary."""
@@ -217,9 +219,7 @@ def resolve_components(
     }
 
     # Helper to resolve a list of component names
-    def resolve_list(
-        component_type: str, names: list[str]
-    ) -> list[ComponentInfo]:
+    def resolve_list(component_type: str, names: list[str]) -> list[ComponentInfo]:
         result = []
         custom = (custom_mappings or {}).get(component_type, {})
 
