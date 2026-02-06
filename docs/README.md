@@ -14,9 +14,9 @@ Learn how to use the `run_local_build.sh` script for local builds. This guide co
 - Managing artifacts
 - Troubleshooting common issues
 
-### [Using the Local Multi-Arch Build Script](local-multiarch-build-script.md)
+### [Using the Local Build Script for Multi-Arch Distributions](local-multiarch-build-script.md)
 
-Learn how to use the `run_local_multiarch_build.sh` script to build collector binaries for multiple architectures in one run. This guide covers:
+Learn how to use `run_local_build.sh -p` to build collector binaries for multiple architectures in one run. This guide covers:
 
 - When to use multi-arch vs single-platform builds
 - How the script chooses the Docker image platform (host-native)

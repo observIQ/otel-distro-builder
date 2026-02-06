@@ -14,7 +14,7 @@ DIST_VERSION="1.0.0"
 PLATFORM=""
 PARALLELISM=""
 NO_BINDPLANE=false
-# Default platforms when -p is omitted (same as run_local_multiarch_build.sh)
+# Default platforms when -p is omitted (multi-arch: linux/darwin x amd64/arm64)
 DEFAULT_PLATFORMS="linux/amd64,darwin/amd64,linux/arm64,darwin/arm64"
 
 # Help message
@@ -154,15 +154,17 @@ if [ -z "$EFFECTIVE_VERSION" ] && [ -f "$MANIFEST_PATH" ]; then
     EFFECTIVE_VERSION=$(grep -m1 '^# Target version:' "$MANIFEST_PATH" | sed 's/.*: *//')
 fi
 
-# Build Docker args (use run_local_multiarch_build.sh; -p uses PLATFORMS_FOR_BUILD which has default)
+# Build via run_local_build.sh with -p (PLATFORMS_FOR_BUILD has default for multi-arch)
 BUILD_ARGS="-m $MANIFEST_PATH -o $OUTPUT_DIR -p $PLATFORMS_FOR_BUILD"
 [ -n "$PARALLELISM" ] && BUILD_ARGS="$BUILD_ARGS -n $PARALLELISM"
 [ -n "$EFFECTIVE_VERSION" ] && BUILD_ARGS="$BUILD_ARGS -v $EFFECTIVE_VERSION"
 
 # shellcheck disable=SC2086
-"$SCRIPT_DIR/run_local_multiarch_build.sh" $BUILD_ARGS
+"$SCRIPT_DIR/run_local_build.sh" $BUILD_ARGS
 
 echo
 echo "=== Build Complete ==="
 echo "Artifacts: $OUTPUT_DIR"
-[ "$KEEP_MANIFEST" = true ] && echo "Manifest: $MANIFEST_PATH"
+if [ "$KEEP_MANIFEST" = true ]; then
+    echo "Manifest: $MANIFEST_PATH"
+fi

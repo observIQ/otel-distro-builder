@@ -128,14 +128,10 @@ script-test: ## Run script smoke tests (help, validation; no Docker required)
 	@echo "$(BLUE)Running script smoke tests...$(NC)"
 	@echo "  Checking run_local_build.sh -h..."
 	@./scripts/run_local_build.sh -h | grep -q "manifest_path" || (echo "run_local_build.sh -h failed"; exit 1)
-	@echo "  Checking run_local_multiarch_build.sh -h..."
-	@./scripts/run_local_multiarch_build.sh -h | grep -q "manifest_path" || (echo "run_local_multiarch_build.sh -h failed"; exit 1)
 	@echo "  Checking build_from_config.sh -h..."
 	@./scripts/build_from_config.sh -h | grep -q "config_path" || (echo "build_from_config.sh -h failed"; exit 1)
 	@echo "  Checking run_local_build.sh requires -m..."
 	@./scripts/run_local_build.sh 2>&1 | grep -q "Manifest path is required" || (echo "run_local_build.sh should require -m"; exit 1)
-	@echo "  Checking run_local_multiarch_build.sh requires -m..."
-	@./scripts/run_local_multiarch_build.sh 2>&1 | grep -q "Manifest path is required" || (echo "run_local_multiarch_build.sh should require -m"; exit 1)
 	@echo "  Checking build_from_config.sh requires -c..."
 	@./scripts/build_from_config.sh 2>&1 | grep -q "Config path is required" || (echo "build_from_config.sh should require -c"; exit 1)
 	@echo "  Checking generate_manifest.sh with test config..."
@@ -190,14 +186,16 @@ build-local: ## Build distribution with specific versions
 	fi
 	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
-multiarch-build: ## Build multi-arch distribution using manifest.yaml
+# Default platforms for multi-arch local build (linux/darwin x amd64/arm64)
+MULTIARCH_PLATFORMS ?= linux/amd64,darwin/amd64,linux/arm64,darwin/arm64
+
+multiarch-build: ## Build multi-arch distribution using manifest.yaml (uses run_local_build.sh -p)
 	@if [ ! -f manifest.yaml ]; then \
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml \
+	./scripts/run_local_build.sh -m manifest.yaml -p $(or $(platforms),$(MULTIARCH_PLATFORMS)) \
 		$(if $(output_dir),-o $(output_dir)) \
-		$(if $(platforms),-p $(platforms)) \
 		$(if $(ocb_version),-v $(ocb_version)) \
 		$(if $(supervisor_version),-s $(supervisor_version)) \
 		$(if $(go_version),-g $(go_version)) \
@@ -208,7 +206,7 @@ multiarch-build-local: ## Build multi-arch distribution with specific versions u
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
+	./scripts/run_local_build.sh -m manifest.yaml -p $(MULTIARCH_PLATFORMS) -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
 generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [output=manifest.yaml] [version=0.144.0] [name=my-collector])
 	@if [ -z "$(config)" ]; then \

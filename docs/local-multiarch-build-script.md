@@ -1,12 +1,12 @@
 # Using the Local Multi-Arch Build Script
 
-This guide explains how to use the `run_local_multiarch_build.sh` script to build custom OpenTelemetry Collector distributions for **multiple architectures** in a single run using a local Docker container.
+This guide explains how to build custom OpenTelemetry Collector distributions for **multiple architectures** in a single run using `run_local_build.sh` with the `-p` (platforms) option.
 
-## When to Use This Script
+## When to Use Multi-Arch Builds
 
-Use `run_local_multiarch_build.sh` when you need collector binaries for several platforms (e.g. linux/amd64, linux/arm64, darwin/arm64) from one command. The script builds one Docker image for your host architecture (to avoid emulation issues) and runs the builder so it produces artifacts for all requested platforms.
+Use `run_local_build.sh -p <platforms>` when you need collector binaries for several platforms (e.g. linux/amd64, linux/arm64, darwin/arm64) from one command. The script builds one Docker image for your host architecture (to avoid emulation issues) and runs the builder so it produces artifacts for all requested platforms.
 
-For a single platform or simple local build, see [Using the Local Build Script](./local-build-script.md).
+For a single platform, run `run_local_build.sh` without `-p` (default: linux/arm64). See [Using the Local Build Script](./local-build-script.md).
 
 ## Prerequisites
 
@@ -36,13 +36,13 @@ providers:
   - # Add your providers
 ```
 
-2. Run the multi-arch build script:
+2. Run the build script with `-p` to target multiple platforms:
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,darwin/amd64,linux/arm64,darwin/arm64
 ```
 
-This builds the collector for the default platforms (linux/amd64, darwin/amd64, linux/arm64, darwin/arm64) and writes artifacts to `./artifacts`.
+This builds the collector for linux and darwin (amd64 and arm64) and writes artifacts to `./artifacts`. Omit `-p` for a single-arch build (default: linux/arm64).
 
 ## How It Works
 
@@ -56,23 +56,23 @@ This builds the collector for the default platforms (linux/amd64, darwin/amd64, 
 |--------|-------------|---------|----------|
 | `-m` | Path to manifest file | None | Yes |
 | `-o` | Output directory for artifacts | `./artifacts` | No |
-| `-p` | Comma-delimited GOOS/GOARCH for collector binaries | `linux/amd64,darwin/amd64,linux/arm64,darwin/arm64` | No |
+| `-p` | Comma-delimited GOOS/GOARCH for collector binaries (omit for single-arch: linux/arm64) | None (single-arch) | No |
 | `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | From manifest | No |
-| `-g` | Go version to use | `1.24.0` | No |
+| `-g` | Go version to use | From manifest/versions.yaml | No |
 | `-s` | Supervisor version | From manifest | No |
 | `-h` | Show help message | N/A | No |
 
-The `-p` value is passed to the builder as `--platforms` and defines which OS/architecture combinations to build (e.g. `linux/amd64,linux/arm64,darwin/arm64`). The Docker image used to run the builder is always built for your host (linux/arm64 or linux/amd64).
+The `-p` value is passed to the builder as `--platforms` and defines which OS/architecture combinations to build (e.g. `linux/amd64,linux/arm64,darwin/arm64`). The Docker image used to run the builder is always built for your host (linux/arm64 or linux/amd64). For multi-arch, always pass `-p`; `make multiarch-build` uses a default platform list.
 
 ## Example Usage
 
-### Default Platforms
+### Default Multi-Arch Platforms (Make)
 
-Build for the script’s default platforms (linux/amd64, darwin/amd64, linux/arm64, darwin/arm64):
+Use `make multiarch-build` to build for the default multi-arch list (linux/amd64, darwin/amd64, linux/arm64, darwin/arm64). Or pass `-p` explicitly:
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,darwin/amd64,linux/arm64,darwin/arm64
 ```
 
 ### Custom Platforms
@@ -80,25 +80,25 @@ Build for the script’s default platforms (linux/amd64, darwin/amd64, linux/arm
 Build only for linux/amd64 and linux/arm64:
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
 ```
 
 Build for linux and darwin, both amd64 and arm64:
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
 ```
 
 ### Custom Output Directory
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -o ./dist
 ```
 
 ### Specific Versions
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml \
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 \
   -v 0.121.0 \
   -s 0.122.0 \
   -g 1.24.0
@@ -109,13 +109,13 @@ Build for linux and darwin, both amd64 and arm64:
 If the build runs out of memory, lower parallelism (e.g. `-n 1`):
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -n 1
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -n 1
 ```
 
 ### Combined Options
 
 ```bash
-./scripts/run_local_multiarch_build.sh -m manifest.yaml \
+./scripts/run_local_build.sh -m manifest.yaml \
   -o ./dist \
   -p linux/amd64,linux/arm64,darwin/arm64 \
   -n 4 \
@@ -124,7 +124,7 @@ If the build runs out of memory, lower parallelism (e.g. `-n 1`):
 
 ## Using Make Commands
 
-You can run the multi-arch script via Make:
+You can run multi-arch builds via Make (both use `run_local_build.sh -p` under the hood):
 
 ### Multi-arch with pinned versions
 
@@ -132,7 +132,7 @@ You can run the multi-arch script via Make:
 make multiarch-build-local
 ```
 
-This runs `docker-multiarch-build` (multi-arch image build) then `run_local_multiarch_build.sh` with pinned OCB, Supervisor, and Go versions.
+This runs `run_local_build.sh` with default multi-arch platforms and pinned OCB, Supervisor, and Go versions.
 
 ### Multi-arch with optional parameters
 
@@ -140,7 +140,7 @@ This runs `docker-multiarch-build` (multi-arch image build) then `run_local_mult
 make multiarch-build
 ```
 
-Then override as needed:
+Override as needed:
 
 ```bash
 make multiarch-build output_dir=./artifacts platforms=linux/amd64,linux/arm64 ocb_version=0.121.0
@@ -191,7 +191,7 @@ To verify the scripts work without running a full Docker build:
 
 1. **Script smoke tests** (no Docker): run `make script-test`. This checks that each script prints help, enforces required arguments, and that `generate_manifest.sh` can produce a manifest from the test config.
 2. **Unit tests**: run `make unit-test` to test platform parsing and main CLI logic used by the builder.
-3. **Full integration**: with Docker running, use a small manifest and one platform to confirm the pipeline end-to-end, e.g. `./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64 -o ./artifacts-test`.
+3. **Full integration**: with Docker running, use a small manifest and one platform to confirm the pipeline end-to-end, e.g. `./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64 -o ./artifacts-test`.
 
 ## Additional Resources
 

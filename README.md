@@ -177,15 +177,33 @@ docker run --rm \
   ghcr.io/observiq/otel-distro-builder:latest \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --goos darwin,linux,windows \
-  --goarch amd64,arm64 \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64 \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
   --go-version 1.24.0 \
   --parallelism 4
 ```
 
-Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
+**Using `--platforms`** (comma-separated GOOS/GOARCH):
+
+```bash
+# Single platform (e.g. Apple Silicon)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms darwin/arm64
+
+# Linux only (amd64 + arm64)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64
+
+# Linux + Darwin (all common arches)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+```
+
+Optional builder arguments: `--platforms` (GOOS/GOARCH list), `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
 
 > Read more details in the [Docker documentation](./docs/docker.md).
 
@@ -287,24 +305,17 @@ Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version
 
 Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
-#### `run_local_multiarch_build.sh`
-
-Build collector binaries for multiple architectures in one run (default: linux/amd64, linux/arm64, darwin/arm64):
+**Multi-arch builds** use the same script with `-p` (omit `-p` for single-arch default linux/arm64):
 
 ```bash
-# Default: collector for linux/amd64, linux/arm64, darwin/arm64
-./scripts/run_local_multiarch_build.sh -m manifest.yaml
+# Multi-arch: linux + darwin, amd64 + arm64
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
 
-# Custom platforms only
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
-
-# With output dir and versions
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
+# Or a subset of platforms
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
 ```
 
-Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 4).
-
-Via Make: `make build-multiarch`, `make build-multiarch-local`.
+Via Make: `make multiarch-build` (default platforms), `make multiarch-build-local`, or `make build platforms=linux/amd64,linux/arm64`.
 
 Artifacts are written to the specified output directory (default: `./artifacts`).
 

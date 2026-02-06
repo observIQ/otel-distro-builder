@@ -102,8 +102,50 @@ docker run --rm \
 
 ### Custom Platform Build
 
+Use `--platforms` with a comma-separated list of `GOOS/GOARCH` (e.g. `linux/amd64`, `darwin/arm64`). This is the recommended way to specify target platforms.
+
 ```bash
-# ARM64
+# Single platform: Apple Silicon (darwin/arm64)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms darwin/arm64
+
+# Linux only: amd64 and arm64
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64
+
+# Linux + Darwin (common server and Mac targets)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+
+# Include Windows (amd64)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/arm64,windows/amd64
+```
+
+Alternatively, use `--goos` and `--goarch` to specify target OS and architecture lists (builder builds the Cartesian product):
+
+```bash
+# ARM64 only (darwin, linux, windows)
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
@@ -113,14 +155,14 @@ docker run --rm \
   --goos darwin,linux,windows \
   --goarch arm64
 
-#AMD64
+# AMD64 only
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --goos windows,linux,windows \
+  --goos darwin,linux,windows \
   --goarch amd64
 ```
 

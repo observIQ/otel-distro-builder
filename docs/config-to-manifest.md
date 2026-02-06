@@ -14,23 +14,51 @@ This results in a smaller, more efficient collector binary that includes only th
 
 ## Quick Start
 
-### Generate Manifest Only
+## Generate Manifest Only
+
+### Docker
 
 ```bash
-# Using Docker
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
   --from-config /workspace/config.yaml \
   --output-manifest /workspace/manifest.yaml \
   --generate-only
-
-# Using Python directly
-python -m builder.src.main \
-  --from-config ./config.yaml \
-  --output-manifest ./manifest.yaml \
-  --generate-only
 ```
 
-### Generate and Build
+### Using the Make Command
+
+You can also generate a manifest using the provided Make target, which wraps `scripts/generate_manifest.sh`. This is convenient for local workflows:
+
+```bash
+# Using Make (generates manifest.yaml from config.yaml)
+make generate-manifest config=config.yaml output=manifest.yaml
+
+# Or, generate and print to stdout (omit output)
+make generate-manifest config=config.yaml
+```
+
+### Using the generate_manifest.sh Script Directly
+
+If you want to invoke the helper script yourself:
+
+```bash
+# Generate manifest and print to stdout
+./scripts/generate_manifest.sh -c config.yaml
+
+# Generate manifest and write to manifest.yaml
+./scripts/generate_manifest.sh -c config.yaml -o manifest.yaml
+
+# Specify OpenTelemetry version and custom dist name
+./scripts/generate_manifest.sh -c config.yaml -v 0.144.0 -n my-collector -o manifest.yaml
+
+# Exclude Bindplane components
+./scripts/generate_manifest.sh -c config.yaml -B -o manifest.yaml
+```
+
+This script supports other options: run `./scripts/generate_manifest.sh -h` for full usage.
+
+
+## Generate and Build
 
 ```bash
 # Generate manifest from config and build the collector
