@@ -109,6 +109,7 @@ class BuildContext:
     distribution: str  # Name of the distribution
     goos: list[str]  # Target OS list (e.g. ["linux", "darwin"])
     goarch: list[str]  # Target architecture list (e.g. ["amd64", "arm64"])
+    platform_pairs: list[tuple[str, str]]  # Exact (os, arch) pairs requested
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
     ocb_version: str  # Version of OCB to use
@@ -125,14 +126,20 @@ class BuildContext:
         manifest_content: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
+        platform_pairs: Optional[list[tuple[str, str]]] = None,
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = None,
         parallelism: int = 4,
     ):
         """Create a BuildContext from manifest content."""
-        goos = goos or ["linux"]
-        goarch = goarch or ["arm64"]
+        # Import here to avoid circular dependency at module level
+        from .platforms import get_host_platform  # pylint: disable=import-outside-toplevel
+
+        host_os, host_arch = get_host_platform()
+        goos = goos or [host_os]
+        goarch = goarch or [host_arch]
+        platform_pairs = platform_pairs or [(o, a) for o in goos for a in goarch]
 
         # Parse manifest
         manifest = yaml.safe_load(manifest_content)
@@ -194,6 +201,7 @@ class BuildContext:
             distribution=distribution,
             goos=goos,
             goarch=goarch,
+            platform_pairs=platform_pairs,
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
             ocb_version=ocb_version,
@@ -279,12 +287,11 @@ def generate_sources(ctx: BuildContext) -> None:
 
 
 def download_supervisor(ctx: BuildContext):
-    # Download supervisor only for requested (goos, goarch) platforms
-    platforms = [(os_name, arch) for os_name in ctx.goos for arch in ctx.goarch]
+    # Download supervisor only for the exact requested platform pairs
     supervisor.download_supervisor(
         os.path.join(ctx.build_dir, "_contrib"),
         ctx.supervisor_version,
-        platforms=platforms,
+        platforms=ctx.platform_pairs,
     )
     logger.success("Supervisor binaries downloaded")
 
@@ -321,7 +328,9 @@ def process_templates(ctx: BuildContext):
 
             # further processing for .goreleaser.yaml
             if template == ".goreleaser.yaml":
-                content = process_goreleaser_yaml(content, ctx.goos_yaml)
+                content = process_goreleaser_yaml(
+                    content, ctx.goos_yaml, ctx.platform_pairs
+                )
 
             write_file(dest_path, content)
         logger.info(f"Processed: {template} → {dest}", indent=1)
@@ -334,16 +343,48 @@ def process_templates(ctx: BuildContext):
     logger.success("All templates processed")
 
 
-def process_goreleaser_yaml(content: str, goos_yaml: str) -> str:
-    """Process the .goreleaser.yaml file."""
+def process_goreleaser_yaml(
+    content: str,
+    goos_yaml: str,
+    platform_pairs: list[tuple[str, str]],
+) -> str:
+    """Process the .goreleaser.yaml file.
+
+    Adds ignore entries for any (goos, goarch) cross-product combination
+    that is NOT in the requested platform pairs, so goreleaser only builds
+    for the exact platforms the user asked for.
+    """
+    needs_rewrite = False
+    config = yaml.safe_load(content)
+
+    # Add ignore entries for unwanted cross-product combinations
+    pairs_set = set(platform_pairs)
+    all_goos = sorted({p[0] for p in platform_pairs})
+    all_goarch = sorted({p[1] for p in platform_pairs})
+
+    # Only add ignores when pairs don't cover the full cross-product
+    cross_product = {(o, a) for o in all_goos for a in all_goarch}
+    unwanted = cross_product - pairs_set
+    if unwanted:
+        needs_rewrite = True
+        for build_entry in config.get("builds", []):
+            existing_ignores = build_entry.get("ignore", [])
+            for os_name, arch in sorted(unwanted):
+                ignore_entry = {"goos": os_name, "goarch": arch}
+                if ignore_entry not in existing_ignores:
+                    existing_ignores.append(ignore_entry)
+            build_entry["ignore"] = existing_ignores
+
     # remove nfpms from .goreleaser.yaml if not linux
     if "linux" not in goos_yaml:
-        config = yaml.safe_load(content)
+        needs_rewrite = True
         if "nfpms" in config:
             del config["nfpms"]
-        content = yaml.dump(config, sort_keys=False)
 
-    # expand with more processing as necessary
+    # Only rewrite YAML when structural changes were made
+    # to preserve comments and Go template formatting
+    if needs_rewrite:
+        content = yaml.dump(config, sort_keys=False)
 
     return content
 
@@ -456,6 +497,7 @@ def build(
     artifact_dir: str,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
+    platform_pairs: Optional[list[tuple[str, str]]] = None,
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = None,
@@ -466,8 +508,9 @@ def build(
     Args:
         manifest_content: Content of the manifest file
         artifact_dir: Directory to copy artifacts to after build
-        goos: Comma-separated list of target operating systems
-        goarch: Comma-separated list of target architectures
+        goos: List of target operating systems
+        goarch: List of target architectures
+        platform_pairs: Exact (os, arch) pairs to build for. If None, cross-product of goos×goarch is used.
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
         go_version: Version of Go to use for building (default: from manifest/versions.yaml when not provided)
@@ -487,9 +530,10 @@ def build(
         manifest_content,
         goos,
         goarch,
-        ocb_version,
-        supervisor_version,
-        go_version,
+        platform_pairs=platform_pairs,
+        ocb_version=ocb_version,
+        supervisor_version=supervisor_version,
+        go_version=go_version,
         parallelism=parallelism,
     )
 

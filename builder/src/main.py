@@ -10,7 +10,7 @@ import yaml
 
 from . import build
 from .logger import BuildLogger, get_logger
-from .platforms import resolve_platforms
+from .platforms import resolve_platform_pairs, resolve_platforms
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -240,6 +240,9 @@ def main() -> None:
         goos, goarch = resolve_platforms(
             platforms=args.platforms, goos=args.goos, goarch=args.goarch
         )
+        platform_pairs = resolve_platform_pairs(
+            platforms=args.platforms, goos=args.goos, goarch=args.goarch
+        )
 
         # Build the collector
         success = build.build(
@@ -247,6 +250,7 @@ def main() -> None:
             artifact_dir=args.artifacts or CONTAINER_ARTIFACTS_DIR,
             goos=goos,
             goarch=goarch,
+            platform_pairs=platform_pairs,
             ocb_version=args.ocb_version,
             supervisor_version=args.supervisor_version,
             go_version=args.go_version,

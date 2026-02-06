@@ -14,8 +14,6 @@ DIST_VERSION="1.0.0"
 PLATFORM=""
 PARALLELISM=""
 NO_BINDPLANE=false
-# Default platforms when -p is omitted (multi-arch: linux/darwin x amd64/arm64)
-DEFAULT_PLATFORMS="linux/amd64,darwin/amd64,linux/arm64,darwin/arm64"
 
 # Help message
 usage() {
@@ -35,7 +33,7 @@ usage() {
     echo
     echo "Build options:"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"
-    echo "  -p <platforms>              Comma-delimited GOOS/GOARCH (default: $DEFAULT_PLATFORMS)"
+    echo "  -p <platforms>              Comma-delimited GOOS/GOARCH (default: host platform)"
     echo "  -P <parallelism>            Number of parallel Goreleaser build tasks (default: 4)"
     echo
     echo "Other options:"
@@ -43,7 +41,7 @@ usage() {
     echo "  -h                          Show this help message"
     echo
     echo "Examples:"
-    echo "  # Build from config (default: multi-arch for linux/darwin amd64 and arm64)"
+    echo "  # Build from config (defaults to host platform)"
     echo "  $0 -c config.yaml"
     echo
     echo "  # Build with specific OTel version and output directory"
@@ -114,15 +112,16 @@ else
     trap 'rm -rf "$TEMP_DIR"' EXIT
 fi
 
-# Resolve platforms for display and build (multi-arch default when -p omitted)
-PLATFORMS_FOR_BUILD="${PLATFORM:-$DEFAULT_PLATFORMS}"
-
 echo "=== Build from Config ==="
 echo "Config: $CONFIG_PATH"
 echo "Output: $OUTPUT_DIR"
 [ -n "$OTEL_VERSION" ] && echo "OTel Version: $OTEL_VERSION"
 echo "Distribution: $DIST_NAME"
-echo "Platform(s): $PLATFORMS_FOR_BUILD"
+if [ -n "$PLATFORM" ]; then
+    echo "Platform(s): $PLATFORM"
+else
+    echo "Platform(s): host default"
+fi
 echo
 
 # Step 1: Generate manifest
@@ -143,7 +142,7 @@ if [ ! -f "$MANIFEST_PATH" ]; then
 fi
 
 echo
-echo "=== Step 2: Building Distribution (multi-arch) ==="
+echo "=== Step 2: Building Distribution ==="
 
 # Resolve effective OTel version for OCB/Supervisor.
 # If the user didn't pass -v, read the version that was used during manifest
@@ -154,8 +153,9 @@ if [ -z "$EFFECTIVE_VERSION" ] && [ -f "$MANIFEST_PATH" ]; then
     EFFECTIVE_VERSION=$(grep -m1 '^# Target version:' "$MANIFEST_PATH" | sed 's/.*: *//')
 fi
 
-# Build via run_local_build.sh with -p (PLATFORMS_FOR_BUILD has default for multi-arch)
-BUILD_ARGS="-m $MANIFEST_PATH -o $OUTPUT_DIR -p $PLATFORMS_FOR_BUILD"
+# Build via run_local_build.sh
+BUILD_ARGS="-m $MANIFEST_PATH -o $OUTPUT_DIR"
+[ -n "$PLATFORM" ] && BUILD_ARGS="$BUILD_ARGS -p $PLATFORM"
 [ -n "$PARALLELISM" ] && BUILD_ARGS="$BUILD_ARGS -n $PARALLELISM"
 [ -n "$EFFECTIVE_VERSION" ] && BUILD_ARGS="$BUILD_ARGS -v $EFFECTIVE_VERSION"
 
