@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local build-cli test-standalone-binary scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
 
 # Variables
 VENV_DIR := builder/.venv
@@ -48,6 +48,8 @@ help: ## Show this help
 	@echo "    generate-manifest-docker  Generate manifest using Docker"
 	@echo "  $(GREEN)build-from-config**$(NC)  Generate manifest and build from collector config"
 	@echo "  $(GREEN)release**$(NC)       Create a new release (usage: make release v=X.Y.Z)"
+	@echo "  $(GREEN)build-cli**$(NC)     Build standalone otel-distro-builder binary (PyInstaller)"
+	@echo "  $(GREEN)test-standalone-binary**$(NC)  Test built binary (no Python at runtime)"
 	@echo ""
 	@echo "$(CYAN)Security Scanning:$(NC)"
 	@echo "  $(GREEN)scan-all**$(NC)      Run all security scans"
@@ -251,6 +253,20 @@ build-from-config: ## Generate manifest and build from collector config (make bu
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"
 	@./scripts/release.sh $(v)
+
+build-cli: deps ## Build standalone otel-distro-builder binary (PyInstaller)
+	@echo "$(BLUE)Building standalone CLI binary...$(NC)"
+	pip install pyinstaller
+	pyinstaller --clean --noconfirm otel-distro-builder.spec
+	@echo "$(GREEN)Binary built: dist/otel-distro-builder$(NC)"
+
+test-standalone-binary: ## Test the standalone binary (run after make build-cli; no Python required at runtime)
+	@echo "$(BLUE)Testing standalone binary (no Python dependency)...$(NC)"
+	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
+	dist/otel-distro-builder --help
+	dist/otel-distro-builder --version
+	@OUT=$$(mktemp); dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only -o "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
+	@echo "$(GREEN)Standalone binary works with no Python at runtime.$(NC)"
 
 clean: ## Remove generated files
 	@echo "$(BLUE)Cleaning up...$(NC)"

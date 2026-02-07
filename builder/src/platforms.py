@@ -51,11 +51,11 @@ def parse_platform_pairs(platforms: Optional[str]) -> List[Tuple[str, str]]:
     pairs: list[Tuple[str, str]] = []
     seen: set[Tuple[str, str]] = set()
 
-    for platform in platforms.split(","):
-        if not platform.strip():
+    for plat in platforms.split(","):
+        if not plat.strip():
             continue
 
-        parts = platform.split("/")
+        parts = plat.split("/")
         if len(parts) != 2:
             continue
 

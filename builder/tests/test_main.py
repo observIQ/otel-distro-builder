@@ -76,9 +76,8 @@ def test_main_argument_handling(args, expected_goos, expected_goarch, expected_p
         patch("sys.argv", ["main.py"] + args),
         patch("os.makedirs"),
         patch("src.main.logger"),
-        patch(
-            "src.platforms.get_host_platform", return_value=("linux", "amd64")
-        ),
+        patch("src.platforms.get_host_platform", return_value=("linux", "amd64")),
+        patch("os.getcwd", return_value="/tmp"),
     ):
 
         mock_build.return_value = True
@@ -88,10 +87,10 @@ def test_main_argument_handling(args, expected_goos, expected_goarch, expected_p
             main()
         assert exc_info.value.code == 0
 
-        # Verify build called with expected arguments
+        # Verify build called with expected arguments (artifact_dir = host default)
         mock_build.assert_called_once_with(
             manifest_content=manifest_content,
-            artifact_dir="/artifacts",
+            artifact_dir="/tmp/artifacts",
             goos=expected_goos,
             goarch=expected_goarch,
             platform_pairs=expected_pairs,

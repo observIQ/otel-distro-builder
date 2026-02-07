@@ -167,7 +167,7 @@ def run_build_test(
                 cmd.extend(["-e", f"{k}={v}"])
 
         cmd.append(image_name)
-        cmd.extend(["--manifest", "/manifest.yaml"])
+        cmd.extend(["--manifest", "/manifest.yaml", "--artifacts", "/artifacts"])
 
         result = subprocess.run(
             cmd,

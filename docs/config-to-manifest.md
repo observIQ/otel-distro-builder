@@ -89,7 +89,7 @@ These options are available when building (not using `--generate-only`):
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--artifacts` | Directory to copy final artifacts to | `/artifacts` |
+| `--artifacts` | Directory to copy final artifacts to | `<cwd>/artifacts` |
 | `--platforms` | Target platforms (e.g., `linux/amd64,darwin/arm64`) | `linux/arm64` |
 | `--goos` | Target operating systems | Derived from platforms |
 | `--goarch` | Target architectures | Derived from platforms |

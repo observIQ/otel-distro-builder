@@ -5,9 +5,9 @@
 [![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-distro-builder)](https://github.com/observIQ/otel-distro-builder/releases)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Build custom OpenTelemetry Collector Distributions from manifest files with a local build utility, Docker, Google Cloud Build, or a GitHub Action.
+Build custom OpenTelemetry Collector Distributions from manifest files with a local CLI (no Docker required), Docker, Google Cloud Build, or a GitHub Action.
 
-[Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
+[Install](#-install) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
 
 </div>
 
@@ -32,6 +32,21 @@ It handles all the complex aspects of managing your own distribution that have h
 - 🔄 **GitHub Actions Integration**: Seamless CI/CD integration
 - 🚀 **Automated Releases**: Streamlined versioning and release process
 - 🔍 **Platform-Specific Builds**: Optimize for your target environment
+
+## 📥 Install
+
+The CLI runs on your host and reads config/manifest files from the host filesystem. **Docker is not required** for manifest generation or for full builds when Go (and OCB) are available on the host.
+
+| Method | Command |
+|--------|---------|
+| **From repo (development)** | `pip install -e .` |
+| **PyPI** (when published) | `pip install otel-distro-builder` |
+| **Homebrew** (from this repo) | `brew install --formula Formula/otel-distro-builder.rb` |
+| **Standalone binary** | Download `otel-distro-builder-<version>-<os>-<arch>.tar.gz` from [Releases](https://github.com/observiq/otel-distro-builder/releases) and extract the binary to your PATH. |
+
+Then run `otel-distro-builder --help`.
+
+**Dependencies:** For **manifest generation** (`--from-config`, `--generate-only`), the standalone binary and pip install need **no other dependencies**. For **full distribution builds** on the host, **Go is the only required dependency**—the CLI downloads the OpenTelemetry Collector Builder (OCB) automatically. Docker is optional and only for an isolated build environment.
 
 ## 🚀 Quick Start
 
@@ -96,12 +111,17 @@ on:
    git tag v1.0.0 && git push --tags
    ```
 
-5. **(Optional) Build with Docker**:
+5. **Build** (host CLI or optional Docker):
 
    ```bash
+   # Host (after pip install -e . or pip install otel-distro-builder)
+   otel-distro-builder --manifest manifest.yaml --artifacts ./artifacts
+
+   # Optional: build with Docker (isolated environment)
    docker pull ghcr.io/observiq/otel-distro-builder:main
-   docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
-     --manifest /workspace/manifest.yaml
+   docker run --rm -v $(pwd):/workspace -v $(pwd)/artifacts:/artifacts \
+     ghcr.io/observiq/otel-distro-builder:main \
+     --manifest /workspace/manifest.yaml --artifacts /artifacts
    ```
 
 ## 🔄 Generate Manifest from Existing Config
@@ -246,9 +266,8 @@ When building for multiple architectures or large manifests, the number of paral
 
 ### Prerequisites
 
-- Python 3
-- Docker
-- Make
+- **Using the CLI (binary or pip):** For full builds, only [Go](https://go.dev/dl/) is required; OCB is downloaded by the CLI. For manifest generation only, no dependencies.
+- **Development (editing this repo):** Python 3, Make. Docker is optional (for running the builder in a container).
 
 ### Available Commands
 

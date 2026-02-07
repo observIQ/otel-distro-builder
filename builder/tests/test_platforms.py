@@ -3,13 +3,9 @@
 from unittest.mock import patch
 
 import pytest
-from src.platforms import (
-    get_host_platform,
-    parse_platform_pairs,
-    parse_platforms,
-    resolve_platform_pairs,
-    resolve_platforms,
-)
+from src.platforms import (get_host_platform, parse_platform_pairs,
+                           parse_platforms, resolve_platform_pairs,
+                           resolve_platforms)
 
 # All tests that depend on default platform behavior mock get_host_platform
 # to return ("linux", "amd64") so tests are deterministic on any machine.

@@ -1,12 +1,12 @@
 """Component registry for mapping OTel Collector config names to Go modules."""
 
-import os
 from dataclasses import dataclass
 from typing import Optional
 
 import yaml
 
 from .logger import BuildLogger, get_logger
+from .resources import get_components_yaml_path
 from .version import DEFAULT_VERSION
 
 logger: BuildLogger = get_logger(__name__)
@@ -33,7 +33,7 @@ class ComponentRegistry:
                            uses the default file in the same directory.
         """
         if components_file is None:
-            components_file = os.path.join(os.path.dirname(__file__), "components.yaml")
+            components_file = get_components_yaml_path()
 
         self._components: dict[str, dict[str, ComponentInfo]] = {
             "receivers": {},

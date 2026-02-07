@@ -139,7 +139,7 @@ if [ "$USE_DOCKER" = true ]; then
             $DOCKER_ARGS
     fi
 else
-    # Use local Python
+    # Use CLI on host (prefer installed otel-distro-builder, else Python module)
     PYTHON_ARGS="--from-config $CONFIG_PATH --generate-only"
     PYTHON_ARGS="$PYTHON_ARGS --dist-name $DIST_NAME"
     PYTHON_ARGS="$PYTHON_ARGS --dist-module $DIST_MODULE"
@@ -147,12 +147,16 @@ else
     [ -n "$OTEL_VERSION" ] && PYTHON_ARGS="$PYTHON_ARGS --otel-version $OTEL_VERSION"
     [ -n "$OUTPUT_MANIFEST" ] && PYTHON_ARGS="$PYTHON_ARGS --output-manifest $OUTPUT_MANIFEST"
     [ "$NO_BINDPLANE" = true ] && PYTHON_ARGS="$PYTHON_ARGS --no-bindplane"
-    
-    # Run the Python module
-    cd "$PROJECT_ROOT"
-    # shellcheck disable=SC2086
-    python -m builder.src.main $PYTHON_ARGS
-    
+
+    if command -v otel-distro-builder >/dev/null 2>&1; then
+        # shellcheck disable=SC2086
+        otel-distro-builder $PYTHON_ARGS
+    else
+        cd "$PROJECT_ROOT"
+        # shellcheck disable=SC2086
+        python -m builder.src.main $PYTHON_ARGS
+    fi
+
     if [ -n "$OUTPUT_MANIFEST" ]; then
         echo "=== Manifest generated ==="
         echo "Output: $OUTPUT_MANIFEST"

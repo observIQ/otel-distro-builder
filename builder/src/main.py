@@ -11,11 +11,14 @@ import yaml
 from . import build
 from .logger import BuildLogger, get_logger
 from .platforms import resolve_platform_pairs, resolve_platforms
+from .resources import get_versions_yaml_path
 
 logger: BuildLogger = get_logger(__name__)
 
-# Fixed container artifacts directory
-CONTAINER_ARTIFACTS_DIR = "/artifacts"
+
+def _default_artifacts_dir() -> str:
+    """Default artifacts directory on host (when not overridden by --artifacts)."""
+    return os.path.join(os.getcwd(), "artifacts")
 
 
 def get_latest_otel_version() -> str:
@@ -27,7 +30,7 @@ def get_latest_otel_version() -> str:
     fallback_version = "0.144.0"
 
     try:
-        versions_path = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
+        versions_path = get_versions_yaml_path()
         with open(versions_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
 
@@ -100,24 +103,44 @@ def generate_from_config(
     return result.content
 
 
+def _get_version() -> str:
+    """Return package version (from metadata when installed, else fallback)."""
+    try:
+        from importlib.metadata import \
+            version  # pylint: disable=import-outside-toplevel
+
+        return version("otel-distro-builder")
+    except ImportError:
+        return "1.0.0"
+
+
 def main() -> None:
     """
     Main entry point for the OpenTelemetry Distribution Builder.
     Handles command-line arguments, builds and packages the collector, and logs
     performance metrics.
     """
+    if "--version" in sys.argv or "-V" in sys.argv:
+        print(_get_version())
+        sys.exit(0)
+
     parser = argparse.ArgumentParser(
-        description="Build and package a custom OpenTelemetry Collector Distribution."
+        description="Build and package a custom OpenTelemetry Collector Distribution. "
+        "All paths are host filesystem paths; no Docker required."
     )
 
     # Manifest source - either direct manifest or generate from config
     source_group = parser.add_mutually_exclusive_group(required=True)
-    source_group.add_argument("--manifest", type=str, help="Path to the manifest file")
+    source_group.add_argument(
+        "--manifest",
+        type=str,
+        help="Path to the manifest file (host path)",
+    )
     source_group.add_argument(
         "--from-config",
         type=str,
         metavar="CONFIG_PATH",
-        help="Generate manifest from an existing collector config.yaml file",
+        help="Path to collector config.yaml (host path); generates manifest from it",
     )
 
     # Config-to-manifest specific options
@@ -165,7 +188,7 @@ def main() -> None:
     parser.add_argument(
         "--artifacts",
         type=str,
-        help=f"Directory to copy final artifacts to (default: {CONTAINER_ARTIFACTS_DIR})",
+        help="Directory to copy final artifacts to (default: <cwd>/artifacts)",
     )
     parser.add_argument(
         "--platforms",
@@ -247,7 +270,7 @@ def main() -> None:
         # Build the collector
         success = build.build(
             manifest_content=manifest_content,
-            artifact_dir=args.artifacts or CONTAINER_ARTIFACTS_DIR,
+            artifact_dir=args.artifacts or _default_artifacts_dir(),
             goos=goos,
             goarch=goarch,
             platform_pairs=platform_pairs,

@@ -8,14 +8,10 @@ import yaml
 
 from .config_parser import ResolvedComponents
 from .logger import BuildLogger, get_logger
+from .resources import get_bindplane_components_yaml_path
 from .version import DEFAULT_VERSION
 
 logger: BuildLogger = get_logger(__name__)
-
-# Path to bindplane components file
-BINDPLANE_COMPONENTS_FILE = os.path.join(
-    os.path.dirname(__file__), "bindplane_components.yaml"
-)
 
 # Default manifest configuration
 DEFAULT_MODULE = "github.com/custom/otelcol-distribution"
@@ -110,15 +106,16 @@ class ManifestGenerator:
         Returns:
             Dictionary with Bindplane collector components or None if file not found
         """
+        bindplane_file = get_bindplane_components_yaml_path()
         try:
-            with open(BINDPLANE_COMPONENTS_FILE, "r", encoding="utf-8") as f:
+            with open(bindplane_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
             # Get the version from the file (single source of truth; no hardcoded default)
             version = data.get("version")
             if not version:
                 raise ValueError(
-                    f"{BINDPLANE_COMPONENTS_FILE} must specify a 'version' key at the top level"
+                    f"{bindplane_file} must specify a 'version' key at the top level"
                 )
             version_str = f"v{version}"
 
@@ -151,9 +148,7 @@ class ManifestGenerator:
             return data
 
         except FileNotFoundError:
-            logger.warning(
-                f"Bindplane components file not found: {BINDPLANE_COMPONENTS_FILE}"
-            )
+            logger.warning(f"Bindplane components file not found: {bindplane_file}")
             return None
         except yaml.YAMLError as e:
             logger.warning(f"Failed to parse Bindplane components: {e}")

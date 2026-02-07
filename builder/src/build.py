@@ -13,12 +13,10 @@ import yaml
 from . import ocb_downloader as ocb
 from . import supervisor_downloader as supervisor
 from .logger import BuildLogger, get_logger
+from .resources import get_templates_dir
 from .version import DEFAULT_VERSION, determine_build_versions
 
 logger: BuildLogger = get_logger(__name__)
-
-# Fixed build workspace directory
-BUILD_DIR = "/build"
 
 # Default versions
 DEFAULT_OTEL_CONTRIB_VERSION = DEFAULT_VERSION  # Default OpenTelemetry Contrib version to use if not detected from manifest
@@ -124,6 +122,7 @@ class BuildContext:
     def create(
         cls,
         manifest_content: str,
+        build_dir: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
         platform_pairs: Optional[list[tuple[str, str]]] = None,
@@ -132,9 +131,22 @@ class BuildContext:
         go_version: Optional[str] = None,
         parallelism: int = 4,
     ):
-        """Create a BuildContext from manifest content."""
+        """Create a BuildContext from manifest content.
+
+        Args:
+            manifest_content: Content of the manifest file.
+            build_dir: Host path for the build workspace (intermediate and OCB files).
+            goos: Target OS list.
+            goarch: Target architecture list.
+            platform_pairs: Exact (os, arch) pairs.
+            ocb_version: OCB version.
+            supervisor_version: Supervisor version.
+            go_version: Go version.
+            parallelism: Parallelism.
+        """
         # Import here to avoid circular dependency at module level
-        from .platforms import get_host_platform  # pylint: disable=import-outside-toplevel
+        from .platforms import \
+            get_host_platform  # pylint: disable=import-outside-toplevel
 
         host_os, host_arch = get_host_platform()
         goos = goos or [host_os]
@@ -171,21 +183,20 @@ class BuildContext:
         goos_yaml = "[" + ", ".join(goos) + "]"
         goarch_yaml = "[" + ", ".join(goarch) + "]"
 
-        # Set up build paths
-        working_dir = os.path.abspath(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        )
-        source_dir = os.path.join(BUILD_DIR, "_build")
-        build_artifact_dir = os.path.join(BUILD_DIR, "dist")
-        ocb_dir = os.path.join(working_dir, "ocb")
-        templates_dir = os.path.join(working_dir, "builder", "templates")
-        manifest_path = os.path.join(BUILD_DIR, "manifest.yaml")
+        # All paths under build_dir (host path)
+        build_dir = os.path.abspath(build_dir)
+        working_dir = build_dir
+        source_dir = os.path.join(build_dir, "_build")
+        build_artifact_dir = os.path.join(build_dir, "dist")
+        ocb_dir = os.path.join(build_dir, "ocb")
+        templates_dir = get_templates_dir()
+        manifest_path = os.path.join(build_dir, "manifest.yaml")
 
         # Update manifest output_path to point to source_dir
         manifest["dist"]["output_path"] = "_build"
 
         # Write prepared manifest
-        os.makedirs(BUILD_DIR, exist_ok=True)
+        os.makedirs(build_dir, exist_ok=True)
         with open(manifest_path, "w", encoding="utf-8") as f:
             yaml.dump(manifest, f)
         logger.success("Manifest prepared successfully")
@@ -193,7 +204,7 @@ class BuildContext:
         # Create instance
         return cls(
             working_dir=working_dir,
-            build_dir=BUILD_DIR,
+            build_dir=build_dir,
             source_dir=source_dir,
             build_artifact_dir=build_artifact_dir,
             ocb_dir=ocb_dir,
@@ -525,11 +536,15 @@ def build(
 
     logger.section("Build Configuration")
 
+    # Build workspace under artifact_dir (host path)
+    build_dir = os.path.join(os.path.abspath(artifact_dir), ".build")
+
     # Create build context
     ctx = BuildContext.create(
         manifest_content,
-        goos,
-        goarch,
+        build_dir,
+        goos=goos,
+        goarch=goarch,
         platform_pairs=platform_pairs,
         ocb_version=ocb_version,
         supervisor_version=supervisor_version,

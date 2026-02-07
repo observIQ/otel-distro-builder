@@ -1,12 +1,13 @@
 """Version parsing utilities for OpenTelemetry Collector Builder."""
 
-import os
 import re
 from dataclasses import dataclass
 from typing import Optional
 
 import yaml
 from packaging import version
+
+from .resources import get_versions_yaml_path
 
 CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
 MIN_SUPERVISOR_VERSION = "0.122.0"
@@ -23,7 +24,7 @@ def _get_latest_version() -> str:
         fallback if the file cannot be read.
     """
     try:
-        versions_file = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
+        versions_file = get_versions_yaml_path()
         with open(versions_file, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
         if data and "versions" in data:
@@ -49,7 +50,7 @@ class BuildVersions:
 
 def load_version_mappings() -> dict:
     """Load version mappings from versions.yaml."""
-    versions_file = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
+    versions_file = get_versions_yaml_path()
     with open(versions_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data["versions"]
