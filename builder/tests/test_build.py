@@ -3,13 +3,26 @@
 from __future__ import annotations
 
 import os
+import platform
 import shutil
 import subprocess
-import sys
 import time
 from pathlib import Path
 
 import pytest
+
+
+def get_host_arch() -> str:
+    """Map the host machine architecture to GOARCH."""
+    machine = platform.machine().lower()
+    arch_map = {
+        "x86_64": "amd64",
+        "amd64": "amd64",
+        "aarch64": "arm64",
+        "arm64": "arm64",
+    }
+    return arch_map.get(machine, machine)
+
 
 # Expected artifacts for each build type
 LINUX_ARM64_ARTIFACTS = [
@@ -57,17 +70,6 @@ LINUX_AMD64_ARTIFACTS = [
     # checksums (always present)
     "otelcol-contrib_checksums.txt",
 ]
-
-
-def get_current_platform() -> str:
-    """Get the current platform identifier."""
-    if sys.platform.startswith("linux"):
-        return "linux"
-    if sys.platform.startswith("darwin"):
-        return "darwin"
-    if sys.platform.startswith("win"):
-        return "windows"
-    return sys.platform
 
 
 def verify_build_artifacts(artifact_path: Path, expected_artifacts: list[str]) -> None:
@@ -225,8 +227,12 @@ def run_build_test(
 
 @pytest.mark.build
 def test_simple_build() -> None:
-    """Test building a simple distribution with minimal components."""
-    run_build_test("simple.yaml", LINUX_ARM64_ARTIFACTS)
+    """Test building a simple distribution with minimal components.
+
+    No platform is specified, so the build defaults to the host architecture.
+    """
+    expected = LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    run_build_test("simple.yaml", expected)
 
 
 @pytest.mark.build
@@ -248,4 +254,5 @@ def test_simple_build_env() -> None:
 @pytest.mark.release
 def test_contrib_build() -> None:
     """Test building a full contrib distribution with all components."""
-    run_build_test("contrib.yaml", LINUX_ARM64_ARTIFACTS)
+    expected = LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    run_build_test("contrib.yaml", expected)
