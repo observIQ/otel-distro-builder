@@ -54,7 +54,7 @@ jobs:
           BIN="release/otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}"
           "$BIN" --help
           "$BIN" --version
-          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only -o /tmp/gen.yaml
+          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/gen.yaml
           test -s /tmp/gen.yaml
 
       - name: Upload artifact
@@ -82,7 +82,7 @@ jobs:
           chmod +x "$BIN"
           "$BIN" --help
           "$BIN" --version
-          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only -o /tmp/out.yaml
+          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/out.yaml
           test -s /tmp/out.yaml
           echo "Standalone binary works with no Python dependency."
 

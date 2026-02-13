@@ -265,7 +265,7 @@ test-standalone-binary: ## Test the standalone binary (run after make build-cli;
 	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
 	dist/otel-distro-builder --help
 	dist/otel-distro-builder --version
-	@OUT=$$(mktemp); dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only -o "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
+	@OUT=$$(mktemp); dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
 	@echo "$(GREEN)Standalone binary works with no Python at runtime.$(NC)"
 
 clean: ## Remove generated files
