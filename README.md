@@ -130,18 +130,18 @@ Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a 
 
 ```bash
 # Generate manifest only (prints to stdout)
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --generate-only
 
 # Generate manifest and save to file
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --output-manifest /workspace/manifest.yaml \
   --generate-only
 
 # Generate manifest and build in one step
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --artifacts /workspace/dist \
   --platforms linux/amd64,linux/arm64
@@ -185,7 +185,7 @@ All generated packages and binaries are available in the `${{ github.workspace }
 
 ```bash
 # Pull the latest version
-docker pull ghcr.io/observiq/otel-distro-builder:latest
+docker pull ghcr.io/observiq/otel-distro-builder:main
 
 # Pull specific version
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
@@ -194,7 +194,7 @@ docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
-  ghcr.io/observiq/otel-distro-builder:latest \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
   --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64 \
@@ -209,17 +209,17 @@ docker run --rm \
 ```bash
 # Single platform (e.g. Apple Silicon)
 docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
-  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
   --platforms darwin/arm64
 
 # Linux only (amd64 + arm64)
 docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
-  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
   --platforms linux/amd64,linux/arm64
 
 # Linux + Darwin (all common arches)
 docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
-  ghcr.io/observiq/otel-distro-builder:latest --manifest /manifest.yaml --artifacts /artifacts \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
   --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
 ```
 

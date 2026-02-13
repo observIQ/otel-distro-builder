@@ -19,7 +19,7 @@ This results in a smaller, more efficient collector binary that includes only th
 ### Docker
 
 ```bash
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --output-manifest /workspace/manifest.yaml \
   --generate-only
@@ -62,7 +62,7 @@ This script supports other options: run `./scripts/generate_manifest.sh -h` for 
 
 ```bash
 # Generate manifest from config and build the collector
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:latest \
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --artifacts /workspace/dist \
   --platforms linux/amd64,linux/arm64
