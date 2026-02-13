@@ -1,6 +1,6 @@
 # Build otel-distro-builder standalone binaries (PyInstaller) per platform.
 # On push tag v*, builds binaries and uploads them to the existing release.
-# Platforms: linux/amd64, linux/arm64 (arm runner), darwin/arm64.
+# Platforms: linux/amd64, linux/arm64 (arm runner), darwin/arm64, windows/amd64.
 # If ubuntu-24.04-arm is not available for your plan, remove the linux/arm64 matrix entry.
 
 name: Build CLI Binaries
@@ -25,6 +25,9 @@ jobs:
           - runner: macos-14
             os: darwin
             arch: arm64
+          - runner: windows-latest
+            os: windows
+            arch: amd64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +43,8 @@ jobs:
           pip install .
           pip install pyinstaller
 
-      - name: Build binary
+      - name: Build binary (Unix)
+        if: matrix.os != 'windows'
         run: |
           pyinstaller --clean --noconfirm otel-distro-builder.spec
           VERSION=${GITHUB_REF#refs/tags/}
@@ -49,7 +53,18 @@ jobs:
           chmod +x release/otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}
           tar -czvf "otel-distro-builder-${VERSION}-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" -C release "otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}"
 
-      - name: Test standalone binary (no Python required)
+      - name: Build binary (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          pyinstaller --clean --noconfirm otel-distro-builder.spec
+          $Version = $env:GITHUB_REF -replace '^refs/tags/', ''
+          New-Item -ItemType Directory -Force -Path release
+          Copy-Item dist\otel-distro-builder.exe release\otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}.exe
+          Compress-Archive -Path release\otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}.exe -DestinationPath "otel-distro-builder-${Version}-${{ matrix.os }}-${{ matrix.arch }}.zip"
+
+      - name: Test standalone binary (Unix)
+        if: matrix.os != 'windows'
         run: |
           BIN="release/otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}"
           "$BIN" --help
@@ -57,11 +72,21 @@ jobs:
           "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/gen.yaml
           test -s /tmp/gen.yaml
 
+      - name: Test standalone binary (Windows)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $BIN = "release\otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}.exe"
+          & $BIN --help
+          & $BIN --version
+          & $BIN --from-config builder\tests\configs\otelcol\simple.yaml --generate-only --output-manifest $env:TEMP\gen.yaml
+          if (-not (Test-Path $env:TEMP\gen.yaml)) { throw "Manifest not generated" }
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.os }}-${{ matrix.arch }}
-          path: "otel-distro-builder-*.tar.gz"
+          path: "otel-distro-builder-*.${{ matrix.os == 'windows' && 'zip' || 'tar.gz' }}"
 
   test-standalone-no-python:
     # Prove the binary works with no Python on PATH (Go only needed for full builds).
@@ -77,8 +102,8 @@ jobs:
 
       - name: Extract and run binary (no Python in this job)
         run: |
-          tar -xzf binary-linux-amd64/otel-distro-builder-*.tar.gz
-          BIN=$(find . -maxdepth 1 -type f -name 'otel-distro-builder-*' | head -1)
+          tar -xzf otel-distro-builder-*.tar.gz
+          BIN=$(find . -maxdepth 1 -type f -name 'otel-distro-builder-*' ! -name '*.tar.gz' | head -1)
           chmod +x "$BIN"
           "$BIN" --help
           "$BIN" --version
@@ -101,6 +126,8 @@ jobs:
       - name: Add binaries to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-binaries/*/*
+          files: |
+            release-binaries/*.tar.gz
+            release-binaries/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

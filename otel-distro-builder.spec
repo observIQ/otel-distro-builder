@@ -35,6 +35,7 @@ a = Analysis(
         'builder.src.manifest_generator',
         'builder.src.component_registry',
         'builder.src.config_parser',
+        'builder.src.goreleaser_downloader',
         'builder.src.ocb_downloader',
         'builder.src.supervisor_downloader',
     ],

@@ -11,6 +11,7 @@ from typing import Optional
 import psutil
 import yaml
 
+from . import goreleaser_downloader as goreleaser_dl
 from . import ocb_downloader as ocb
 from . import supervisor_downloader as supervisor
 from .logger import BuildLogger, get_logger
@@ -64,22 +65,14 @@ class BuildMetrics:
         memory = self.process.memory_info().rss / (1024 * 1024)
         self.peak_memory = max(self.peak_memory, memory)
 
-        # Disk I/O: psutil.io_counters() on Windows/Linux; resource.getrusage() on macOS
+        # Disk I/O: psutil.io_counters() on Windows/Linux. On macOS the kernel does not
+        # populate getrusage ru_inblock/ru_oublock, so per-process disk I/O is unavailable.
         try:
             io = self.process.io_counters()
             self.disk_read = io.read_bytes
             self.disk_write = io.write_bytes
         except (AttributeError, OSError):
-            if sys.platform == "darwin":
-                try:
-                    import resource
-
-                    r = resource.getrusage(resource.RUSAGE_SELF)
-                    # BSD/macOS: block I/O counts; 1 block = 512 bytes
-                    self.disk_read = getattr(r, "ru_inblock", 0) * 512
-                    self.disk_write = getattr(r, "ru_oublock", 0) * 512
-                except (ImportError, AttributeError):
-                    pass
+            pass  # macOS: leave at 0; log_summary will show N/A
 
     def get_total_duration(self):
         """Get total build duration in seconds."""
@@ -101,10 +94,16 @@ class BuildMetrics:
         # Resource usage
         logger.info("Resource Usage:", indent=1)
         logger.info(f"Peak Memory: {self.peak_memory:.1f}MB", indent=2)
-        logger.info(f"Total Disk Read: {self.disk_read / (1024*1024):.1f}MB", indent=2)
-        logger.info(
-            f"Total Disk Write: {self.disk_write / (1024*1024):.1f}MB", indent=2
-        )
+        if sys.platform == "darwin" and self.disk_read == 0 and self.disk_write == 0:
+            logger.info("Total Disk Read: N/A (unavailable on macOS)", indent=2)
+            logger.info("Total Disk Write: N/A (unavailable on macOS)", indent=2)
+        else:
+            logger.info(
+                f"Total Disk Read: {self.disk_read / (1024*1024):.1f}MB", indent=2
+            )
+            logger.info(
+                f"Total Disk Write: {self.disk_write / (1024*1024):.1f}MB", indent=2
+            )
 
 
 @dataclass
@@ -439,25 +438,43 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
 def build_release(ctx: BuildContext) -> bool:
     """Build the final release using goreleaser."""
     logger.section("Release Building")
+
+    # Shared tools directory for downloaded binaries
+    tools_dir = os.path.join(ctx.build_dir, "tools")
+
+    # Resolve goreleaser: PATH first, then download OSS binary
+    goreleaser_path = shutil.which("goreleaser")
+    if not goreleaser_path:
+        goreleaser_path = goreleaser_dl.get_goreleaser_path(tools_dir)
+
+    # Resolve syft (needed by goreleaser for SBOM generation): PATH first, then download
+    syft_path = shutil.which("syft")
+    if not syft_path:
+        syft_path = goreleaser_dl.get_syft_path(tools_dir)
+
     logger.info(
         f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs"
     )
 
-    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean --parallelism {ctx.parallelism}"
+    cmd = f"RELEASE_VERSION={ctx.release_version} {goreleaser_path} --snapshot --clean --parallelism {ctx.parallelism}"
     logger.command(cmd)
 
+    # Build PATH with tools_dir so goreleaser can find syft
+    env = {
+        **os.environ,
+        "RELEASE_VERSION": ctx.release_version,
+        "PATH": tools_dir + os.pathsep + os.environ.get("PATH", ""),
+    }
+
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean", "--parallelism", str(ctx.parallelism)],
+        [goreleaser_path, "--snapshot", "--clean", "--parallelism", str(ctx.parallelism)],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         check=False,
-        env={
-            **os.environ,  # Include existing environment variables
-            "RELEASE_VERSION": ctx.release_version,
-        },
-    )  # Ensure output is decoded as text
+        env=env,
+    )
 
     # Always show goreleaser output
     if result.stdout:
