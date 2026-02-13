@@ -7,7 +7,8 @@ import os
 block_cipher = None
 
 # Paths relative to repo root (run pyinstaller from repo root)
-builder_dir = os.path.join(os.getcwd(), 'builder')
+repo_root = os.getcwd()
+builder_dir = os.path.join(repo_root, 'builder')
 builder_src = os.path.join(builder_dir, 'src')
 
 # Package data for frozen binary (dest paths match resources._frozen_base() layout)
@@ -18,9 +19,10 @@ datas = [
     (os.path.join(builder_src, 'bindplane_components.yaml'), 'builder/src'),
 ]
 
+# Entry point: run via package so main.py's relative imports work when frozen
 a = Analysis(
-    [os.path.join(builder_src, 'main.py')],
-    pathex=[os.getcwd(), builder_src],
+    [os.path.join(repo_root, 'cli_entry.py')],
+    pathex=[repo_root],
     binaries=[],
     datas=datas,
     hiddenimports=[

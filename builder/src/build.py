@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -63,10 +64,22 @@ class BuildMetrics:
         memory = self.process.memory_info().rss / (1024 * 1024)
         self.peak_memory = max(self.peak_memory, memory)
 
-        # Disk I/O
-        io = self.process.io_counters()
-        self.disk_read = io.read_bytes
-        self.disk_write = io.write_bytes
+        # Disk I/O: psutil.io_counters() on Windows/Linux; resource.getrusage() on macOS
+        try:
+            io = self.process.io_counters()
+            self.disk_read = io.read_bytes
+            self.disk_write = io.write_bytes
+        except (AttributeError, OSError):
+            if sys.platform == "darwin":
+                try:
+                    import resource
+
+                    r = resource.getrusage(resource.RUSAGE_SELF)
+                    # BSD/macOS: block I/O counts; 1 block = 512 bytes
+                    self.disk_read = getattr(r, "ru_inblock", 0) * 512
+                    self.disk_write = getattr(r, "ru_oublock", 0) * 512
+                except (ImportError, AttributeError):
+                    pass
 
     def get_total_duration(self):
         """Get total build duration in seconds."""
