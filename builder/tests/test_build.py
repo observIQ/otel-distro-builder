@@ -231,7 +231,9 @@ def test_simple_build() -> None:
 
     No platform is specified, so the build defaults to the host architecture.
     """
-    expected = LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    expected = (
+        LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    )
     run_build_test("simple.yaml", expected)
 
 
@@ -254,5 +256,7 @@ def test_simple_build_env() -> None:
 @pytest.mark.release
 def test_contrib_build() -> None:
     """Test building a full contrib distribution with all components."""
-    expected = LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    expected = (
+        LINUX_AMD64_ARTIFACTS if get_host_arch() == "amd64" else LINUX_ARM64_ARTIFACTS
+    )
     run_build_test("contrib.yaml", expected)

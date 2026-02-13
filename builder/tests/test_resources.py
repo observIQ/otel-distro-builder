@@ -4,16 +4,13 @@ import os
 from unittest.mock import patch
 
 import pytest
-from src.resources import (
-    _get_bindplane_components_yaml_path_impl,
-    _get_components_yaml_path_impl,
-    _get_templates_dir_impl,
-    _get_versions_yaml_path_impl,
-    get_bindplane_components_yaml_path,
-    get_components_yaml_path,
-    get_templates_dir,
-    get_versions_yaml_path,
-)
+from src.resources import (_get_bindplane_components_yaml_path_impl,
+                           _get_components_yaml_path_impl,
+                           _get_templates_dir_impl,
+                           _get_versions_yaml_path_impl,
+                           get_bindplane_components_yaml_path,
+                           get_components_yaml_path, get_templates_dir,
+                           get_versions_yaml_path)
 
 # Path to builder/src (where resources.py lives)
 SRC_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "src"))
@@ -60,11 +57,11 @@ class TestDevContext:
 
     def test_bindplane_components_yaml_path(self):
         result = _get_bindplane_components_yaml_path_impl()
-        expected = os.path.normpath(
-            os.path.join(SRC_DIR, "bindplane_components.yaml")
-        )
+        expected = os.path.normpath(os.path.join(SRC_DIR, "bindplane_components.yaml"))
         assert result == expected
-        assert os.path.isfile(result), f"bindplane_components.yaml not found at {result}"
+        assert os.path.isfile(
+            result
+        ), f"bindplane_components.yaml not found at {result}"
 
 
 # ── Frozen (PyInstaller) context ────────────────────────────────────────────
@@ -140,9 +137,7 @@ class TestFrozenFallback:
     def test_bindplane_components_yaml_falls_back(self, tmp_path):
         with patch("src.resources._frozen_base", return_value=str(tmp_path)):
             result = _get_bindplane_components_yaml_path_impl()
-        expected = os.path.normpath(
-            os.path.join(SRC_DIR, "bindplane_components.yaml")
-        )
+        expected = os.path.normpath(os.path.join(SRC_DIR, "bindplane_components.yaml"))
         assert result == expected
 
 

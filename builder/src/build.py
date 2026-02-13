@@ -467,7 +467,13 @@ def build_release(ctx: BuildContext) -> bool:
     }
 
     result = subprocess.run(
-        [goreleaser_path, "--snapshot", "--clean", "--parallelism", str(ctx.parallelism)],
+        [
+            goreleaser_path,
+            "--snapshot",
+            "--clean",
+            "--parallelism",
+            str(ctx.parallelism),
+        ],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

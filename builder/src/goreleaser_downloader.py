@@ -8,8 +8,8 @@ import tempfile
 
 import requests
 
-from .ocb_downloader import get_architecture
 from .logger import BuildLogger, get_logger
+from .ocb_downloader import get_architecture
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -61,7 +61,9 @@ def _download_and_extract(url: str, binary_name: str, output_dir: str) -> str:
     response = requests.get(url, stream=True, timeout=120)
     content_type = response.headers.get("content-type", "")
     if response.status_code != 200:
-        raise RuntimeError(f"Failed to download from {url}. Status: {response.status_code}")
+        raise RuntimeError(
+            f"Failed to download from {url}. Status: {response.status_code}"
+        )
     if "text/html" in content_type:
         raise RuntimeError(f"File not found at {url} (got HTML)")
 
@@ -76,7 +78,7 @@ def _download_and_extract(url: str, binary_name: str, output_dir: str) -> str:
                 with tarfile.open(tmp.name, "r:gz") as tf:
                     tf.extractall(extract_dir)
                 # Walk to find the binary (may be at root or in a subdir)
-                for root, _dirs, files in os.walk(extract_dir):
+                for root, _, files in os.walk(extract_dir):
                     for f in files:
                         if f == binary_name:
                             shutil.copy2(os.path.join(root, f), output_path)
@@ -85,7 +87,9 @@ def _download_and_extract(url: str, binary_name: str, output_dir: str) -> str:
                         continue
                     break
                 else:
-                    raise RuntimeError(f"Binary '{binary_name}' not found in archive from {url}")
+                    raise RuntimeError(
+                        f"Binary '{binary_name}' not found in archive from {url}"
+                    )
         finally:
             if os.path.exists(tmp.name):
                 os.unlink(tmp.name)
