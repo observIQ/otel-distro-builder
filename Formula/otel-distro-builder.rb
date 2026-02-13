@@ -38,6 +38,6 @@ class OtelDistroBuilder < Formula
   end
 
   test do
-    assert_match "usage:", shell_output("#{bin}/otel-distro-builder --help", 1)
+    assert_match "usage:", shell_output("#{bin}/otel-distro-builder --help")
   end
 end

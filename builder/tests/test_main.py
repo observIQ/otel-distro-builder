@@ -3,7 +3,7 @@
 from unittest.mock import mock_open, patch
 
 import pytest
-from src.main import main
+from src.main import _get_version, main
 
 
 @pytest.mark.unit
@@ -125,3 +125,32 @@ def test_main_error_handling(error, expected_message, expected_exit_code):
 
         assert exc_info.value.code == expected_exit_code
         mock_error.assert_called_once_with(expected_message)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("flag", ["--version", "-V"])
+def test_version_flag(flag, capsys):
+    """--version and -V print the version and exit 0."""
+    with patch("sys.argv", ["main.py", flag]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    output = capsys.readouterr().out.strip()
+    # Should be a non-empty version string (e.g. "1.0.0")
+    assert output
+    assert "." in output
+
+
+@pytest.mark.unit
+def test_get_version_installed():
+    """_get_version returns metadata version when the package is installed."""
+    with patch("importlib.metadata.version", return_value="2.3.4"):
+        assert _get_version() == "2.3.4"
+
+
+@pytest.mark.unit
+def test_get_version_fallback():
+    """_get_version returns fallback when package metadata is unavailable."""
+    with patch("importlib.metadata.version", side_effect=ImportError):
+        assert _get_version() == "1.0.0"
