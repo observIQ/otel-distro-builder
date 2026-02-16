@@ -4,6 +4,16 @@ This directory contains comprehensive documentation for using `otel-distro-build
 
 ## Available Guides
 
+### [Generate Manifest from Collector Config](config-to-manifest.md)
+
+Generate an OCB manifest from an existing collector `config.yaml` so you can build a minimal distribution with only the components you use. This guide covers:
+
+- Generating a manifest (host CLI, no Docker required)
+- Config-to-manifest options (`--from-config`, `--generate-only`, `--no-bindplane`, etc.)
+- Generate-and-build in one step
+- Bindplane components and excluding them
+- Troubleshooting unknown components and version mismatches
+
 ### [Using the Local Build Script](local-build-script.md)
 
 Learn how to use the `run_local_build.sh` script for local builds. This guide covers:
@@ -73,10 +83,11 @@ If you find any issues or have suggestions for improving the documentation, plea
 
 ```text
 docs/
-├── README.md                    # This landing page
-├── local-build-script.md        # Local build script guide
-├── local-multiarch-build-script.md  # Local multi-arch build script guide
-├── docker.md                   # Docker usage guide
-├── github-actions.md           # GitHub Actions usage guide
-└── google-cloud-build.md       # Google Cloud Build usage guide
+├── README.md                       # This landing page
+├── config-to-manifest.md           # Generate manifest from config.yaml
+├── local-build-script.md           # Local build script guide
+├── local-multiarch-build-script.md # Local multi-arch build script guide
+├── docker.md                       # Docker usage guide
+├── github-actions.md               # GitHub Actions usage guide
+└── google-cloud-build.md           # Google Cloud Build usage guide
 ```

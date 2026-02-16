@@ -181,7 +181,7 @@ def main() -> None:
     parser.add_argument(
         "--no-bindplane",
         action="store_true",
-        help="Exclude Bindplane/observIQ components from the generated manifest",
+        help="Exclude Bindplane components from the generated manifest",
     )
 
     # Build options
@@ -219,7 +219,7 @@ def main() -> None:
         "--go-version",
         type=str,
         default=None,
-        help="Version of Go to use for building (default: from manifest/versions.yaml; must be in Dockerfile GO_VERSIONS)",
+        help="Version of Go to use for building (default: from manifest/versions.yaml; downloaded automatically if not installed)",
     )
     parser.add_argument(
         "--parallelism",

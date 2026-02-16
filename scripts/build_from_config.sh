@@ -29,7 +29,7 @@ usage() {
     echo "  -n <dist_name>              Distribution name (default: otelcol-custom)"
     echo "  -m <dist_module>            Go module path (default: github.com/custom/otelcol-distribution)"
     echo "  -V <dist_version>           Distribution version (default: 1.0.0)"
-    echo "  -B                          Exclude Bindplane/observIQ components (included by default)"
+    echo "  -B                          Exclude Bindplane components (included by default)"
     echo
     echo "Build options:"
     echo "  -o <output_dir>             Directory to store build artifacts (default: ./artifacts)"

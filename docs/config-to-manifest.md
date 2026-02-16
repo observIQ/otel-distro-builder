@@ -6,62 +6,76 @@ This guide explains how to use the OTel Distro Builder to generate an OCB (OpenT
 
 If you already have a running OpenTelemetry Collector with a `config.yaml` file, you can use this feature to:
 
-1. Automatically detect all components (receivers, processors, exporters, extensions, connectors) used in your config
-2. Generate a minimal `manifest.yaml` containing only the components you need
-3. Build a custom collector distribution optimized for your specific use case
+1. Detect all components (receivers, processors, exporters, extensions, connectors) used in your config
+2. Generate a minimal `manifest.yaml` containing only those components
+3. Optionally build a custom collector distribution in the same run
 
-This results in a smaller, more efficient collector binary that includes only the components you actually use.
+You get a smaller, more efficient collector binary that includes only the components you use. **No Docker required**—the CLI runs on your host; for full builds you need Go installed and the CLI downloads OCB automatically.
 
-## Quick Start
+## Quick Start (Host CLI)
 
-## Generate Manifest Only
-
-### Docker
+Generate a manifest only, or generate and build in one step:
 
 ```bash
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml \
-  --output-manifest /workspace/manifest.yaml \
-  --generate-only
+# Generate manifest only (prints to stdout)
+otel-distro-builder --from-config config.yaml --generate-only
+
+# Generate manifest and save to a file
+otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only
+
+# Generate manifest and build the distribution
+otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platforms linux/amd64,linux/arm64
 ```
 
-### Using the Make Command
+## Other Ways to Run
 
-You can also generate a manifest using the provided Make target, which wraps `scripts/generate_manifest.sh`. This is convenient for local workflows:
+### Using Make
+
+Make targets wrap the CLI and are convenient for local development:
 
 ```bash
-# Using Make (generates manifest.yaml from config.yaml)
+# Generate manifest (writes to manifest.yaml if output= is set)
 make generate-manifest config=config.yaml output=manifest.yaml
 
-# Or, generate and print to stdout (omit output)
+# Generate and print to stdout
 make generate-manifest config=config.yaml
+
+# Generate and build in one step
+make build-from-config config=config.yaml
 ```
 
-### Using the generate_manifest.sh Script Directly
+### Using the generate_manifest.sh Script
 
-If you want to invoke the helper script yourself:
+The script invokes the CLI with common options:
 
 ```bash
-# Generate manifest and print to stdout
+# Generate and print to stdout
 ./scripts/generate_manifest.sh -c config.yaml
 
-# Generate manifest and write to manifest.yaml
+# Generate and write to manifest.yaml
 ./scripts/generate_manifest.sh -c config.yaml -o manifest.yaml
 
-# Specify OpenTelemetry version and custom dist name
+# Custom OpenTelemetry version and distribution name
 ./scripts/generate_manifest.sh -c config.yaml -v 0.144.0 -n my-collector -o manifest.yaml
 
 # Exclude Bindplane components
 ./scripts/generate_manifest.sh -c config.yaml -B -o manifest.yaml
 ```
 
-This script supports other options: run `./scripts/generate_manifest.sh -h` for full usage.
+Run `./scripts/generate_manifest.sh -h` for all options.
 
+### Using Docker
 
-## Generate and Build
+Use Docker for an isolated environment (mount your workspace and artifacts):
 
 ```bash
-# Generate manifest from config and build the collector
+# Generate manifest and save to file
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml \
+  --output-manifest /workspace/manifest.yaml \
+  --generate-only
+
+# Generate and build
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
   --artifacts /workspace/dist \
@@ -81,19 +95,22 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
 | `--dist-name` | Name of the distribution | `otelcol-custom` |
 | `--dist-module` | Go module path for the distribution | `github.com/custom/otelcol-distribution` |
 | `--dist-version` | Version of the distribution | `1.0.0` |
-| `--no-bindplane` | Exclude Bindplane/observIQ components from the manifest | `false` (components included) |
+| `--no-bindplane` | Exclude Bindplane components from the manifest | `false` (components included) |
 
 ### Build Options
 
-These options are available when building (not using `--generate-only`):
+These options apply when building (omitting `--generate-only`):
 
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--artifacts` | Directory to copy final artifacts to | `<cwd>/artifacts` |
-| `--platforms` | Target platforms (e.g., `linux/amd64,darwin/arm64`) | `linux/arm64` |
-| `--goos` | Target operating systems | Derived from platforms |
-| `--goarch` | Target architectures | Derived from platforms |
-| `--parallelism` | Number of parallel builds | `4` |
+| `--platforms` | Comma-separated GOOS/GOARCH (e.g., `linux/amd64,darwin/arm64`) | From manifest |
+| `--goos` | Target operating systems (overrides manifest) | Derived from platforms |
+| `--goarch` | Target architectures (overrides manifest) | Derived from platforms |
+| `--ocb-version` | OpenTelemetry Collector Builder version | Detected from manifest |
+| `--supervisor-version` | Supervisor version | Detected from manifest |
+| `--go-version` | Go version for build | From manifest/versions.yaml |
+| `--parallelism` | Number of parallel Goreleaser build tasks | `4` |
 
 ## Example
 
@@ -195,7 +212,7 @@ replaces:
 
 ## Bindplane Components
 
-By default, generated manifests include all Bindplane/observIQ components. This provides access to additional receivers, processors, and exporters developed by observIQ.
+By default, generated manifests include all Bindplane components. This provides access to additional receivers, processors, and exporters developed by Bindplane.
 
 ### Included Bindplane Components
 
@@ -206,17 +223,13 @@ By default, generated manifests include all Bindplane/observIQ components. This 
 
 ### Excluding Bindplane Components
 
-If you want a manifest with only standard OpenTelemetry components, use the `--no-bindplane` flag:
+To generate a manifest with only standard OpenTelemetry components, use `--no-bindplane`:
 
 ```bash
-# Generate manifest without Bindplane components
-python -m builder.src.main \
-  --from-config ./config.yaml \
-  --output-manifest ./manifest.yaml \
-  --generate-only \
-  --no-bindplane
+# CLI: generate manifest without Bindplane components
+otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only --no-bindplane
 
-# Using the shell script
+# Or using the shell script
 ./scripts/generate_manifest.sh -c config.yaml -o manifest.yaml -B
 ```
 
@@ -226,7 +239,7 @@ The builder includes mappings for:
 
 - **Core components**: Built-in receivers, processors, exporters from the OpenTelemetry Collector core
 - **Contrib components**: Components from the OpenTelemetry Collector Contrib repository
-- **Bindplane components**: Custom components from the observIQ Bindplane collector (included by default)
+- **Bindplane components**: Custom components from the Bindplane collector (included by default)
 
 ### Component Name Mapping
 

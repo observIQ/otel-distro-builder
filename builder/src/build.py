@@ -11,6 +11,7 @@ from typing import Optional
 import psutil
 import yaml
 
+from . import go_downloader as go_dl
 from . import goreleaser_downloader as goreleaser_dl
 from . import ocb_downloader as ocb
 from . import supervisor_downloader as supervisor
@@ -236,19 +237,51 @@ class BuildContext:
         )
 
 
-def validate_environment():
-    """Validate that required tools are available."""
+def validate_environment() -> bool:
+    """Validate that required tools are available.
+
+    Returns:
+        True if system Go is available, False if it needs to be downloaded.
+    """
     logger.section("Environment Validation")
 
     go_binary = shutil.which("go")
     if not go_binary:
-        logger.error(
-            "Go binary not found. Please ensure Go is installed and in your PATH."
-        )
-        raise RuntimeError("Go binary not found")
+        logger.info("System Go not found; will download automatically before build")
+        return False
 
-    go_version = subprocess.check_output(["go", "version"], text=True).strip()
-    logger.success(f"Go found: {go_version}")
+    go_ver = subprocess.check_output(["go", "version"], text=True).strip()
+    logger.success(f"Go found: {go_ver}")
+    return True
+
+
+def resolve_go_toolchain(
+    ctx: BuildContext, system_go_available: bool
+) -> dict[str, str]:
+    """Ensure a Go toolchain is available and return env overrides.
+
+    If system Go is present, the returned env is empty (use system Go as-is).
+    Otherwise, download the required Go version and return GOROOT + PATH overrides
+    so that goreleaser (and any child ``go`` commands) use the downloaded toolchain.
+
+    Args:
+        ctx: Current build context (provides go_version and build_dir).
+        system_go_available: Whether ``go`` was found on the system PATH.
+
+    Returns:
+        Dict of environment variable overrides (may be empty).
+    """
+    if system_go_available:
+        return {}
+
+    go_root = go_dl.get_go_toolchain(ctx.go_version)
+    go_bin_dir = os.path.join(go_root, "bin")
+
+    logger.success(f"Using downloaded Go {ctx.go_version} (GOROOT={go_root})")
+    return {
+        "GOROOT": go_root,
+        "PATH": go_bin_dir + os.pathsep + os.environ.get("PATH", ""),
+    }
 
 
 def create_directories(ctx: BuildContext):
@@ -435,8 +468,13 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
     metrics.end_phase("process_templates")
 
 
-def build_release(ctx: BuildContext) -> bool:
-    """Build the final release using goreleaser."""
+def build_release(ctx: BuildContext, go_env: Optional[dict[str, str]] = None) -> bool:
+    """Build the final release using goreleaser.
+
+    Args:
+        ctx: Build context.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
     logger.section("Release Building")
 
     # Shared tools directory for downloaded binaries
@@ -465,6 +503,14 @@ def build_release(ctx: BuildContext) -> bool:
         "RELEASE_VERSION": ctx.release_version,
         "PATH": tools_dir + os.pathsep + os.environ.get("PATH", ""),
     }
+
+    # Merge Go toolchain overrides (GOROOT and PATH with Go bin prepended)
+    if go_env:
+        if "GOROOT" in go_env:
+            env["GOROOT"] = go_env["GOROOT"]
+        if "PATH" in go_env:
+            # Prepend Go bin dir to our already-extended PATH
+            env["PATH"] = go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env["PATH"]
 
     result = subprocess.run(
         [
@@ -608,8 +654,13 @@ def build(
     try:
         # Validate environment
         metrics.start_phase("validate")
-        validate_environment()
+        system_go_available = validate_environment()
         metrics.end_phase("validate")
+
+        # Resolve Go toolchain (downloads if system Go is absent)
+        metrics.start_phase("resolve_go")
+        go_env = resolve_go_toolchain(ctx, system_go_available)
+        metrics.end_phase("resolve_go")
 
         # Create directories
         metrics.start_phase("create_dirs")
@@ -624,7 +675,7 @@ def build(
 
         # Build release
         metrics.start_phase("build_release")
-        success = build_release(ctx)
+        success = build_release(ctx, go_env=go_env)
         metrics.update_resource_usage()
         metrics.end_phase("build_release")
 

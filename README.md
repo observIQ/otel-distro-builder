@@ -126,25 +126,33 @@ on:
 
 ## 🔄 Generate Manifest from Existing Config
 
-Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need:
+Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need. **No Docker required**—run the CLI on your host (after [install](#-install)); for full builds you need Go installed and the CLI will download OCB automatically.
 
 ```bash
 # Generate manifest only (prints to stdout)
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml \
-  --generate-only
+otel-distro-builder --from-config config.yaml --generate-only
 
 # Generate manifest and save to file
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml \
-  --output-manifest /workspace/manifest.yaml \
-  --generate-only
+otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only
 
 # Generate manifest and build in one step
+otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platforms linux/amd64,linux/arm64
+```
+
+Optional: use Docker for an isolated environment (mount your workspace and artifacts):
+
+```bash
+# Generate manifest only
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml \
-  --artifacts /workspace/dist \
-  --platforms linux/amd64,linux/arm64
+  --from-config /workspace/config.yaml --generate-only
+
+# Generate and save manifest
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml --output-manifest /workspace/manifest.yaml --generate-only
+
+# Generate manifest and build
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml --artifacts /workspace/dist --platforms linux/amd64,linux/arm64
 ```
 
 ### Config-to-Manifest Options
@@ -160,9 +168,9 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
 | `--dist-version` | Distribution version | `1.0.0` |
 | `--no-bindplane` | Exclude Bindplane components | `false` (included) |
 
-> **Note:** By default, generated manifests include all Bindplane components. Use `--no-bindplane` to exclude them.
+By default, generated manifests include Bindplane components. Use `--no-bindplane` to exclude them.
 
-> See [Config to Manifest documentation](./docs/config-to-manifest.md) for detailed usage and examples.
+See [Config to Manifest](docs/config-to-manifest.md) for detailed options, examples, and troubleshooting.
 
 ## 📚 Documentation
 
