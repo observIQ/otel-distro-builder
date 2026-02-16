@@ -258,7 +258,9 @@ release: test ## Create a new release (make release v=X.Y.Z)
 build-cli: deps ## Build standalone otel-distro-builder binary (PyInstaller)
 	@echo "$(BLUE)Building standalone CLI binary...$(NC)"
 	@pip install pyinstaller
+	@# Remove existing dist so only the new binary is present
 	@set -e; \
+	rm -rf dist; \
 	BUILD_DIR=$$(mktemp -d); \
 	pyinstaller --clean --noconfirm --workpath "$$BUILD_DIR" otel-distro-builder.spec; \
 	rm -rf "$$BUILD_DIR"
