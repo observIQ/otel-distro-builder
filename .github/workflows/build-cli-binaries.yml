@@ -92,7 +92,7 @@ jobs:
           path: "otel-distro-builder-*.${{ matrix.os == 'windows' && 'zip' || 'tar.gz' }}"
 
   test-standalone-no-python:
-    # Prove the binary works with no Python on PATH (Go only needed for full builds).
+    # Prove the binary works with neither Python nor Go on PATH.
     runs-on: ubuntu-latest
     needs: build-binary
     steps:
@@ -103,16 +103,22 @@ jobs:
         with:
           name: binary-linux-amd64
 
-      - name: Extract and run binary (no Python in this job)
+      - name: Extract and run binary (no Python or Go on PATH)
         run: |
           tar -xzf otel-distro-builder-*.tar.gz
           BIN=$(find . -maxdepth 1 -type f -name 'otel-distro-builder-*' ! -name '*.tar.gz' | head -1)
           chmod +x "$BIN"
-          "$BIN" --help
-          "$BIN" --version
-          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/out.yaml
+
+          # Build a PATH with Go directories removed
+          NO_GO_PATH=$(echo "$PATH" | tr ':' '\n' | while read -r d; do [ -x "$d/go" ] || printf '%s:' "$d"; done | sed 's/:$//')
+          echo "Verifying Go is not on cleaned PATH..."
+          PATH="$NO_GO_PATH" command -v go && { echo "FAIL: Go still on PATH"; exit 1; } || true
+
+          PATH="$NO_GO_PATH" "$BIN" --help
+          PATH="$NO_GO_PATH" "$BIN" --version
+          PATH="$NO_GO_PATH" "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/out.yaml
           test -s /tmp/out.yaml
-          echo "Standalone binary works with no Python dependency."
+          echo "Standalone binary works with no Python or Go at runtime."
 
   upload-to-release:
     needs: [build-binary, test-standalone-no-python]

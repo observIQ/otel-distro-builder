@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local build-cli test-standalone-binary scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local build-cli test-standalone-binary test-standalone-build-collector scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
 
 # Variables
 VENV_DIR := builder/.venv
@@ -49,7 +49,8 @@ help: ## Show this help
 	@echo "  $(GREEN)build-from-config**$(NC)  Generate manifest and build from collector config"
 	@echo "  $(GREEN)release**$(NC)       Create a new release (usage: make release v=X.Y.Z)"
 	@echo "  $(GREEN)build-cli**$(NC)     Build standalone otel-distro-builder binary (PyInstaller)"
-	@echo "  $(GREEN)test-standalone-binary**$(NC)  Test built binary (no Python at runtime)"
+	@echo "  $(GREEN)test-standalone-binary**$(NC)  Test built binary (no Python or Go at runtime)"
+	@echo "  $(GREEN)test-standalone-build-collector**$(NC)  Build from config with standalone binary and validate collector starts"
 	@echo ""
 	@echo "$(CYAN)Security Scanning:$(NC)"
 	@echo "  $(GREEN)scan-all**$(NC)      Run all security scans"
@@ -256,17 +257,49 @@ release: test ## Create a new release (make release v=X.Y.Z)
 
 build-cli: deps ## Build standalone otel-distro-builder binary (PyInstaller)
 	@echo "$(BLUE)Building standalone CLI binary...$(NC)"
-	pip install pyinstaller
-	pyinstaller --clean --noconfirm otel-distro-builder.spec
+	@pip install pyinstaller
+	@set -e; \
+	BUILD_DIR=$$(mktemp -d); \
+	pyinstaller --clean --noconfirm --workpath "$$BUILD_DIR" otel-distro-builder.spec; \
+	rm -rf "$$BUILD_DIR"
 	@echo "$(GREEN)Binary built: dist/otel-distro-builder$(NC)"
 
-test-standalone-binary: ## Test the standalone binary (run after make build-cli; no Python required at runtime)
-	@echo "$(BLUE)Testing standalone binary (no Python dependency)...$(NC)"
+test-standalone-binary: ## Test the standalone binary works with no Python or Go at runtime
+	@echo "$(BLUE)Testing standalone binary (zero runtime dependencies)...$(NC)"
 	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
-	dist/otel-distro-builder --help
-	dist/otel-distro-builder --version
-	@OUT=$$(mktemp); dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
-	@echo "$(GREEN)Standalone binary works with no Python at runtime.$(NC)"
+	@# Build a PATH with Go directories removed to prove the binary needs neither Python nor Go
+	@NO_GO_PATH=$$(echo "$$PATH" | tr ':' '\n' | while read -r d; do [ -x "$$d/go" ] || printf '%s:' "$$d"; done | sed 's/:$$//'); \
+	echo "  --help (no Go on PATH)..."; \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --help > /dev/null; \
+	echo "  --version (no Go on PATH)..."; \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --version; \
+	echo "  --generate-only (no Go on PATH)..."; \
+	OUT=$$(mktemp); \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
+	@echo "$(GREEN)Standalone binary works with no Python or Go at runtime.$(NC)"
+
+test-standalone-build-collector: ## Build from config with standalone binary and validate collector starts
+	@echo "$(BLUE)Testing standalone binary: full build from config + collector validation...$(NC)"
+	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
+	@set -e; \
+	echo "  Building collector from config..."; \
+	./dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml; \
+	GOOS=$$(uname -s | tr '[:upper:]' '[:lower:]'); \
+	GOARCH=$$(uname -m); \
+	case "$$GOARCH" in x86_64) GOARCH=amd64;; aarch64) GOARCH=arm64;; esac; \
+	echo "  Looking for full-distro tar (excl. _otelcol_) matching *_$${GOOS}_$${GOARCH}.tar.gz..."; \
+	TAR=$$(ls artifacts/*_$${GOOS}_$${GOARCH}.tar.gz 2>/dev/null | grep -v '_otelcol_' | head -1); \
+	if [ -z "$$TAR" ]; then echo "$(RED)No matching tar found in artifacts/ for $${GOOS}/$${GOARCH}$(NC)"; exit 1; fi; \
+	echo "  Found: $$TAR"; \
+	EXTRACT_DIR=$$(mktemp -d); \
+	tar -xzf "$$TAR" -C "$$EXTRACT_DIR"; \
+	chmod +x "$$EXTRACT_DIR/otelcol-custom" "$$EXTRACT_DIR/supervisor"; \
+	echo "  Running otelcol-custom --version..."; \
+	"$$EXTRACT_DIR/otelcol-custom" --version; \
+	echo "  Running supervisor --help..."; \
+	"$$EXTRACT_DIR/supervisor" --help; \
+	rm -rf "$$EXTRACT_DIR"; \
+	echo "$(GREEN)Standalone build-from-config + collector validation passed.$(NC)"
 
 clean: ## Remove generated files
 	@echo "$(BLUE)Cleaning up...$(NC)"

@@ -305,8 +305,15 @@ def write_file(path: str, content: str, mode="w"):
         file.write(content)
 
 
-def generate_sources(ctx: BuildContext) -> None:
-    """Generate source files using OCB."""
+def generate_sources(
+    ctx: BuildContext, go_env: Optional[dict[str, str]] = None
+) -> None:
+    """Generate source files using OCB.
+
+    Args:
+        ctx: Build context.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
 
     # Download OCB
     ocb_path = ocb.download_ocb(ctx.ocb_version, ctx.ocb_dir)
@@ -319,12 +326,21 @@ def generate_sources(ctx: BuildContext) -> None:
     logger.info("Running OpenTelemetry Collector Builder (OCB):", indent=1)
     logger.command(cmd)
 
+    # Build environment with Go toolchain overrides so OCB can find `go`
+    env = {**os.environ}
+    if go_env:
+        if "GOROOT" in go_env:
+            env["GOROOT"] = go_env["GOROOT"]
+        if "PATH" in go_env:
+            env["PATH"] = go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env.get("PATH", "")
+
     result = subprocess.run(
         [ocb_path, "--skip-compilation=true", "--config", ctx.manifest_path],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         check=False,
+        env=env,
     )
     build_log = result.stdout.decode()
 
@@ -445,13 +461,23 @@ def process_goreleaser_yaml(
     return content
 
 
-def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
-    """Prepare the release."""
+def release_preparation(
+    ctx: BuildContext,
+    metrics: BuildMetrics,
+    go_env: Optional[dict[str, str]] = None,
+):
+    """Prepare the release.
+
+    Args:
+        ctx: Build context.
+        metrics: Build metrics tracker.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
     logger.section("Release Preparation")
 
     # Generate sources
     metrics.start_phase("generate_sources")
-    generate_sources(ctx)
+    generate_sources(ctx, go_env=go_env)
     metrics.update_resource_usage()
     metrics.end_phase("generate_sources")
 
@@ -595,6 +621,7 @@ def build(
     supervisor_version: Optional[str] = None,
     go_version: Optional[str] = None,
     parallelism: int = 4,
+    keep_build_dir: bool = False,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -608,6 +635,8 @@ def build(
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
         go_version: Version of Go to use for building (default: from manifest/versions.yaml when not provided)
         parallelism: Number of parallel Goreleaser build tasks (default 4)
+        keep_build_dir: If True, do not remove the intermediate .build directory
+            under artifact_dir after a successful build (default False).
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -669,7 +698,7 @@ def build(
 
         # Release preparation
         metrics.start_phase("release_preparation")
-        release_preparation(ctx, metrics)
+        release_preparation(ctx, metrics, go_env=go_env)
         metrics.update_resource_usage()
         metrics.end_phase("release_preparation")
 
@@ -688,6 +717,11 @@ def build(
             copy_artifacts(ctx, final_artifact_dir)
             metrics.update_resource_usage()
             metrics.end_phase("copy_artifacts")
+
+            # Remove intermediate .build directory unless --debug was passed
+            if not keep_build_dir:
+                shutil.rmtree(ctx.build_dir, ignore_errors=True)
+                logger.info("Removed intermediate build directory")
 
             # Log final metrics
             metrics.log_summary()

@@ -227,6 +227,11 @@ def main() -> None:
         default=4,
         help="Number of parallel builds to run (default: 4)",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Keep the intermediate .build directory under the artifacts folder for inspection (default: removed after successful build)",
+    )
     args = parser.parse_args()
 
     # Set log level to INFO
@@ -278,6 +283,7 @@ def main() -> None:
             supervisor_version=args.supervisor_version,
             go_version=args.go_version,
             parallelism=args.parallelism,
+            keep_build_dir=args.debug,
         )
 
         sys.exit(0 if success else 1)

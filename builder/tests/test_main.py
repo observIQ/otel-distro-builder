@@ -98,6 +98,7 @@ def test_main_argument_handling(args, expected_goos, expected_goarch, expected_p
             supervisor_version=None,
             go_version=None,
             parallelism=4,
+            keep_build_dir=False,
         )
 
 
