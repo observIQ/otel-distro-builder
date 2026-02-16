@@ -332,7 +332,9 @@ def generate_sources(
         if "GOROOT" in go_env:
             env["GOROOT"] = go_env["GOROOT"]
         if "PATH" in go_env:
-            env["PATH"] = go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env.get("PATH", "")
+            env["PATH"] = (
+                go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env.get("PATH", "")
+            )
 
     result = subprocess.run(
         [ocb_path, "--skip-compilation=true", "--config", ctx.manifest_path],

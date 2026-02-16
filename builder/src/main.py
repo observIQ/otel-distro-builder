@@ -114,16 +114,8 @@ def _get_version() -> str:
         return "1.0.0"
 
 
-def main() -> None:
-    """
-    Main entry point for the OpenTelemetry Distribution Builder.
-    Handles command-line arguments, builds and packages the collector, and logs
-    performance metrics.
-    """
-    if "--version" in sys.argv or "-V" in sys.argv:
-        print(_get_version())
-        sys.exit(0)
-
+def _build_parser() -> argparse.ArgumentParser:
+    """Build and return the argument parser."""
     parser = argparse.ArgumentParser(
         description="Build and package a custom OpenTelemetry Collector Distribution. "
         "All paths are host filesystem paths; no Docker required."
@@ -232,7 +224,20 @@ def main() -> None:
         action="store_true",
         help="Keep the intermediate .build directory under the artifacts folder for inspection (default: removed after successful build)",
     )
-    args = parser.parse_args()
+    return parser
+
+
+def main() -> None:
+    """
+    Main entry point for the OpenTelemetry Distribution Builder.
+    Handles command-line arguments, builds and packages the collector, and logs
+    performance metrics.
+    """
+    if "--version" in sys.argv or "-V" in sys.argv:
+        print(_get_version())
+        sys.exit(0)
+
+    args = _build_parser().parse_args()
 
     # Set log level to INFO
     logging.getLogger().setLevel(logging.INFO)
