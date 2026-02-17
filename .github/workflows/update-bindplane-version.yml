@@ -1,0 +1,78 @@
+# Check for new observIQ/bindplane-otel-collector releases and open a PR
+# to update the version in builder/src/bindplane_components.yaml.
+
+name: Update Bindplane Collector Version
+
+on:
+  schedule:
+    # Every Monday at 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: update-bindplane-version
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for newer Bindplane collector version
+        id: version-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          YAML_FILE="builder/src/bindplane_components.yaml"
+
+          # Fetch latest release tag (excludes prereleases)
+          LATEST_TAG=$(gh api repos/observIQ/bindplane-otel-collector/releases/latest --jq '.tag_name')
+          LATEST_VERSION="${LATEST_TAG#v}"
+
+          # Read current version from YAML
+          CURRENT_VERSION=$(grep -m1 '^version:' "$YAML_FILE" | sed 's/version: *"\(.*\)"/\1/')
+
+          echo "Current version: $CURRENT_VERSION"
+          echo "Latest version:  $LATEST_VERSION"
+
+          # Compare using sort -V (version sort)
+          NEWER=$(printf '%s\n%s' "$CURRENT_VERSION" "$LATEST_VERSION" | sort -V | tail -1)
+
+          if [ "$NEWER" = "$CURRENT_VERSION" ]; then
+            echo "Already up to date."
+            echo "update_needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Update available: $CURRENT_VERSION -> $LATEST_VERSION"
+            echo "update_needed=true" >> "$GITHUB_OUTPUT"
+            echo "latest_version=$LATEST_VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update version in YAML
+        if: steps.version-check.outputs.update_needed == 'true'
+        env:
+          LATEST_VERSION: ${{ steps.version-check.outputs.latest_version }}
+        run: |
+          sed -i "s/^version: \".*\"/version: \"${LATEST_VERSION}\"/" builder/src/bindplane_components.yaml
+
+      - name: Create Pull Request
+        if: steps.version-check.outputs.update_needed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: deps/update-bindplane-collector-${{ steps.version-check.outputs.latest_version }}
+          commit-message: "chore: update Bindplane collector to v${{ steps.version-check.outputs.latest_version }}"
+          title: "chore: update Bindplane collector to v${{ steps.version-check.outputs.latest_version }}"
+          body: |
+            Updates the Bindplane collector version in `builder/src/bindplane_components.yaml` from the current version to **v${{ steps.version-check.outputs.latest_version }}**.
+
+            **Upstream release:** https://github.com/observIQ/bindplane-otel-collector/releases/tag/v${{ steps.version-check.outputs.latest_version }}
+
+            This PR was automatically created by the [update-bindplane-version](${{ github.server_url }}/${{ github.repository }}/actions/workflows/update-bindplane-version.yml) workflow.
+          labels: dependencies

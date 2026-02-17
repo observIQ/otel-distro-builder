@@ -5,7 +5,7 @@
 # __BINDPLANE_VERSION__ is replaced at runtime with the appropriate version.
 
 # Latest Bindplane collector version
-version: "1.92.1"
+version: "1.93.0"
 
 extensions:
   - gomod: "github.com/observiq/bindplane-otel-collector/extension/bindplaneextension __BINDPLANE_VERSION__"
