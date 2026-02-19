@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+*.cursor
 
 # Test binary, built with `go test -c`
 *.test
@@ -29,6 +30,7 @@ gpg.*
 !.vscode/tasks.json
 
 # misc
+.idea/
 .env
 builder/.venv
 .DS_Store

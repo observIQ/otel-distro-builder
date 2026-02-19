@@ -2,12 +2,9 @@
 
 import pytest
 import yaml
-from src.version import (
-    MIN_SUPERVISOR_VERSION,
-    BuildVersions,
-    determine_build_versions,
-    get_contrib_version_from_manifest,
-)
+from src.version import (MIN_SUPERVISOR_VERSION, BuildVersions,
+                         determine_build_versions,
+                         get_contrib_version_from_manifest)
 
 
 @pytest.mark.unit
@@ -27,6 +24,8 @@ extensions:
     assert isinstance(versions, BuildVersions)
     assert versions.ocb == "0.123.0"
     assert versions.supervisor == "0.123.0"
+    # Go must come from version_mappings (0.123.0 -> 1.23.0), not hardcoded
+    assert versions.go == "1.23.0"
 
 
 @pytest.mark.unit

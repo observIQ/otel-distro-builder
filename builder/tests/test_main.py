@@ -3,22 +3,23 @@
 from unittest.mock import mock_open, patch
 
 import pytest
-from src.main import main
+from src.main import _get_version, main
 
 
 @pytest.mark.unit
 @pytest.mark.parametrize(
-    "args,expected_goos,expected_goarch",
+    "args,expected_goos,expected_goarch,expected_pairs",
     [
         # Default case - just manifest
-        (["--manifest", "test.yaml"], ["linux"], ["arm64"]),
-        # Platforms only
+        (["--manifest", "test.yaml"], ["linux"], ["amd64"], [("linux", "amd64")]),
+        # Platforms only - preserves exact pairs (no cross-product)
         (
             ["--manifest", "test.yaml", "--platforms", "linux/amd64,darwin/arm64"],
             ["darwin", "linux"],
             ["amd64", "arm64"],
+            [("linux", "amd64"), ("darwin", "arm64")],
         ),
-        # OS and ARCH override platforms
+        # OS and ARCH override platforms (cross-product)
         (
             [
                 "--manifest",
@@ -32,28 +33,32 @@ from src.main import main
             ],
             ["windows"],
             ["arm64", "amd64"],
+            [("windows", "arm64"), ("windows", "amd64")],
         ),
-        # OS only
+        # OS only (cross-product with default arch)
         (
             ["--manifest", "test.yaml", "--goos", "windows,darwin"],
             ["windows", "darwin"],
-            ["arm64"],
+            ["amd64"],
+            [("windows", "amd64"), ("darwin", "amd64")],
         ),
-        # ARCH only
+        # ARCH only (cross-product with default os)
         (
             ["--manifest", "test.yaml", "--goarch", "amd64,arm64"],
             ["linux"],
             ["amd64", "arm64"],
+            [("linux", "amd64"), ("linux", "arm64")],
         ),
         # Invalid platforms
         (
             ["--manifest", "test.yaml", "--platforms", "invalid,format"],
             ["linux"],
-            ["arm64"],
+            ["amd64"],
+            [("linux", "amd64")],
         ),
     ],
 )
-def test_main_argument_handling(args, expected_goos, expected_goarch):
+def test_main_argument_handling(args, expected_goos, expected_goarch, expected_pairs):
     """Test main function argument handling."""
     manifest_content = """
     dist:
@@ -71,7 +76,9 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
         patch("sys.argv", ["main.py"] + args),
         patch("os.makedirs"),
         patch("src.main.logger"),
-    ):  # Mock logger to prevent actual logging
+        patch("src.platforms.get_host_platform", return_value=("linux", "amd64")),
+        patch("os.getcwd", return_value="/tmp"),
+    ):
 
         mock_build.return_value = True
 
@@ -80,16 +87,18 @@ def test_main_argument_handling(args, expected_goos, expected_goarch):
             main()
         assert exc_info.value.code == 0
 
-        # Verify build called with expected arguments
+        # Verify build called with expected arguments (artifact_dir = host default)
         mock_build.assert_called_once_with(
             manifest_content=manifest_content,
-            artifact_dir="/artifacts",
+            artifact_dir="/tmp/artifacts",
             goos=expected_goos,
             goarch=expected_goarch,
+            platform_pairs=expected_pairs,
             ocb_version=None,
             supervisor_version=None,
-            go_version="1.24.1",
+            go_version=None,
             parallelism=4,
+            keep_build_dir=False,
         )
 
 
@@ -117,3 +126,32 @@ def test_main_error_handling(error, expected_message, expected_exit_code):
 
         assert exc_info.value.code == expected_exit_code
         mock_error.assert_called_once_with(expected_message)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("flag", ["--version", "-V"])
+def test_version_flag(flag, capsys):
+    """--version and -V print the version and exit 0."""
+    with patch("sys.argv", ["main.py", flag]):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+    output = capsys.readouterr().out.strip()
+    # Should be a non-empty version string (e.g. "1.0.0")
+    assert output
+    assert "." in output
+
+
+@pytest.mark.unit
+def test_get_version_installed():
+    """_get_version returns metadata version when the package is installed."""
+    with patch("importlib.metadata.version", return_value="2.3.4"):
+        assert _get_version() == "2.3.4"
+
+
+@pytest.mark.unit
+def test_get_version_fallback():
+    """_get_version returns fallback when package metadata is unavailable."""
+    with patch("importlib.metadata.version", side_effect=ImportError):
+        assert _get_version() == "1.0.0"

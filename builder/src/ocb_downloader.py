@@ -1,6 +1,7 @@
 """Utility for downloading and managing OpenTelemetry Collector Builder (OCB) binaries."""
 
 import os
+import platform
 
 import requests
 
@@ -11,11 +12,13 @@ logger: BuildLogger = get_logger(__name__)
 
 def get_architecture():
     """Determine the architecture of the current system."""
-    arch = os.uname().machine
+    arch = platform.machine()
     if arch == "x86_64":
         return "amd64"
-    if arch in ["arm64", "aarch64"]:
+    if arch in ["arm64", "aarch64", "ARM64"]:
         return "arm64"
+    if arch in ["AMD64"]:
+        return "amd64"
     if arch == "ppc64le":
         return "ppc64le"
     logger.error(f"Unsupported architecture: {arch}")
@@ -90,7 +93,7 @@ def download_ocb(version, output_dir):
     """Download the OCB binary for the specified version and store it in the output directory."""
     logger.section("OCB Download")
 
-    os_name = os.uname().sysname.lower()
+    os_name = platform.system().lower()
     arch = get_architecture()
     output_file = os.path.join(output_dir, f"ocb_{version}_{os_name}_{arch}")
     if os_name == "windows":

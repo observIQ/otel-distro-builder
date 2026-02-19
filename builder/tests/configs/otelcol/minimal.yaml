@@ -1,0 +1,14 @@
+# Minimal config - just nop components
+receivers:
+  nop:
+
+processors: {}
+
+exporters:
+  nop:
+
+service:
+  pipelines:
+    traces:
+      receivers: [nop]
+      exporters: [nop]

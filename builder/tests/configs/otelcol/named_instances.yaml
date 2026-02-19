@@ -1,0 +1,60 @@
+# Config with named instances for testing
+receivers:
+  otlp/traces:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+  
+  otlp/metrics:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4318
+  
+  prometheus/app:
+    config:
+      scrape_configs:
+        - job_name: 'app'
+          static_configs:
+            - targets: ['app:8080']
+  
+  prometheus/infra:
+    config:
+      scrape_configs:
+        - job_name: 'infra'
+          static_configs:
+            - targets: ['infra:9090']
+
+processors:
+  batch/fast:
+    timeout: 100ms
+  
+  batch/slow:
+    timeout: 5s
+  
+  attributes/add_env:
+    actions:
+      - key: env
+        value: prod
+        action: insert
+
+exporters:
+  otlp/backend1:
+    endpoint: backend1:4317
+  
+  otlp/backend2:
+    endpoint: backend2:4317
+  
+  debug/verbose:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp/traces]
+      processors: [batch/fast]
+      exporters: [otlp/backend1, debug/verbose]
+    
+    metrics:
+      receivers: [otlp/metrics, prometheus/app, prometheus/infra]
+      processors: [batch/slow, attributes/add_env]
+      exporters: [otlp/backend2]

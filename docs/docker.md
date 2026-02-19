@@ -40,11 +40,11 @@ providers:
 
 ```bash
 docker run --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/build \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
-  --artifacts /workspace/artifacts
+  --manifest /manifest.yaml \
+  --artifacts /artifacts
 ```
 
 ## Available Options
@@ -54,29 +54,32 @@ The Docker container accepts the following command-line options:
 | Option                 | Description                             | Default      |
 | ---------------------- | --------------------------------------- | ------------ |
 | `--manifest`           | Path to manifest file                   | Required     |
-| `--artifacts`          | Output directory for artifacts          | `/artifacts` |
+| `--artifacts`          | Output directory for artifacts          | `<cwd>/artifacts` |
 | `--platforms`          | Comma-separated GOOS/GOARCH (e.g. linux/amd64,linux/arm64) | (from manifest) |
 | `--goos`               | Target operating system                 | `linux`      |
 | `--goarch`             | Target architecture                     | `amd64`      |
 | `--ocb-version`        | OpenTelemetry Collector Builder version | `0.122.0`    |
-| `--go-version`         | Go version to use                       | `1.24.1`     |
+| `--go-version`         | Go version to use                       | `1.24.0`     |
 | `--supervisor-version` | Supervisor version                      | `0.122.0`    |
 | `--parallelism`        | Number of parallel Goreleaser build tasks (lower to reduce memory) | `4` |
 
 ## Volume Mounts
 
-When running the container, you need to mount two volumes:
+When running the container, mount the manifest file and an artifacts directory:
 
-1. **Workspace Volume**: Contains your manifest file, source files, and the output artifacts directory
+1. **Manifest** (read-only): Mount your manifest file into the container.
 
    ```bash
-   -v $(pwd):/workspace
+   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro"
    ```
 
-2. **Build Volume**: Where the build is stored
+2. **Artifacts**: Mount a host directory at `/artifacts` so build outputs are written back to the host.
+
    ```bash
-   -v $(pwd)/build:/build
+   -v "$(pwd)/artifacts:/artifacts"
    ```
+
+> **Important:** Always pass `--artifacts /artifacts` to ensure the builder writes to the mounted volume. Without it, artifacts are written to the container's working directory (`/app/artifacts`) and will be lost when the container exits.
 
 ## Output Artifacts
 
@@ -94,16 +97,59 @@ The builder will generate the following artifacts in your specified output direc
 
 ```bash
 docker run --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/build \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml
+  --manifest /manifest.yaml \
+  --artifacts /artifacts
 ```
 
 ### Custom Platform Build
 
+Use `--platforms` with a comma-separated list of `GOOS/GOARCH` (e.g. `linux/amd64`, `darwin/arm64`). This is the recommended way to specify target platforms.
+
 ```bash
-# ARM64
+# Single platform: Apple Silicon (darwin/arm64)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms darwin/arm64
+
+# Linux only: amd64 and arm64
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64
+
+# Linux + Darwin (common server and Mac targets)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+
+# Include Windows (amd64)
+docker run --rm \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/arm64,windows/amd64
+```
+
+Alternatively, use `--goos` and `--goarch` to specify target OS and architecture lists (builder builds the Cartesian product):
+
+```bash
+# ARM64 only (darwin, linux, windows)
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
@@ -113,14 +159,14 @@ docker run --rm \
   --goos darwin,linux,windows \
   --goarch arm64
 
-#AMD64
+# AMD64 only
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --goos windows,linux,windows \
+  --goos darwin,linux,windows \
   --goarch amd64
 ```
 
@@ -128,12 +174,13 @@ docker run --rm \
 
 ```bash
 docker run --rm \
-  -v $(pwd):/workspace \
-  -v $(pwd)/build:/build \
+  -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
+  -v "$(pwd)/artifacts:/artifacts" \
   ghcr.io/observiq/otel-distro-builder:main \
-  --manifest /workspace/manifest.yaml \
+  --manifest /manifest.yaml \
+  --artifacts /artifacts \
   --ocb-version 0.121.0 \
-  --go-version 1.24.1 \
+  --go-version 1.24.0 \
   --supervisor-version 0.122.0
 ```
 

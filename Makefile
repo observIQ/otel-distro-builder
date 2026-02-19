@@ -1,4 +1,4 @@
-.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local scan-fs scan-image scan-all security-update unit-test build-test
+.PHONY: help setup test release clean venv deps format lint type-check quality shell-check check-all build docker-build docker-rebuild docker-multiarch-build build-local build-cli test-standalone-binary test-standalone-build-collector scan-fs scan-image scan-all security-update unit-test build-test script-test generate-manifest generate-manifest-docker build-from-config
 
 # Variables
 VENV_DIR := builder/.venv
@@ -33,6 +33,7 @@ help: ## Show this help
 	@echo "    quicktest        Run quick tests (simple build and version tests)"
 	@echo "    unit-test        Run unit tests only"
 	@echo "    build-test       Run build tests only"
+	@echo "    script-test     Run script smoke tests (no Docker)"
 	@echo "  $(GREEN)check-all**$(NC)     Run all checks (quality, shell-check, test)"
 	@echo ""
 	@echo "$(CYAN)Docker Operations:$(NC)"
@@ -43,7 +44,13 @@ help: ## Show this help
 	@echo "$(CYAN)Building & Release:$(NC)"
 	@echo "  $(GREEN)build**$(NC)         Build distribution using manifest.yaml"
 	@echo "    build-local      Build with specific versions (run_local_build.sh)"
+	@echo "  $(GREEN)generate-manifest**$(NC)  Generate manifest from collector config"
+	@echo "    generate-manifest-docker  Generate manifest using Docker"
+	@echo "  $(GREEN)build-from-config**$(NC)  Generate manifest and build from collector config"
 	@echo "  $(GREEN)release**$(NC)       Create a new release (usage: make release v=X.Y.Z)"
+	@echo "  $(GREEN)build-cli**$(NC)     Build standalone otel-distro-builder binary (PyInstaller)"
+	@echo "  $(GREEN)test-standalone-binary**$(NC)  Test built binary (no Python or Go at runtime)"
+	@echo "  $(GREEN)test-standalone-build-collector**$(NC)  Build from config with standalone binary and validate collector starts"
 	@echo ""
 	@echo "$(CYAN)Security Scanning:$(NC)"
 	@echo "  $(GREEN)scan-all**$(NC)      Run all security scans"
@@ -103,7 +110,7 @@ type-check: deps ## Run type checking
 
 shell-check: ## Check shell scripts
 	@echo "$(BLUE)Checking shell scripts...$(NC)"
-	shellcheck scripts/*.sh
+	shellcheck -x -e SC1091 scripts/*.sh
 
 quality: format lint type-check shell-check ## Run all code quality checks
 	@echo "$(GREEN)All quality checks passed!$(NC)"
@@ -120,6 +127,19 @@ build-test: deps ## Run build tests only
 	@echo "$(BLUE)Running build tests...$(NC)"
 	PYTHONPATH=builder/src $(VENV_BIN)/pytest builder/tests/ -v -m "build"
 
+script-test: ## Run script smoke tests (help, validation; no Docker required)
+	@echo "$(BLUE)Running script smoke tests...$(NC)"
+	@echo "  Checking run_local_build.sh -h..."
+	@./scripts/run_local_build.sh -h | grep -q "manifest_path" || (echo "run_local_build.sh -h failed"; exit 1)
+	@echo "  Checking build_from_config.sh -h..."
+	@./scripts/build_from_config.sh -h | grep -q "config_path" || (echo "build_from_config.sh -h failed"; exit 1)
+	@echo "  Checking run_local_build.sh requires -m..."
+	@./scripts/run_local_build.sh 2>&1 | grep -q "Manifest path is required" || (echo "run_local_build.sh should require -m"; exit 1)
+	@echo "  Checking build_from_config.sh requires -c..."
+	@./scripts/build_from_config.sh 2>&1 | grep -q "Config path is required" || (echo "build_from_config.sh should require -c"; exit 1)
+	@echo "  Checking generate_manifest.sh with test config..."
+	@OUT=$$(mktemp); ./scripts/generate_manifest.sh -c builder/tests/configs/otelcol/simple.yaml -o "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; echo "generate_manifest.sh failed"; exit 1)
+	@echo "$(GREEN)Script smoke tests passed.$(NC)"
 
 check-all: quality shell-check test scan-all ## Run all checks including security scans
 
@@ -167,16 +187,18 @@ build-local: ## Build distribution with specific versions
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
-multiarch-build: ## Build multi-arch distribution using manifest.yaml
+# Default platforms for multi-arch local build (linux/darwin x amd64/arm64)
+MULTIARCH_PLATFORMS ?= linux/amd64,darwin/amd64,linux/arm64,darwin/arm64
+
+multiarch-build: ## Build multi-arch distribution using manifest.yaml (uses run_local_build.sh -p)
 	@if [ ! -f manifest.yaml ]; then \
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml \
+	./scripts/run_local_build.sh -m manifest.yaml -p $(or $(platforms),$(MULTIARCH_PLATFORMS)) \
 		$(if $(output_dir),-o $(output_dir)) \
-		$(if $(platforms),-p $(platforms)) \
 		$(if $(ocb_version),-v $(ocb_version)) \
 		$(if $(supervisor_version),-s $(supervisor_version)) \
 		$(if $(go_version),-g $(go_version)) \
@@ -187,11 +209,99 @@ multiarch-build-local: ## Build multi-arch distribution with specific versions u
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_multiarch_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.1 -n 4
+	./scripts/run_local_build.sh -m manifest.yaml -p $(MULTIARCH_PLATFORMS) -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
+
+generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [output=manifest.yaml] [version=0.144.0] [name=my-collector])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make generate-manifest config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Generating manifest from config...$(NC)"
+	./scripts/generate_manifest.sh -c $(config) \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module))
+
+generate-manifest-docker: ## Generate manifest using Docker (make generate-manifest-docker config=config.yaml [output=manifest.yaml])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make generate-manifest-docker config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Generating manifest from config using Docker...$(NC)"
+	./scripts/generate_manifest.sh -c $(config) -d \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module))
+
+build-from-config: ## Generate manifest and build from collector config (make build-from-config config=config.yaml [version=0.144.0] [name=my-collector] [platforms=linux/amd64])
+	@if [ -z "$(config)" ]; then \
+		echo "$(RED)Error: config is required. Usage: make build-from-config config=config.yaml$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)Building distribution from collector config...$(NC)"
+	./scripts/build_from_config.sh -c $(config) \
+		$(if $(output),-o $(output)) \
+		$(if $(version),-v $(version)) \
+		$(if $(name),-n $(name)) \
+		$(if $(module),-m $(module)) \
+		$(if $(platforms),-p $(platforms)) \
+		$(if $(parallelism),-P $(parallelism)) \
+		$(if $(no_bindplane),-B) \
+		$(if $(keep),-k)
 
 release: test ## Create a new release (make release v=X.Y.Z)
 	@echo "$(BLUE)Creating release...$(NC)"
 	@./scripts/release.sh $(v)
+
+build-cli: deps ## Build standalone otel-distro-builder binary (PyInstaller)
+	@echo "$(BLUE)Building standalone CLI binary...$(NC)"
+	@pip install pyinstaller
+	@# Remove existing dist so only the new binary is present
+	@set -e; \
+	rm -rf dist; \
+	BUILD_DIR=$$(mktemp -d); \
+	pyinstaller --clean --noconfirm --workpath "$$BUILD_DIR" otel-distro-builder.spec; \
+	rm -rf "$$BUILD_DIR"
+	@echo "$(GREEN)Binary built: dist/otel-distro-builder$(NC)"
+
+test-standalone-binary: ## Test the standalone binary works with no Python or Go at runtime
+	@echo "$(BLUE)Testing standalone binary (zero runtime dependencies)...$(NC)"
+	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
+	@# Build a PATH with Go directories removed to prove the binary needs neither Python nor Go
+	@NO_GO_PATH=$$(echo "$$PATH" | tr ':' '\n' | while read -r d; do [ -x "$$d/go" ] || printf '%s:' "$$d"; done | sed 's/:$$//'); \
+	echo "  --help (no Go on PATH)..."; \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --help > /dev/null; \
+	echo "  --version (no Go on PATH)..."; \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --version; \
+	echo "  --generate-only (no Go on PATH)..."; \
+	OUT=$$(mktemp); \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
+	@echo "$(GREEN)Standalone binary works with no Python or Go at runtime.$(NC)"
+
+test-standalone-build-collector: ## Build from config with standalone binary and validate collector starts
+	@echo "$(BLUE)Testing standalone binary: full build from config + collector validation...$(NC)"
+	@test -x dist/otel-distro-builder || (echo "$(RED)Run 'make build-cli' first$(NC)"; exit 1)
+	@set -e; \
+	echo "  Building collector from config..."; \
+	./dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml; \
+	GOOS=$$(uname -s | tr '[:upper:]' '[:lower:]'); \
+	GOARCH=$$(uname -m); \
+	case "$$GOARCH" in x86_64) GOARCH=amd64;; aarch64) GOARCH=arm64;; esac; \
+	echo "  Looking for full-distro tar (excl. _otelcol_) matching *_$${GOOS}_$${GOARCH}.tar.gz..."; \
+	TAR=$$(ls artifacts/*_$${GOOS}_$${GOARCH}.tar.gz 2>/dev/null | grep -v '_otelcol_' | head -1); \
+	if [ -z "$$TAR" ]; then echo "$(RED)No matching tar found in artifacts/ for $${GOOS}/$${GOARCH}$(NC)"; exit 1; fi; \
+	echo "  Found: $$TAR"; \
+	EXTRACT_DIR=$$(mktemp -d); \
+	tar -xzf "$$TAR" -C "$$EXTRACT_DIR"; \
+	chmod +x "$$EXTRACT_DIR/otelcol-custom" "$$EXTRACT_DIR/supervisor"; \
+	echo "  Running otelcol-custom --version..."; \
+	"$$EXTRACT_DIR/otelcol-custom" --version; \
+	echo "  Running supervisor --help..."; \
+	"$$EXTRACT_DIR/supervisor" --help; \
+	rm -rf "$$EXTRACT_DIR"; \
+	echo "$(GREEN)Standalone build-from-config + collector validation passed.$(NC)"
 
 clean: ## Remove generated files
 	@echo "$(BLUE)Cleaning up...$(NC)"

@@ -45,7 +45,7 @@ providers:
 | `-p` | Docker build platform(s), comma-delimited (e.g. linux/arm64,linux/amd64) | None | No |
 | `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | `0.121.0` | No |
-| `-g` | Go version to use | `1.24.1` | No |
+| `-g` | Go version to use | `1.24.0` | No |
 | `-s` | Supervisor version | `0.122.0` | No |
 | `-i` | Build ID for artifact storage | Auto-generated | No |
 | `-h` | Show help message | N/A | No |
@@ -83,7 +83,7 @@ Build for `linux/amd64` or `darwin/arm64`:
 ./scripts/run_local_build.sh \
   -m manifest.yaml \
   -v 0.121.0 \
-  -g 1.24.1 \
+  -g 1.24.0 \
   -s 0.122.0
 ```
 

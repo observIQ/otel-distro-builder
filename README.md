@@ -5,9 +5,9 @@
 [![GitHub Release](https://img.shields.io/github/v/release/observIQ/otel-distro-builder)](https://github.com/observIQ/otel-distro-builder/releases)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Build custom OpenTelemetry Collector Distributions from manifest files with a local build utility, Docker, Google Cloud Build, or a GitHub Action.
+Build custom OpenTelemetry Collector Distributions from manifest files with a local CLI (no Docker required), Docker, Google Cloud Build, or a GitHub Action.
 
-[Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
+[Install](#-install) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Examples](#-examples)
 
 </div>
 
@@ -32,6 +32,21 @@ It handles all the complex aspects of managing your own distribution that have h
 - 🔄 **GitHub Actions Integration**: Seamless CI/CD integration
 - 🚀 **Automated Releases**: Streamlined versioning and release process
 - 🔍 **Platform-Specific Builds**: Optimize for your target environment
+
+## 📥 Install
+
+The CLI runs on your host and reads config/manifest files from the host filesystem. **Docker is not required** for manifest generation or for full builds when Go (and OCB) are available on the host.
+
+| Method | Command |
+|--------|---------|
+| **From repo (development)** | `pip install -e .` |
+| **PyPI** (when published) | `pip install otel-distro-builder` |
+| **Homebrew** (from this repo) | `brew install --formula Formula/otel-distro-builder.rb` |
+| **Standalone binary** | Download `otel-distro-builder-<version>-<os>-<arch>.tar.gz` from [Releases](https://github.com/observiq/otel-distro-builder/releases) and extract the binary to your PATH. |
+
+Then run `otel-distro-builder --help`.
+
+**Dependencies:** For **manifest generation** (`--from-config`, `--generate-only`), the standalone binary and pip install need **no other dependencies**. For **full distribution builds** on the host, **Go is the only required dependency**—the CLI downloads the OpenTelemetry Collector Builder (OCB) automatically. Docker is optional and only for an isolated build environment.
 
 ## 🚀 Quick Start
 
@@ -96,13 +111,66 @@ on:
    git tag v1.0.0 && git push --tags
    ```
 
-5. **(Optional) Build with Docker**:
+5. **Build** (host CLI or optional Docker):
 
    ```bash
+   # Host (after pip install -e . or pip install otel-distro-builder)
+   otel-distro-builder --manifest manifest.yaml --artifacts ./artifacts
+
+   # Optional: build with Docker (isolated environment)
    docker pull ghcr.io/observiq/otel-distro-builder:main
-   docker run --rm -v $(pwd):/workspace -v $(pwd)/build:/build ghcr.io/observiq/otel-distro-builder:main \
-     --manifest /workspace/manifest.yaml
+   docker run --rm -v $(pwd):/workspace -v $(pwd)/artifacts:/artifacts \
+     ghcr.io/observiq/otel-distro-builder:main \
+     --manifest /workspace/manifest.yaml --artifacts /artifacts
    ```
+
+## 🔄 Generate Manifest from Existing Config
+
+Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need. **No Docker required**—run the CLI on your host (after [install](#-install)); for full builds you need Go installed and the CLI will download OCB automatically.
+
+```bash
+# Generate manifest only (prints to stdout)
+otel-distro-builder --from-config config.yaml --generate-only
+
+# Generate manifest and save to file
+otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only
+
+# Generate manifest and build in one step
+otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platforms linux/amd64,linux/arm64
+```
+
+Optional: use Docker for an isolated environment (mount your workspace and artifacts):
+
+```bash
+# Generate manifest only
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml --generate-only
+
+# Generate and save manifest
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml --output-manifest /workspace/manifest.yaml --generate-only
+
+# Generate manifest and build
+docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
+  --from-config /workspace/config.yaml --artifacts /workspace/dist --platforms linux/amd64,linux/arm64
+```
+
+### Config-to-Manifest Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--from-config` | Path to collector config.yaml | Required |
+| `--output-manifest` | Path to write generated manifest | None |
+| `--generate-only` | Only generate manifest, don't build | `false` |
+| `--otel-version` | Target OpenTelemetry version | Latest from `versions.yaml` |
+| `--dist-name` | Distribution name | `otelcol-custom` |
+| `--dist-module` | Go module path | `github.com/custom/otelcol-distribution` |
+| `--dist-version` | Distribution version | `1.0.0` |
+| `--no-bindplane` | Exclude Bindplane components | `false` (included) |
+
+By default, generated manifests include Bindplane components. Use `--no-bindplane` to exclude them.
+
+See [Config to Manifest](docs/config-to-manifest.md) for detailed options, examples, and troubleshooting.
 
 ## 📚 Documentation
 
@@ -125,7 +193,7 @@ All generated packages and binaries are available in the `${{ github.workspace }
 
 ```bash
 # Pull the latest version
-docker pull ghcr.io/observiq/otel-distro-builder:latest
+docker pull ghcr.io/observiq/otel-distro-builder:main
 
 # Pull specific version
 docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
@@ -134,18 +202,36 @@ docker pull ghcr.io/observiq/otel-distro-builder:v1.0.5
 docker run --rm \
   -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" \
   -v "$(pwd)/artifacts:/artifacts" \
-  ghcr.io/observiq/otel-distro-builder:latest \
+  ghcr.io/observiq/otel-distro-builder:main \
   --manifest /manifest.yaml \
   --artifacts /artifacts \
-  --goos darwin,linux,windows \
-  --goarch amd64,arm64 \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64 \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
-  --go-version 1.24.1 \
+  --go-version 1.24.0 \
   --parallelism 4
 ```
 
-Optional builder arguments: `--platforms`, `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
+**Using `--platforms`** (comma-separated GOOS/GOARCH):
+
+```bash
+# Single platform (e.g. Apple Silicon)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms darwin/arm64
+
+# Linux only (amd64 + arm64)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64
+
+# Linux + Darwin (all common arches)
+docker run --rm -v "$(pwd)/manifest.yaml:/manifest.yaml:ro" -v "$(pwd)/artifacts:/artifacts" \
+  ghcr.io/observiq/otel-distro-builder:main --manifest /manifest.yaml --artifacts /artifacts \
+  --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
+```
+
+Optional builder arguments: `--platforms` (GOOS/GOARCH list), `--goos`, `--goarch`, `--ocb-version`, `--supervisor-version`, `--go-version`, `--parallelism` (number of parallel Goreleaser build tasks; default 4; lower to reduce memory use).
 
 > Read more details in the [Docker documentation](./docs/docker.md).
 
@@ -188,9 +274,8 @@ When building for multiple architectures or large manifests, the number of paral
 
 ### Prerequisites
 
-- Python 3
-- Docker
-- Make
+- **Using the CLI (binary or pip):** For full builds, only [Go](https://go.dev/dl/) is required; OCB is downloaded by the CLI. For manifest generation only, no dependencies.
+- **Development (editing this repo):** Python 3, Make. Docker is optional (for running the builder in a container).
 
 ### Available Commands
 
@@ -234,7 +319,7 @@ Build a custom OpenTelemetry Collector distribution using a local Docker contain
 ./scripts/run_local_build.sh -m manifest.yaml
 
 # Custom output directory and versions
-./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
 
 # Build Docker image for a specific platform (e.g. Apple Silicon / arm64)
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64
@@ -247,24 +332,17 @@ Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version
 
 Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
-#### `run_local_multiarch_build.sh`
-
-Build collector binaries for multiple architectures in one run (default: linux/amd64, linux/arm64, darwin/arm64):
+**Multi-arch builds** use the same script with `-p` (omit `-p` for single-arch default linux/arm64):
 
 ```bash
-# Default: collector for linux/amd64, linux/arm64, darwin/arm64
-./scripts/run_local_multiarch_build.sh -m manifest.yaml
+# Multi-arch: linux + darwin, amd64 + arm64
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
 
-# Custom platforms only
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -p linux/amd64,linux/arm64
-
-# With output dir and versions
-./scripts/run_local_multiarch_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.1
+# Or a subset of platforms
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
 ```
 
-Options: `-m` (required), `-o` (output dir), `-p` (GOOS/GOARCH list), `-v`, `-g`, `-s`. When running the container directly, you can also pass `--parallelism N` to the builder (default 4).
-
-Via Make: `make build-multiarch`, `make build-multiarch-local`.
+Via Make: `make multiarch-build` (default platforms), `make multiarch-build-local`, or `make build platforms=linux/amd64,linux/arm64`.
 
 Artifacts are written to the specified output directory (default: `./artifacts`).
 

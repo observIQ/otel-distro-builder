@@ -3,6 +3,7 @@
 import os
 import shutil
 import subprocess
+import sys
 import time
 from dataclasses import dataclass
 from typing import Optional
@@ -10,20 +11,20 @@ from typing import Optional
 import psutil
 import yaml
 
+from . import go_downloader as go_dl
+from . import goreleaser_downloader as goreleaser_dl
 from . import ocb_downloader as ocb
 from . import supervisor_downloader as supervisor
 from .logger import BuildLogger, get_logger
-from .version import determine_build_versions
+from .resources import get_templates_dir
+from .version import DEFAULT_VERSION, determine_build_versions
 
 logger: BuildLogger = get_logger(__name__)
 
-# Fixed build workspace directory
-BUILD_DIR = "/build"
-
 # Default versions
-DEFAULT_OTEL_CONTRIB_VERSION = "0.122.0"  # Default OpenTelemetry Contrib version to use if not detected from manifest
+DEFAULT_OTEL_CONTRIB_VERSION = DEFAULT_VERSION  # Default OpenTelemetry Contrib version to use if not detected from manifest
 MIN_SUPERVISOR_VERSION = "0.122.0"  # Minimum required version for the supervisor
-DEFAULT_GO_VERSION = "1.24.1"  # Default Go version to use for building
+DEFAULT_GO_VERSION = "1.24.0"  # Default Go version (must match Dockerfile GO_VERSIONS / DEFAULT_GO_VERSION)
 
 CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
 EXCLUDED_FILES = ["artifacts.json", "metadata.json", "config.yaml"]
@@ -65,10 +66,14 @@ class BuildMetrics:
         memory = self.process.memory_info().rss / (1024 * 1024)
         self.peak_memory = max(self.peak_memory, memory)
 
-        # Disk I/O
-        io = self.process.io_counters()
-        self.disk_read = io.read_bytes
-        self.disk_write = io.write_bytes
+        # Disk I/O: psutil.io_counters() on Windows/Linux. On macOS the kernel does not
+        # populate getrusage ru_inblock/ru_oublock, so per-process disk I/O is unavailable.
+        try:
+            io = self.process.io_counters()
+            self.disk_read = io.read_bytes
+            self.disk_write = io.write_bytes
+        except (AttributeError, OSError):
+            pass  # macOS: leave at 0; log_summary will show N/A
 
     def get_total_duration(self):
         """Get total build duration in seconds."""
@@ -90,10 +95,16 @@ class BuildMetrics:
         # Resource usage
         logger.info("Resource Usage:", indent=1)
         logger.info(f"Peak Memory: {self.peak_memory:.1f}MB", indent=2)
-        logger.info(f"Total Disk Read: {self.disk_read / (1024*1024):.1f}MB", indent=2)
-        logger.info(
-            f"Total Disk Write: {self.disk_write / (1024*1024):.1f}MB", indent=2
-        )
+        if sys.platform == "darwin" and self.disk_read == 0 and self.disk_write == 0:
+            logger.info("Total Disk Read: N/A (unavailable on macOS)", indent=2)
+            logger.info("Total Disk Write: N/A (unavailable on macOS)", indent=2)
+        else:
+            logger.info(
+                f"Total Disk Read: {self.disk_read / (1024*1024):.1f}MB", indent=2
+            )
+            logger.info(
+                f"Total Disk Write: {self.disk_write / (1024*1024):.1f}MB", indent=2
+            )
 
 
 @dataclass
@@ -107,6 +118,9 @@ class BuildContext:
     ocb_dir: str  # OCB binaries directory
     templates_dir: str  # Template files directory
     distribution: str  # Name of the distribution
+    goos: list[str]  # Target OS list (e.g. ["linux", "darwin"])
+    goarch: list[str]  # Target architecture list (e.g. ["amd64", "arm64"])
+    platform_pairs: list[tuple[str, str]]  # Exact (os, arch) pairs requested
     goos_yaml: str  # Target OS in YAML format
     goarch_yaml: str  # Target architecture in YAML format
     ocb_version: str  # Version of OCB to use
@@ -121,18 +135,36 @@ class BuildContext:
     def create(
         cls,
         manifest_content: str,
+        build_dir: str,
         goos: Optional[list[str]] = None,
         goarch: Optional[list[str]] = None,
+        platform_pairs: Optional[list[tuple[str, str]]] = None,
         ocb_version: Optional[str] = None,
         supervisor_version: Optional[str] = None,
-        go_version: Optional[str] = "1.24.1",
+        go_version: Optional[str] = None,
         parallelism: int = 4,
     ):
-        """Create a BuildContext from manifest content."""
-        goos = goos or ["linux"]
-        goarch = goarch or ["arm64"]
-        # Ensure go_version is always a string
-        go_version = go_version or "1.24.1"
+        """Create a BuildContext from manifest content.
+
+        Args:
+            manifest_content: Content of the manifest file.
+            build_dir: Host path for the build workspace (intermediate and OCB files).
+            goos: Target OS list.
+            goarch: Target architecture list.
+            platform_pairs: Exact (os, arch) pairs.
+            ocb_version: OCB version.
+            supervisor_version: Supervisor version.
+            go_version: Go version.
+            parallelism: Parallelism.
+        """
+        # Import here to avoid circular dependency at module level
+        from .platforms import \
+            get_host_platform  # pylint: disable=import-outside-toplevel
+
+        host_os, host_arch = get_host_platform()
+        goos = goos or [host_os]
+        goarch = goarch or [host_arch]
+        platform_pairs = platform_pairs or [(o, a) for o in goos for a in goarch]
 
         # Parse manifest
         manifest = yaml.safe_load(manifest_content)
@@ -151,29 +183,33 @@ class BuildContext:
         )
         ocb_version = versions.ocb
         supervisor_version = versions.supervisor
+        # Use manifest-derived Go version when caller did not specify one
+        if go_version is None:
+            go_version = versions.go
+        go_version = go_version or DEFAULT_GO_VERSION
 
         logger.info(f"Using version {ocb_version} for OCB")
         logger.info(f"Using version {supervisor_version} for Supervisor")
+        logger.info(f"Using Go version {go_version}")
 
         # Format as YAML array
         goos_yaml = "[" + ", ".join(goos) + "]"
         goarch_yaml = "[" + ", ".join(goarch) + "]"
 
-        # Set up build paths
-        working_dir = os.path.abspath(
-            os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        )
-        source_dir = os.path.join(BUILD_DIR, "_build")
-        build_artifact_dir = os.path.join(BUILD_DIR, "dist")
-        ocb_dir = os.path.join(working_dir, "ocb")
-        templates_dir = os.path.join(working_dir, "builder", "templates")
-        manifest_path = os.path.join(BUILD_DIR, "manifest.yaml")
+        # All paths under build_dir (host path)
+        build_dir = os.path.abspath(build_dir)
+        working_dir = build_dir
+        source_dir = os.path.join(build_dir, "_build")
+        build_artifact_dir = os.path.join(build_dir, "dist")
+        ocb_dir = os.path.join(build_dir, "ocb")
+        templates_dir = get_templates_dir()
+        manifest_path = os.path.join(build_dir, "manifest.yaml")
 
         # Update manifest output_path to point to source_dir
         manifest["dist"]["output_path"] = "_build"
 
         # Write prepared manifest
-        os.makedirs(BUILD_DIR, exist_ok=True)
+        os.makedirs(build_dir, exist_ok=True)
         with open(manifest_path, "w", encoding="utf-8") as f:
             yaml.dump(manifest, f)
         logger.success("Manifest prepared successfully")
@@ -181,12 +217,15 @@ class BuildContext:
         # Create instance
         return cls(
             working_dir=working_dir,
-            build_dir=BUILD_DIR,
+            build_dir=build_dir,
             source_dir=source_dir,
             build_artifact_dir=build_artifact_dir,
             ocb_dir=ocb_dir,
             templates_dir=templates_dir,
             distribution=distribution,
+            goos=goos,
+            goarch=goarch,
+            platform_pairs=platform_pairs,
             goos_yaml=goos_yaml,
             goarch_yaml=goarch_yaml,
             ocb_version=ocb_version,
@@ -198,19 +237,51 @@ class BuildContext:
         )
 
 
-def validate_environment():
-    """Validate that required tools are available."""
+def validate_environment() -> bool:
+    """Validate that required tools are available.
+
+    Returns:
+        True if system Go is available, False if it needs to be downloaded.
+    """
     logger.section("Environment Validation")
 
     go_binary = shutil.which("go")
     if not go_binary:
-        logger.error(
-            "Go binary not found. Please ensure Go is installed and in your PATH."
-        )
-        raise RuntimeError("Go binary not found")
+        logger.info("System Go not found; will download automatically before build")
+        return False
 
-    go_version = subprocess.check_output(["go", "version"], text=True).strip()
-    logger.success(f"Go found: {go_version}")
+    go_ver = subprocess.check_output(["go", "version"], text=True).strip()
+    logger.success(f"Go found: {go_ver}")
+    return True
+
+
+def resolve_go_toolchain(
+    ctx: BuildContext, system_go_available: bool
+) -> dict[str, str]:
+    """Ensure a Go toolchain is available and return env overrides.
+
+    If system Go is present, the returned env is empty (use system Go as-is).
+    Otherwise, download the required Go version and return GOROOT + PATH overrides
+    so that goreleaser (and any child ``go`` commands) use the downloaded toolchain.
+
+    Args:
+        ctx: Current build context (provides go_version and build_dir).
+        system_go_available: Whether ``go`` was found on the system PATH.
+
+    Returns:
+        Dict of environment variable overrides (may be empty).
+    """
+    if system_go_available:
+        return {}
+
+    go_root = go_dl.get_go_toolchain(ctx.go_version)
+    go_bin_dir = os.path.join(go_root, "bin")
+
+    logger.success(f"Using downloaded Go {ctx.go_version} (GOROOT={go_root})")
+    return {
+        "GOROOT": go_root,
+        "PATH": go_bin_dir + os.pathsep + os.environ.get("PATH", ""),
+    }
 
 
 def create_directories(ctx: BuildContext):
@@ -234,8 +305,15 @@ def write_file(path: str, content: str, mode="w"):
         file.write(content)
 
 
-def generate_sources(ctx: BuildContext) -> None:
-    """Generate source files using OCB."""
+def generate_sources(
+    ctx: BuildContext, go_env: Optional[dict[str, str]] = None
+) -> None:
+    """Generate source files using OCB.
+
+    Args:
+        ctx: Build context.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
 
     # Download OCB
     ocb_path = ocb.download_ocb(ctx.ocb_version, ctx.ocb_dir)
@@ -248,12 +326,23 @@ def generate_sources(ctx: BuildContext) -> None:
     logger.info("Running OpenTelemetry Collector Builder (OCB):", indent=1)
     logger.command(cmd)
 
+    # Build environment with Go toolchain overrides so OCB can find `go`
+    env = {**os.environ}
+    if go_env:
+        if "GOROOT" in go_env:
+            env["GOROOT"] = go_env["GOROOT"]
+        if "PATH" in go_env:
+            env["PATH"] = (
+                go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env.get("PATH", "")
+            )
+
     result = subprocess.run(
         [ocb_path, "--skip-compilation=true", "--config", ctx.manifest_path],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         check=False,
+        env=env,
     )
     build_log = result.stdout.decode()
 
@@ -272,9 +361,11 @@ def generate_sources(ctx: BuildContext) -> None:
 
 
 def download_supervisor(ctx: BuildContext):
-    # Download supervisor
+    # Download supervisor only for the exact requested platform pairs
     supervisor.download_supervisor(
-        os.path.join(ctx.build_dir, "_contrib"), ctx.supervisor_version
+        os.path.join(ctx.build_dir, "_contrib"),
+        ctx.supervisor_version,
+        platforms=ctx.platform_pairs,
     )
     logger.success("Supervisor binaries downloaded")
 
@@ -311,7 +402,9 @@ def process_templates(ctx: BuildContext):
 
             # further processing for .goreleaser.yaml
             if template == ".goreleaser.yaml":
-                content = process_goreleaser_yaml(content, ctx.goos_yaml)
+                content = process_goreleaser_yaml(
+                    content, ctx.goos_yaml, ctx.platform_pairs
+                )
 
             write_file(dest_path, content)
         logger.info(f"Processed: {template} → {dest}", indent=1)
@@ -324,27 +417,69 @@ def process_templates(ctx: BuildContext):
     logger.success("All templates processed")
 
 
-def process_goreleaser_yaml(content: str, goos_yaml: str) -> str:
-    """Process the .goreleaser.yaml file."""
+def process_goreleaser_yaml(
+    content: str,
+    goos_yaml: str,
+    platform_pairs: list[tuple[str, str]],
+) -> str:
+    """Process the .goreleaser.yaml file.
+
+    Adds ignore entries for any (goos, goarch) cross-product combination
+    that is NOT in the requested platform pairs, so goreleaser only builds
+    for the exact platforms the user asked for.
+    """
+    needs_rewrite = False
+    config = yaml.safe_load(content)
+
+    # Add ignore entries for unwanted cross-product combinations
+    pairs_set = set(platform_pairs)
+    all_goos = sorted({p[0] for p in platform_pairs})
+    all_goarch = sorted({p[1] for p in platform_pairs})
+
+    # Only add ignores when pairs don't cover the full cross-product
+    cross_product = {(o, a) for o in all_goos for a in all_goarch}
+    unwanted = cross_product - pairs_set
+    if unwanted:
+        needs_rewrite = True
+        for build_entry in config.get("builds", []):
+            existing_ignores = build_entry.get("ignore", [])
+            for os_name, arch in sorted(unwanted):
+                ignore_entry = {"goos": os_name, "goarch": arch}
+                if ignore_entry not in existing_ignores:
+                    existing_ignores.append(ignore_entry)
+            build_entry["ignore"] = existing_ignores
+
     # remove nfpms from .goreleaser.yaml if not linux
     if "linux" not in goos_yaml:
-        config = yaml.safe_load(content)
+        needs_rewrite = True
         if "nfpms" in config:
             del config["nfpms"]
-        content = yaml.dump(config, sort_keys=False)
 
-    # expand with more processing as necessary
+    # Only rewrite YAML when structural changes were made
+    # to preserve comments and Go template formatting
+    if needs_rewrite:
+        content = yaml.dump(config, sort_keys=False)
 
     return content
 
 
-def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
-    """Prepare the release."""
+def release_preparation(
+    ctx: BuildContext,
+    metrics: BuildMetrics,
+    go_env: Optional[dict[str, str]] = None,
+):
+    """Prepare the release.
+
+    Args:
+        ctx: Build context.
+        metrics: Build metrics tracker.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
     logger.section("Release Preparation")
 
     # Generate sources
     metrics.start_phase("generate_sources")
-    generate_sources(ctx)
+    generate_sources(ctx, go_env=go_env)
     metrics.update_resource_usage()
     metrics.end_phase("generate_sources")
 
@@ -361,26 +496,65 @@ def release_preparation(ctx: BuildContext, metrics: BuildMetrics):
     metrics.end_phase("process_templates")
 
 
-def build_release(ctx: BuildContext) -> bool:
-    """Build the final release using goreleaser."""
-    logger.section("Release Building")
-    logger.info(f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs")
+def build_release(ctx: BuildContext, go_env: Optional[dict[str, str]] = None) -> bool:
+    """Build the final release using goreleaser.
 
-    cmd = f"RELEASE_VERSION={ctx.release_version} goreleaser --snapshot --clean --parallelism {ctx.parallelism}"
+    Args:
+        ctx: Build context.
+        go_env: Optional env overrides from resolve_go_toolchain (GOROOT, PATH).
+    """
+    logger.section("Release Building")
+
+    # Shared tools directory for downloaded binaries
+    tools_dir = os.path.join(ctx.build_dir, "tools")
+
+    # Resolve goreleaser: PATH first, then download OSS binary
+    goreleaser_path = shutil.which("goreleaser")
+    if not goreleaser_path:
+        goreleaser_path = goreleaser_dl.get_goreleaser_path(tools_dir)
+
+    # Resolve syft (needed by goreleaser for SBOM generation): PATH first, then download
+    syft_path = shutil.which("syft")
+    if not syft_path:
+        syft_path = goreleaser_dl.get_syft_path(tools_dir)
+
+    logger.info(
+        f"Building release for {ctx.distribution} with goreleaser and parallelism {ctx.parallelism} CPUs"
+    )
+
+    cmd = f"RELEASE_VERSION={ctx.release_version} {goreleaser_path} --snapshot --clean --parallelism {ctx.parallelism}"
     logger.command(cmd)
 
+    # Build PATH with tools_dir so goreleaser can find syft
+    env = {
+        **os.environ,
+        "RELEASE_VERSION": ctx.release_version,
+        "PATH": tools_dir + os.pathsep + os.environ.get("PATH", ""),
+    }
+
+    # Merge Go toolchain overrides (GOROOT and PATH with Go bin prepended)
+    if go_env:
+        if "GOROOT" in go_env:
+            env["GOROOT"] = go_env["GOROOT"]
+        if "PATH" in go_env:
+            # Prepend Go bin dir to our already-extended PATH
+            env["PATH"] = go_env["PATH"].split(os.pathsep)[0] + os.pathsep + env["PATH"]
+
     result = subprocess.run(
-        ["goreleaser", "--snapshot", "--clean", "--parallelism", str(ctx.parallelism)],
+        [
+            goreleaser_path,
+            "--snapshot",
+            "--clean",
+            "--parallelism",
+            str(ctx.parallelism),
+        ],
         cwd=ctx.build_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         text=True,
         check=False,
-        env={
-            **os.environ,  # Include existing environment variables
-            "RELEASE_VERSION": ctx.release_version,
-        },
-    )  # Ensure output is decoded as text
+        env=env,
+    )
 
     # Always show goreleaser output
     if result.stdout:
@@ -444,22 +618,27 @@ def build(
     artifact_dir: str,
     goos: Optional[list[str]] = None,
     goarch: Optional[list[str]] = None,
+    platform_pairs: Optional[list[tuple[str, str]]] = None,
     ocb_version: Optional[str] = None,
     supervisor_version: Optional[str] = None,
-    go_version: Optional[str] = DEFAULT_GO_VERSION,
+    go_version: Optional[str] = None,
     parallelism: int = 4,
+    keep_build_dir: bool = False,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
     Args:
         manifest_content: Content of the manifest file
         artifact_dir: Directory to copy artifacts to after build
-        goos: Comma-separated list of target operating systems
-        goarch: Comma-separated list of target architectures
+        goos: List of target operating systems
+        goarch: List of target architectures
+        platform_pairs: Exact (os, arch) pairs to build for. If None, cross-product of goos×goarch is used.
         ocb_version: Version of OpenTelemetry Collector Builder to use (detected from manifest if not provided)
         supervisor_version: Version of OpenTelemetry Collector Supervisor to use (defaults to OCB version if not provided)
-        go_version: Version of Go to use for building
+        go_version: Version of Go to use for building (default: from manifest/versions.yaml when not provided)
         parallelism: Number of parallel Goreleaser build tasks (default 4)
+        keep_build_dir: If True, do not remove the intermediate .build directory
+            under artifact_dir after a successful build (default False).
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -470,14 +649,19 @@ def build(
 
     logger.section("Build Configuration")
 
+    # Build workspace under artifact_dir (host path)
+    build_dir = os.path.join(os.path.abspath(artifact_dir), ".build")
+
     # Create build context
     ctx = BuildContext.create(
         manifest_content,
-        goos,
-        goarch,
-        ocb_version,
-        supervisor_version,
-        go_version,
+        build_dir,
+        goos=goos,
+        goarch=goarch,
+        platform_pairs=platform_pairs,
+        ocb_version=ocb_version,
+        supervisor_version=supervisor_version,
+        go_version=go_version,
         parallelism=parallelism,
     )
 
@@ -501,8 +685,13 @@ def build(
     try:
         # Validate environment
         metrics.start_phase("validate")
-        validate_environment()
+        system_go_available = validate_environment()
         metrics.end_phase("validate")
+
+        # Resolve Go toolchain (downloads if system Go is absent)
+        metrics.start_phase("resolve_go")
+        go_env = resolve_go_toolchain(ctx, system_go_available)
+        metrics.end_phase("resolve_go")
 
         # Create directories
         metrics.start_phase("create_dirs")
@@ -511,13 +700,13 @@ def build(
 
         # Release preparation
         metrics.start_phase("release_preparation")
-        release_preparation(ctx, metrics)
+        release_preparation(ctx, metrics, go_env=go_env)
         metrics.update_resource_usage()
         metrics.end_phase("release_preparation")
 
         # Build release
         metrics.start_phase("build_release")
-        success = build_release(ctx)
+        success = build_release(ctx, go_env=go_env)
         metrics.update_resource_usage()
         metrics.end_phase("build_release")
 
@@ -530,6 +719,11 @@ def build(
             copy_artifacts(ctx, final_artifact_dir)
             metrics.update_resource_usage()
             metrics.end_phase("copy_artifacts")
+
+            # Remove intermediate .build directory unless --debug was passed
+            if not keep_build_dir:
+                shutil.rmtree(ctx.build_dir, ignore_errors=True)
+                logger.info("Removed intermediate build directory")
 
             # Log final metrics
             metrics.log_summary()

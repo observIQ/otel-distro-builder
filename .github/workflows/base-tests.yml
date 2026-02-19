@@ -40,6 +40,13 @@ jobs:
       - name: Run Unit Tests
         run: make unit-test
 
+      - name: Install package and verify CLI
+        run: |
+          pip install .
+          otel-distro-builder --help
+          otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/generated-manifest.yaml
+          test -s /tmp/generated-manifest.yaml
+
   build-tests:
     name: Build Tests
     runs-on: ubuntu-latest
@@ -73,7 +80,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.1"
+          go-version: "1.24.0"
           cache: true
 
       - name: Install dependencies

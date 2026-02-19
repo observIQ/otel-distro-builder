@@ -1,6 +1,5 @@
 """Version parsing utilities for OpenTelemetry Collector Builder."""
 
-import os
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -8,9 +7,36 @@ from typing import Optional
 import yaml
 from packaging import version
 
+from .resources import get_versions_yaml_path
+
 CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
-DEFAULT_VERSION = "0.122.0"
 MIN_SUPERVISOR_VERSION = "0.122.0"
+
+# Fallback if versions.yaml cannot be read
+_FALLBACK_VERSION = "0.144.0"
+
+
+def _get_latest_version() -> str:
+    """Get the latest version from versions.yaml as the default.
+
+    Returns:
+        The first (latest) version key from versions.yaml, or a hardcoded
+        fallback if the file cannot be read.
+    """
+    try:
+        versions_file = get_versions_yaml_path()
+        with open(versions_file, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        if data and "versions" in data:
+            keys = list(data["versions"].keys())
+            if keys:
+                return str(keys[0])
+    except (FileNotFoundError, yaml.YAMLError, KeyError):
+        pass
+    return _FALLBACK_VERSION
+
+
+DEFAULT_VERSION = _get_latest_version()
 
 
 @dataclass
@@ -24,7 +50,7 @@ class BuildVersions:
 
 def load_version_mappings() -> dict:
     """Load version mappings from versions.yaml."""
-    versions_file = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
+    versions_file = get_versions_yaml_path()
     with open(versions_file, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
     return data["versions"]
@@ -45,10 +71,21 @@ def determine_build_versions(
     Returns:
         BuildVersions containing the determined versions
     """
-    # If both versions are provided, use them
+    # If both versions are provided, use them but look up Go from version mappings
     if ocb_version and supervisor_version:
+        version_mappings = load_version_mappings()
+        # Find the Go version for this OCB (builder) version
+        final_go = None
+        for mapping in version_mappings.values():
+            if mapping.get("builder") == ocb_version:
+                final_go = mapping.get("go")
+                break
+        if final_go is None:
+            # OCB version not in mappings; use default version's Go
+            default_mapping = version_mappings.get(DEFAULT_VERSION, {})
+            final_go = default_mapping.get("go", "1.24.0")
         return BuildVersions(
-            ocb=ocb_version, supervisor=supervisor_version, go="1.24.1"
+            ocb=ocb_version, supervisor=supervisor_version, go=final_go
         )
 
     # Try to detect version from manifest
