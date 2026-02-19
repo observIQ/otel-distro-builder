@@ -64,15 +64,94 @@ class ResolvedComponents:
 class ConfigParser:
     """Parser for OpenTelemetry Collector configuration files."""
 
+    # Component sections that must be mappings (dict) when present
+    _COMPONENT_SECTIONS = (
+        "receivers",
+        "processors",
+        "exporters",
+        "extensions",
+        "connectors",
+    )
+
     def __init__(self, config_content: str):
         """Initialize the parser with config content.
 
         Args:
             config_content: YAML content of the collector config file
+
+        Raises:
+            ValueError: If the content is not a valid OTel Collector config structure
         """
         self._config = yaml.safe_load(config_content)
         if self._config is None:
             self._config = {}
+        self._validate_config_schema(self._config)
+
+    @staticmethod
+    def _validate_config_schema(config: object) -> None:
+        """Validate that *config* has the expected OTel Collector structure.
+
+        Checks performed (without requiring external dependencies):
+        - Top-level value must be a mapping (dict), not a list or scalar.
+        - Component sections (receivers, processors, exporters, extensions,
+          connectors), if present, must be mappings.
+        - ``service``, if present, must be a mapping.
+        - ``service.pipelines``, if present, must be a mapping whose values
+          are themselves mappings.
+        - ``service.extensions``, if present, must be a sequence (list).
+
+        Args:
+            config: The deserialized YAML object to validate.
+
+        Raises:
+            ValueError: Describing the first structural problem found.
+        """
+        if not isinstance(config, dict):
+            raise ValueError(
+                "Invalid collector config: top-level value must be a YAML mapping "
+                f"(got {type(config).__name__}). "
+                "Ensure the file is a valid OpenTelemetry Collector configuration."
+            )
+
+        # Each component section must be a dict when present
+        for section in ConfigParser._COMPONENT_SECTIONS:
+            value = config.get(section)
+            if value is not None and not isinstance(value, dict):
+                raise ValueError(
+                    f"Invalid collector config: '{section}' must be a mapping "
+                    f"(got {type(value).__name__}). "
+                    "Each component section should be a map of component name to config."
+                )
+
+        # Validate service block
+        service = config.get("service")
+        if service is not None:
+            if not isinstance(service, dict):
+                raise ValueError(
+                    f"Invalid collector config: 'service' must be a mapping "
+                    f"(got {type(service).__name__})."
+                )
+
+            pipelines = service.get("pipelines")
+            if pipelines is not None:
+                if not isinstance(pipelines, dict):
+                    raise ValueError(
+                        f"Invalid collector config: 'service.pipelines' must be a mapping "
+                        f"(got {type(pipelines).__name__})."
+                    )
+                for pipeline_name, pipeline_cfg in pipelines.items():
+                    if pipeline_cfg is not None and not isinstance(pipeline_cfg, dict):
+                        raise ValueError(
+                            f"Invalid collector config: pipeline '{pipeline_name}' "
+                            f"must be a mapping (got {type(pipeline_cfg).__name__})."
+                        )
+
+            extensions = service.get("extensions")
+            if extensions is not None and not isinstance(extensions, list):
+                raise ValueError(
+                    f"Invalid collector config: 'service.extensions' must be a sequence "
+                    f"(got {type(extensions).__name__})."
+                )
 
     def parse(self) -> ParsedComponents:
         """Parse the configuration and extract component names.

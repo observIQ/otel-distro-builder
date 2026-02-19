@@ -1,6 +1,6 @@
 # Build otel-distro-builder standalone binaries (PyInstaller) per platform.
 # On push tag v*, builds binaries and uploads them to the existing release.
-# Platforms: linux/amd64, linux/arm64 (arm runner), darwin/arm64, windows/amd64.
+# Platforms: linux/amd64, linux/arm64 (arm runner), darwin/arm64, darwin/amd64, windows/amd64.
 # If ubuntu-24.04-arm is not available for your plan, remove the linux/arm64 matrix entry.
 
 name: Build CLI Binaries
@@ -28,6 +28,9 @@ jobs:
           - runner: macos-14
             os: darwin
             arch: arm64
+          - runner: macos-13
+            os: darwin
+            arch: amd64
           - runner: windows-latest
             os: windows
             arch: amd64
