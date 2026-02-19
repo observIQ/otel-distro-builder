@@ -6,7 +6,7 @@ This guide explains how to build custom OpenTelemetry Collector distributions fo
 
 Use `run_local_build.sh -p <platforms>` when you need collector binaries for several platforms (e.g. linux/amd64, linux/arm64, darwin/arm64) from one command. The script builds one Docker image for your host architecture (to avoid emulation issues) and runs the builder so it produces artifacts for all requested platforms.
 
-For a single platform, run `run_local_build.sh` without `-p` (default: linux/arm64). See [Using the Local Build Script](./local-build-script.md).
+For a single platform, run `run_local_build.sh` without `-p` (defaults to the host platform). See [Using the Local Build Script](./local-build-script.md).
 
 ## Prerequisites
 
@@ -42,7 +42,7 @@ providers:
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,darwin/amd64,linux/arm64,darwin/arm64
 ```
 
-This builds the collector for linux and darwin (amd64 and arm64) and writes artifacts to `./artifacts`. Omit `-p` for a single-arch build (default: linux/arm64).
+This builds the collector for linux and darwin (amd64 and arm64) and writes artifacts to `./artifacts`. Omit `-p` for a single-arch build (defaults to the host platform).
 
 ## How It Works
 
@@ -56,7 +56,7 @@ This builds the collector for linux and darwin (amd64 and arm64) and writes arti
 |--------|-------------|---------|----------|
 | `-m` | Path to manifest file | None | Yes |
 | `-o` | Output directory for artifacts | `./artifacts` | No |
-| `-p` | Comma-delimited GOOS/GOARCH for collector binaries (omit for single-arch: linux/arm64) | None (single-arch) | No |
+| `-p` | Comma-delimited GOOS/GOARCH for collector binaries (omit for single-arch; defaults to host platform) | None (defaults to host platform) | No |
 | `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
 | `-v` | OpenTelemetry Collector Builder version | From manifest | No |
 | `-g` | Go version to use | From manifest/versions.yaml | No |

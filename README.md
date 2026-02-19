@@ -35,7 +35,7 @@ It handles all the complex aspects of managing your own distribution that have h
 
 ## 📥 Install
 
-The CLI runs on your host and reads config/manifest files from the host filesystem. **Docker is not required** for manifest generation or for full builds when Go (and OCB) are available on the host.
+The CLI runs on your host and reads config/manifest files from the host filesystem. **Docker is not required**—the CLI downloads OCB and Go automatically when needed for full builds.
 
 | Method | Command |
 |--------|---------|
@@ -46,7 +46,7 @@ The CLI runs on your host and reads config/manifest files from the host filesyst
 
 Then run `otel-distro-builder --help`.
 
-**Dependencies:** For **manifest generation** (`--from-config`, `--generate-only`), the standalone binary and pip install need **no other dependencies**. For **full distribution builds** on the host, **Go is the only required dependency**—the CLI downloads the OpenTelemetry Collector Builder (OCB) automatically. Docker is optional and only for an isolated build environment.
+**Dependencies:** For **manifest generation** (`--from-config`, `--generate-only`), the standalone binary and pip install need **no other dependencies**. For **full distribution builds** on the host, **no other dependencies are required**—the CLI downloads OCB and Go automatically when needed. Docker is optional and only for an isolated build environment.
 
 ## 🚀 Quick Start
 
@@ -126,7 +126,7 @@ on:
 
 ## 🔄 Generate Manifest from Existing Config
 
-Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need. **No Docker required**—run the CLI on your host (after [install](#-install)); for full builds you need Go installed and the CLI will download OCB automatically.
+Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need. **No Docker required**—run the CLI on your host (after [install](#-install)); for full builds, no other dependencies are required—the CLI downloads OCB and Go automatically.
 
 ```bash
 # Generate manifest only (prints to stdout)
@@ -180,10 +180,15 @@ To view detailed guides, see the [docs](./docs) directory.
 
 #### Inputs
 
-| Input       | Description           | Default           |
-| ----------- | --------------------- | ----------------- |
-| `manifest`  | Path to manifest file | `./manifest.yaml` |
-| `platforms` | Target platforms      | `linux/amd64`     |
+| Input                | Description                                      | Default                       | Required |
+| -------------------- | ------------------------------------------------ | ----------------------------- | -------- |
+| `manifest`           | Path to manifest file                            | `./manifest.yaml`             | Yes      |
+| `artifact_dir`       | Directory to store build artifacts               | `/github/workspace/artifacts` | Yes      |
+| `os`                 | Target operating systems (comma-separated)       | `linux`                       | No       |
+| `arch`               | Target architectures (comma-separated)           | `amd64`                       | No       |
+| `ocb_version`        | OpenTelemetry Collector Builder version          | —                             | No       |
+| `supervisor_version` | Supervisor version                               | —                             | No       |
+| `go_version`         | Go version for building                          | —                             | No       |
 
 #### Outputs
 
@@ -274,7 +279,7 @@ When building for multiple architectures or large manifests, the number of paral
 
 ### Prerequisites
 
-- **Using the CLI (binary or pip):** For full builds, only [Go](https://go.dev/dl/) is required; OCB is downloaded by the CLI. For manifest generation only, no dependencies.
+- **Using the CLI (binary or pip):** For full builds, no other dependencies are required; the CLI downloads OCB and Go automatically. For manifest generation only, no dependencies.
 - **Development (editing this repo):** Python 3, Make. Docker is optional (for running the builder in a container).
 
 ### Available Commands
@@ -332,7 +337,7 @@ Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version
 
 Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
 
-**Multi-arch builds** use the same script with `-p` (omit `-p` for single-arch default linux/arm64):
+**Multi-arch builds** use the same script with `-p` (omit `-p` for single-arch; defaults to the host platform):
 
 ```bash
 # Multi-arch: linux + darwin, amd64 + arm64

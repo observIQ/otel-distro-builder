@@ -10,7 +10,7 @@ If you already have a running OpenTelemetry Collector with a `config.yaml` file,
 2. Generate a minimal `manifest.yaml` containing only those components
 3. Optionally build a custom collector distribution in the same run
 
-You get a smaller, more efficient collector binary that includes only the components you use. **No Docker required**—the CLI runs on your host; for full builds you need Go installed and the CLI downloads OCB automatically.
+You get a smaller, more efficient collector binary that includes only the components you use. **No Docker required**—the CLI runs on your host; for full builds, no other dependencies are required—the CLI downloads OCB and Go automatically.
 
 ## Quick Start (Host CLI)
 

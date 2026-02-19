@@ -42,6 +42,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,33 +55,33 @@ jobs:
         uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
-          output-dir: "./artifacts"
-          create_release: true
-          upload_artifacts: true
-          platforms: "linux/amd64,linux/arm64"
+          artifact_dir: "${{ github.workspace }}/artifacts"
+          os: "linux"
+          arch: "amd64,arm64"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.workspace }}/artifacts/*
 ```
 
 ## Available Inputs
 
 The GitHub Action accepts the following inputs:
 
-| Input              | Description                        | Default           | Required |
-| ------------------ | ---------------------------------- | ----------------- | -------- |
-| `manifest`         | Path to manifest file              | `./manifest.yaml` | Yes      |
-| `output-dir`       | Output directory for artifacts     | `./artifacts`     | No       |
-| `create_release`   | Create GitHub release              | `true`            | No       |
-| `upload_artifacts` | Upload to Actions artifacts        | `true`            | No       |
-| `platforms`        | Target platforms (comma-separated) | `linux/amd64`     | No       |
+| Input                | Description                                    | Default                       | Required |
+| -------------------- | ---------------------------------------------- | ----------------------------- | -------- |
+| `manifest`           | Path to manifest file                          | `./manifest.yaml`             | Yes      |
+| `artifact_dir`       | Directory to store build artifacts             | `/github/workspace/artifacts` | Yes      |
+| `os`                 | Target operating systems (comma-separated)     | `linux`                       | No       |
+| `arch`               | Target architectures (comma-separated)         | `amd64`                       | No       |
+| `ocb_version`        | OpenTelemetry Collector Builder version        | —                             | No       |
+| `supervisor_version` | Supervisor version                             | —                             | No       |
+| `go_version`         | Go version for building                        | —                             | No       |
 
 ## Outputs
 
-The action provides the following outputs:
-
-| Output           | Description                    |
-| ---------------- | ------------------------------ |
-| `name`           | Name of the built collector    |
-| `version`        | Version of the built collector |
-| `artifacts_path` | Path to the built artifacts    |
+The action does not expose formal step outputs. All generated artifacts are written to the directory specified by `artifact_dir`. Use a separate step (e.g. `softprops/action-gh-release`) to upload them to a GitHub Release or elsewhere.
 
 ## Example Workflows
 
@@ -92,6 +95,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -104,8 +110,12 @@ jobs:
         uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
-          create_release: true
-          upload_artifacts: true
+          artifact_dir: "${{ github.workspace }}/artifacts"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.workspace }}/artifacts/*
 ```
 
 ### Multi-Platform Build
@@ -118,6 +128,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -128,9 +141,14 @@ jobs:
         uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
-          platforms: "linux/amd64,linux/arm64,linux/arm/v7"
-          create_release: true
-          upload_artifacts: true
+          artifact_dir: "${{ github.workspace }}/artifacts"
+          os: "linux,darwin"
+          arch: "amd64,arm64"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.workspace }}/artifacts/*
 ```
 
 ### Custom Output Directory
@@ -143,6 +161,9 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -153,9 +174,12 @@ jobs:
         uses: observiq/otel-distro-builder@v1
         with:
           manifest: "./manifest.yaml"
-          output-dir: "./dist"
-          create_release: true
-          upload_artifacts: true
+          artifact_dir: "${{ github.workspace }}/dist"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ github.workspace }}/dist/*
 ```
 
 ## Artifacts and Releases
@@ -172,19 +196,25 @@ The builder will generate the following artifacts:
 
 ### GitHub Release
 
-When `create_release` is enabled:
+The action does not create releases itself. Add a separate step using `softprops/action-gh-release` (or similar) to upload the contents of `artifact_dir` to a GitHub Release:
 
-- A new GitHub release is created with the tag name
-- All artifacts are attached to the release
-- Release notes are generated from commit messages
+```yaml
+- name: Create Release
+  uses: softprops/action-gh-release@v2
+  with:
+    files: ${{ github.workspace }}/artifacts/*
+```
 
 ### Actions Artifacts
 
-When `upload_artifacts` is enabled:
+To upload artifacts to GitHub Actions for download from the Actions UI, add an `actions/upload-artifact` step after the build:
 
-- All built artifacts are uploaded to GitHub Actions
-- Available for download from the Actions UI
-- Can be used by subsequent workflow steps
+```yaml
+- uses: actions/upload-artifact@v4
+  with:
+    name: collector-artifacts
+    path: ${{ github.workspace }}/artifacts/*
+```
 
 ## Best Practices
 
