@@ -47,7 +47,6 @@ providers:
 | `-v` | OpenTelemetry Collector Builder version | `0.121.0` | No |
 | `-g` | Go version to use | `1.24.0` | No |
 | `-s` | Supervisor version | `0.122.0` | No |
-| `-i` | Build ID for artifact storage | Auto-generated | No |
 | `-h` | Show help message | N/A | No |
 
 The `-n` (parallelism) option is passed to the builder as `--parallelism` and controls how many build targets Goreleaser runs in parallel. See [Docker documentation](./docker.md) for the full list of builder options.
@@ -85,14 +84,6 @@ Build for `linux/amd64` or `darwin/arm64`:
   -v 0.121.0 \
   -g 1.24.0 \
   -s 0.122.0
-```
-
-### Custom Build ID
-
-```bash
-./scripts/run_local_build.sh \
-  -m manifest.yaml \
-  -i custom-build-123
 ```
 
 ## Using Make Commands
