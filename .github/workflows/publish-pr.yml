@@ -101,13 +101,14 @@ jobs:
           INPUT_OS: ${{ matrix.os }}
           INPUT_ARCH: ${{ matrix.arch }}
         run: |
+          IMAGE_REF_LOWER=$(echo "$IMAGE_REF" | tr '[:upper:]' '[:lower:]')
           docker run --rm \
             -v "${{ github.workspace }}:/github/workspace" \
             -e INPUT_MANIFEST \
             -e INPUT_ARTIFACT_DIR \
             -e INPUT_OS \
             -e INPUT_ARCH \
-            "$IMAGE_REF"
+            "$IMAGE_REF_LOWER"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
