@@ -93,7 +93,7 @@ on:
       - uses: actions/checkout@v4
 
       # Build the OpenTelemetry distribution using this custom action
-      - uses: observiq/otel-distro-builder@v1
+      - uses: observiq/otel-distro-builder@v1.1.0
         with:
           manifest: "./manifest.yaml"
 
@@ -396,7 +396,7 @@ The builder produces:
 
 We follow semantic versioning. The builder is available in several forms:
 
-- GitHub Action: Use `@v1` for latest 1.x version, or `@v1.0.5` for specific versions
+- GitHub Action: Use `@v1.1.0` for latest 1.x version, or `@v1.0.5` for specific versions
 - Docker Image: Use `main` for latest, or version tags like `v1.0.5`
 - Container Registry: `ghcr.io/observiq/otel-distro-builder:main` or `ghcr.io/observiq/otel-distro-builder:v1.0.5`
 

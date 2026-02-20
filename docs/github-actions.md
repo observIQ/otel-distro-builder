@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and Package
-        uses: observiq/otel-distro-builder@v1
+        uses: observiq/otel-distro-builder@v1.1.0
         with:
           manifest: "./manifest.yaml"
           artifact_dir: "${{ github.workspace }}/artifacts"
@@ -107,7 +107,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build and Package Collector
-        uses: observiq/otel-distro-builder@v1
+        uses: observiq/otel-distro-builder@v1.1.0
         with:
           manifest: "./manifest.yaml"
           artifact_dir: "${{ github.workspace }}/artifacts"
@@ -138,7 +138,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and Package Collector
-        uses: observiq/otel-distro-builder@v1
+        uses: observiq/otel-distro-builder@v1.1.0
         with:
           manifest: "./manifest.yaml"
           artifact_dir: "${{ github.workspace }}/artifacts"
@@ -171,7 +171,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build and Package Collector
-        uses: observiq/otel-distro-builder@v1
+        uses: observiq/otel-distro-builder@v1.1.0
         with:
           manifest: "./manifest.yaml"
           artifact_dir: "${{ github.workspace }}/dist"
