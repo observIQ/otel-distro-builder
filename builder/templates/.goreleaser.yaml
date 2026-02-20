@@ -28,6 +28,7 @@ builds:
       - -w
     flags:
       - -trimpath
+      - -buildvcs=false  # required: OCB output dir has no .git, Go 1.18+ VCS stamping would fail
     env:
       - CGO_ENABLED=0
 archives:
