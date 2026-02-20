@@ -10,6 +10,9 @@ inputs:
     description: "Directory to store build artifacts"
     required: true
     default: "/github/workspace/artifacts"
+  platforms:
+    description: "Target platforms as GOOS/GOARCH pairs (comma-separated, e.g. linux/amd64,linux/arm64). Takes precedence over os/arch when set."
+    required: false
   os:
     description: "Target operating systems (comma-separated: linux,darwin,windows)"
     required: false
@@ -33,6 +36,7 @@ runs:
   image: "builder/Dockerfile"
   env:
     INPUT_MANIFEST: ${{ inputs.manifest }}
+    INPUT_PLATFORMS: ${{ inputs.platforms }}
     INPUT_OS: ${{ inputs.os }}
     INPUT_ARCH: ${{ inputs.arch }}
     INPUT_OCB_VERSION: ${{ inputs.ocb_version }}
