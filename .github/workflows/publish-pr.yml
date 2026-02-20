@@ -61,6 +61,7 @@ jobs:
     needs: build-and-push
     permissions:
       contents: read
+      packages: read
     strategy:
       matrix:
         platform: [linux/amd64, linux/arm64, darwin/arm64, windows/amd64]
@@ -85,13 +86,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and Package
-        uses: docker://ghcr.io/${{ github.repository }}:pr-${{ github.event.pull_request.number }}
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          manifest: ./manifest.yaml
-          artifact_dir: ${{ github.workspace }}/artifacts
-          os: ${{ matrix.os }}
-          arch: ${{ matrix.arch }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Package
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ github.repository }}:pr-${{ github.event.pull_request.number }}
+          INPUT_MANIFEST: /github/workspace/manifest.yaml
+          INPUT_ARTIFACT_DIR: /github/workspace/artifacts
+          INPUT_OS: ${{ matrix.os }}
+          INPUT_ARCH: ${{ matrix.arch }}
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}:/github/workspace" \
+            -e INPUT_MANIFEST \
+            -e INPUT_ARTIFACT_DIR \
+            -e INPUT_OS \
+            -e INPUT_ARCH \
+            "$IMAGE_REF"
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
