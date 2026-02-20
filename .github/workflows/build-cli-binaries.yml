@@ -28,7 +28,7 @@ jobs:
           - runner: macos-14
             os: darwin
             arch: arm64
-          - runner: macos-13
+          - runner: macos-14-large
             os: darwin
             arch: amd64
           - runner: windows-latest
