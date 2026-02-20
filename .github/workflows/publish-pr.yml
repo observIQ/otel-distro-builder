@@ -63,12 +63,24 @@ jobs:
       contents: read
     strategy:
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        platform: [linux/amd64, linux/arm64, darwin/arm64, windows/amd64]
         include:
           - platform: linux/amd64
+            os: linux
+            arch: amd64
             artifact_name: linux-amd64
           - platform: linux/arm64
+            os: linux
+            arch: arm64
             artifact_name: linux-arm64
+          - platform: darwin/arm64
+            os: darwin
+            arch: arm64
+            artifact_name: darwin-arm64
+          - platform: windows/amd64
+            os: windows
+            arch: amd64
+            artifact_name: windows-amd64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,16 +90,19 @@ jobs:
         with:
           manifest: ./manifest.yaml
           artifact_dir: ${{ github.workspace }}/artifacts
-          platforms: ${{ matrix.platform }}
+          os: ${{ matrix.os }}
+          arch: ${{ matrix.arch }}
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: distribution-artifacts-${{ matrix.artifact_name }}
           path: |
-            ${{ github.workspace }}/artifacts/*.deb
-            ${{ github.workspace }}/artifacts/*.rpm
-            ${{ github.workspace }}/artifacts/*.apk
-            ${{ github.workspace }}/artifacts/*.tar.gz
             ${{ github.workspace }}/artifacts/*.sbom.json
+            ${{ github.workspace }}/artifacts/*_checksums.txt
+            ${{ matrix.os == 'linux' && format('{0}/artifacts/*.deb', github.workspace) }}
+            ${{ matrix.os == 'linux' && format('{0}/artifacts/*.rpm', github.workspace) }}
+            ${{ matrix.os == 'linux' && format('{0}/artifacts/*.apk', github.workspace) }}
+            ${{ (matrix.os == 'linux' || matrix.os == 'darwin') && format('{0}/artifacts/*.tar.gz', github.workspace) }}
+            ${{ matrix.os == 'windows' && format('{0}/artifacts/*.zip', github.workspace) }}
           retention-days: 5
