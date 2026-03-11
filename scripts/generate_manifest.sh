@@ -2,7 +2,7 @@
 set -e
 
 # Default values
-OUTPUT_MANIFEST=""
+ARTIFACTS_DIR=""
 OTEL_VERSION=""
 DIST_NAME="otelcol-custom"
 DIST_MODULE="github.com/custom/otelcol-distribution"
@@ -13,15 +13,16 @@ NO_BINDPLANE=false
 
 # Help message
 usage() {
-    echo "Usage: $0 -c <config_path> [-o <output_manifest>] [options]"
+    echo "Usage: $0 -c <config_path> [-a <artifacts_dir>] [options]"
     echo
     echo "Generate an OCB manifest from an existing OpenTelemetry Collector config.yaml"
+    echo "The manifest is always written to <artifacts_dir>/manifest.yaml."
     echo
     echo "Required arguments:"
     echo "  -c <config_path>            Path to collector config.yaml file"
     echo
     echo "Optional arguments:"
-    echo "  -o <output_manifest>        Path to write generated manifest (default: stdout)"
+    echo "  -a <artifacts_dir>          Artifacts directory (default: ./artifacts)"
     echo "  -v <otel_version>           Target OpenTelemetry version (default: latest from versions.yaml)"
     echo "  -n <dist_name>              Distribution name (default: otelcol-custom)"
     echo "  -m <dist_module>            Go module path (default: github.com/custom/otelcol-distribution)"
@@ -31,31 +32,31 @@ usage() {
     echo "  -h                          Show this help message"
     echo
     echo "Examples:"
-    echo "  # Generate manifest and print to stdout"
+    echo "  # Generate manifest to default ./artifacts/manifest.yaml"
     echo "  $0 -c config.yaml"
     echo
-    echo "  # Generate manifest and save to file"
-    echo "  $0 -c config.yaml -o manifest.yaml"
+    echo "  # Generate manifest to a custom artifacts directory"
+    echo "  $0 -c config.yaml -a ./out"
     echo
     echo "  # Generate manifest with specific OTel version"
-    echo "  $0 -c config.yaml -o manifest.yaml -v 0.144.0"
+    echo "  $0 -c config.yaml -v 0.144.0"
     echo
     echo "  # Generate manifest with custom distribution name"
-    echo "  $0 -c config.yaml -o manifest.yaml -n my-collector -m github.com/myorg/collector"
+    echo "  $0 -c config.yaml -n my-collector -m github.com/myorg/collector"
     echo
     echo "  # Generate manifest without Bindplane components"
-    echo "  $0 -c config.yaml -o manifest.yaml -B"
+    echo "  $0 -c config.yaml -B"
     echo
     echo "  # Use Docker instead of local Python"
-    echo "  $0 -c config.yaml -o manifest.yaml -d"
+    echo "  $0 -c config.yaml -d"
     exit 1
 }
 
 # Parse command line arguments
-while getopts "c:o:v:n:m:V:Bdh" opt; do
+while getopts "c:a:v:n:m:V:Bdh" opt; do
     case $opt in
     c) CONFIG_PATH="$OPTARG" ;;
-    o) OUTPUT_MANIFEST="$OPTARG" ;;
+    a) ARTIFACTS_DIR="$OPTARG" ;;
     v) OTEL_VERSION="$OPTARG" ;;
     n) DIST_NAME="$OPTARG" ;;
     m) DIST_MODULE="$OPTARG" ;;
@@ -87,7 +88,7 @@ PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 echo "=== Generate Manifest from Config ==="
 echo "Config: $CONFIG_PATH"
-[ -n "$OUTPUT_MANIFEST" ] && echo "Output: $OUTPUT_MANIFEST"
+[ -n "$ARTIFACTS_DIR" ] && echo "Artifacts: $ARTIFACTS_DIR"
 [ -n "$OTEL_VERSION" ] && echo "OTel Version: $OTEL_VERSION"
 echo "Distribution: $DIST_NAME"
 echo
@@ -100,44 +101,33 @@ if [ "$USE_DOCKER" = true ]; then
     DOCKER_ARGS="$DOCKER_ARGS --dist-version $DIST_VERSION"
     [ -n "$OTEL_VERSION" ] && DOCKER_ARGS="$DOCKER_ARGS --otel-version $OTEL_VERSION"
     [ "$NO_BINDPLANE" = true ] && DOCKER_ARGS="$DOCKER_ARGS --no-bindplane"
-    
-    if [ -n "$OUTPUT_MANIFEST" ]; then
-        OUTPUT_DIR=$(dirname "$OUTPUT_MANIFEST")
-        OUTPUT_FILENAME=$(basename "$OUTPUT_MANIFEST")
-        mkdir -p "$OUTPUT_DIR"
-        OUTPUT_MANIFEST=$(cd "$OUTPUT_DIR" && pwd)/$OUTPUT_FILENAME
-        DOCKER_ARGS="$DOCKER_ARGS --output-manifest /output/$OUTPUT_FILENAME"
-        
-        # Build Docker image if needed
-        echo "Building Docker image..."
-        DOCKER_PLATFORM="linux/$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
-        (cd "$PROJECT_ROOT/builder" && docker build -t "$DOCKER_IMAGE" --platform "$DOCKER_PLATFORM" . > /dev/null)
-        
-        # Run with output volume
-        # shellcheck disable=SC2086
-        docker run --rm \
-            --platform "$DOCKER_PLATFORM" \
-            -v "$CONFIG_PATH:/config.yaml:ro" \
-            -v "$OUTPUT_DIR:/output" \
-            "$DOCKER_IMAGE" \
-            $DOCKER_ARGS
-        
-        echo "=== Manifest generated ==="
-        echo "Output: $OUTPUT_MANIFEST"
+
+    # Resolve artifacts dir for Docker volume mount
+    if [ -n "$ARTIFACTS_DIR" ]; then
+        mkdir -p "$ARTIFACTS_DIR"
+        ARTIFACTS_DIR=$(cd "$ARTIFACTS_DIR" && pwd)
     else
-        # Build Docker image if needed
-        echo "Building Docker image..."
-        DOCKER_PLATFORM="linux/$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
-        (cd "$PROJECT_ROOT/builder" && docker build -t "$DOCKER_IMAGE" --platform "$DOCKER_PLATFORM" . > /dev/null)
-        
-        # Run without output volume (prints to stdout)
-        # shellcheck disable=SC2086
-        docker run --rm \
-            --platform "$DOCKER_PLATFORM" \
-            -v "$CONFIG_PATH:/config.yaml:ro" \
-            "$DOCKER_IMAGE" \
-            $DOCKER_ARGS
+        mkdir -p artifacts
+        ARTIFACTS_DIR=$(cd artifacts && pwd)
     fi
+    DOCKER_ARGS="$DOCKER_ARGS --artifacts /artifacts"
+
+    # Build Docker image if needed
+    echo "Building Docker image..."
+    DOCKER_PLATFORM="linux/$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')"
+    (cd "$PROJECT_ROOT/builder" && docker build -t "$DOCKER_IMAGE" --platform "$DOCKER_PLATFORM" . > /dev/null)
+
+    # Run with artifacts volume
+    # shellcheck disable=SC2086
+    docker run --rm \
+        --platform "$DOCKER_PLATFORM" \
+        -v "$CONFIG_PATH:/config.yaml:ro" \
+        -v "$ARTIFACTS_DIR:/artifacts" \
+        "$DOCKER_IMAGE" \
+        $DOCKER_ARGS
+
+    echo "=== Manifest generated ==="
+    echo "Output: $ARTIFACTS_DIR/manifest.yaml"
 else
     # Use CLI on host (prefer installed otel-distro-builder, else Python module)
     PYTHON_ARGS="--from-config $CONFIG_PATH --generate-only"
@@ -145,7 +135,7 @@ else
     PYTHON_ARGS="$PYTHON_ARGS --dist-module $DIST_MODULE"
     PYTHON_ARGS="$PYTHON_ARGS --dist-version $DIST_VERSION"
     [ -n "$OTEL_VERSION" ] && PYTHON_ARGS="$PYTHON_ARGS --otel-version $OTEL_VERSION"
-    [ -n "$OUTPUT_MANIFEST" ] && PYTHON_ARGS="$PYTHON_ARGS --output-manifest $OUTPUT_MANIFEST"
+    [ -n "$ARTIFACTS_DIR" ] && PYTHON_ARGS="$PYTHON_ARGS --artifacts $ARTIFACTS_DIR"
     [ "$NO_BINDPLANE" = true ] && PYTHON_ARGS="$PYTHON_ARGS --no-bindplane"
 
     if command -v otel-distro-builder >/dev/null 2>&1; then
@@ -157,8 +147,10 @@ else
         python -m builder.src.main $PYTHON_ARGS
     fi
 
-    if [ -n "$OUTPUT_MANIFEST" ]; then
-        echo "=== Manifest generated ==="
-        echo "Output: $OUTPUT_MANIFEST"
+    echo "=== Manifest generated ==="
+    if [ -n "$ARTIFACTS_DIR" ]; then
+        echo "Output: $ARTIFACTS_DIR/manifest.yaml"
+    else
+        echo "Output: ./artifacts/manifest.yaml"
     fi
 fi

@@ -75,8 +75,8 @@ jobs:
           BIN="release/otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}"
           "$BIN" --help
           "$BIN" --version
-          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/gen.yaml
-          test -s /tmp/gen.yaml
+          "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --artifacts /tmp/artifacts
+          test -s /tmp/artifacts/manifest.yaml
 
       - name: Test standalone binary (Windows)
         if: matrix.os == 'windows'
@@ -85,8 +85,8 @@ jobs:
           $BIN = "release\otel-distro-builder-${{ matrix.os }}-${{ matrix.arch }}.exe"
           & $BIN --help
           & $BIN --version
-          & $BIN --from-config builder\tests\configs\otelcol\simple.yaml --generate-only --output-manifest $env:TEMP\gen.yaml
-          if (-not (Test-Path $env:TEMP\gen.yaml)) { throw "Manifest not generated" }
+          & $BIN --from-config builder\tests\configs\otelcol\simple.yaml --generate-only --artifacts $env:TEMP\artifacts
+          if (-not (Test-Path $env:TEMP\artifacts\manifest.yaml)) { throw "Manifest not generated" }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -119,8 +119,8 @@ jobs:
 
           PATH="$NO_GO_PATH" "$BIN" --help
           PATH="$NO_GO_PATH" "$BIN" --version
-          PATH="$NO_GO_PATH" "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/out.yaml
-          test -s /tmp/out.yaml
+          PATH="$NO_GO_PATH" "$BIN" --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --artifacts /tmp/artifacts
+          test -s /tmp/artifacts/manifest.yaml
           echo "Standalone binary works with no Python or Go at runtime."
 
   upload-to-release:

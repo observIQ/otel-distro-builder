@@ -138,7 +138,7 @@ script-test: ## Run script smoke tests (help, validation; no Docker required)
 	@echo "  Checking build_from_config.sh requires -c..."
 	@./scripts/build_from_config.sh 2>&1 | grep -q "Config path is required" || (echo "build_from_config.sh should require -c"; exit 1)
 	@echo "  Checking generate_manifest.sh with test config..."
-	@OUT=$$(mktemp); ./scripts/generate_manifest.sh -c builder/tests/configs/otelcol/simple.yaml -o "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; echo "generate_manifest.sh failed"; exit 1)
+	@ARTIFACTS=$$(mktemp -d); ./scripts/generate_manifest.sh -c builder/tests/configs/otelcol/simple.yaml -a "$$ARTIFACTS" && test -s "$$ARTIFACTS/manifest.yaml" && rm -rf "$$ARTIFACTS" || (rm -rf "$$ARTIFACTS"; echo "generate_manifest.sh failed"; exit 1)
 	@echo "$(GREEN)Script smoke tests passed.$(NC)"
 
 check-all: quality shell-check test scan-all ## Run all checks including security scans
@@ -211,26 +211,26 @@ multiarch-build-local: ## Build multi-arch distribution with specific versions u
 	fi
 	./scripts/run_local_build.sh -m manifest.yaml -p $(MULTIARCH_PLATFORMS) -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
 
-generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [output=manifest.yaml] [version=0.144.0] [name=my-collector])
+generate-manifest: ## Generate manifest from collector config (make generate-manifest config=config.yaml [artifacts=./out] [version=0.144.0] [name=my-collector])
 	@if [ -z "$(config)" ]; then \
 		echo "$(RED)Error: config is required. Usage: make generate-manifest config=config.yaml$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(BLUE)Generating manifest from config...$(NC)"
 	./scripts/generate_manifest.sh -c $(config) \
-		$(if $(output),-o $(output)) \
+		$(if $(artifacts),-a $(artifacts)) \
 		$(if $(version),-v $(version)) \
 		$(if $(name),-n $(name)) \
 		$(if $(module),-m $(module))
 
-generate-manifest-docker: ## Generate manifest using Docker (make generate-manifest-docker config=config.yaml [output=manifest.yaml])
+generate-manifest-docker: ## Generate manifest using Docker (make generate-manifest-docker config=config.yaml [artifacts=./out])
 	@if [ -z "$(config)" ]; then \
 		echo "$(RED)Error: config is required. Usage: make generate-manifest-docker config=config.yaml$(NC)"; \
 		exit 1; \
 	fi
 	@echo "$(BLUE)Generating manifest from config using Docker...$(NC)"
 	./scripts/generate_manifest.sh -c $(config) -d \
-		$(if $(output),-o $(output)) \
+		$(if $(artifacts),-a $(artifacts)) \
 		$(if $(version),-v $(version)) \
 		$(if $(name),-n $(name)) \
 		$(if $(module),-m $(module))
@@ -276,8 +276,8 @@ test-standalone-binary: ## Test the standalone binary works with no Python or Go
 	echo "  --version (no Go on PATH)..."; \
 	PATH="$$NO_GO_PATH" dist/otel-distro-builder --version; \
 	echo "  --generate-only (no Go on PATH)..."; \
-	OUT=$$(mktemp); \
-	PATH="$$NO_GO_PATH" dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest "$$OUT" && test -s "$$OUT" && rm -f "$$OUT" || (rm -f "$$OUT"; exit 1)
+	ARTIFACTS=$$(mktemp -d); \
+	PATH="$$NO_GO_PATH" dist/otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --artifacts "$$ARTIFACTS" && test -s "$$ARTIFACTS/manifest.yaml" && rm -rf "$$ARTIFACTS" || (rm -rf "$$ARTIFACTS"; exit 1)
 	@echo "$(GREEN)Standalone binary works with no Python or Go at runtime.$(NC)"
 
 test-standalone-build-collector: ## Build from config with standalone binary and validate collector starts
