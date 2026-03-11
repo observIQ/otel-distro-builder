@@ -44,8 +44,8 @@ jobs:
         run: |
           pip install .
           otel-distro-builder --help
-          otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --output-manifest /tmp/generated-manifest.yaml
-          test -s /tmp/generated-manifest.yaml
+          otel-distro-builder --from-config builder/tests/configs/otelcol/simple.yaml --generate-only --artifacts /tmp/artifacts
+          test -s /tmp/artifacts/manifest.yaml
 
   build-tests:
     name: Build Tests

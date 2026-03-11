@@ -129,26 +129,24 @@ on:
 Already have a running OpenTelemetry Collector with a `config.yaml`? Generate a minimal manifest containing only the components you need. **No Docker required**—run the CLI on your host (after [install](#-install)); for full builds, no other dependencies are required—the CLI downloads OCB and Go automatically.
 
 ```bash
-# Generate manifest only (prints to stdout)
+# Generate manifest only (writes to ./artifacts/manifest.yaml)
 otel-distro-builder --from-config config.yaml --generate-only
 
-# Generate manifest and save to file
-otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only
+# Generate manifest to a custom directory
+otel-distro-builder --from-config config.yaml --generate-only --artifacts ./out
 
 # Generate manifest and build in one step
 otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platforms linux/amd64,linux/arm64
 ```
 
+The generated manifest is always saved to `<artifacts>/manifest.yaml` (default `./artifacts/manifest.yaml`).
+
 Optional: use Docker for an isolated environment (mount your workspace and artifacts):
 
 ```bash
-# Generate manifest only
+# Generate manifest only (writes to /workspace/artifacts/manifest.yaml)
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml --generate-only
-
-# Generate and save manifest
-docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
-  --from-config /workspace/config.yaml --output-manifest /workspace/manifest.yaml --generate-only
+  --from-config /workspace/config.yaml --generate-only --artifacts /workspace/artifacts
 
 # Generate manifest and build
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
@@ -160,8 +158,8 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--from-config` | Path to collector config.yaml | Required |
-| `--output-manifest` | Path to write generated manifest | None |
 | `--generate-only` | Only generate manifest, don't build | `false` |
+| `--artifacts` | Directory for generated manifest and build artifacts | `<cwd>/artifacts` |
 | `--otel-version` | Target OpenTelemetry version | Latest from `versions.yaml` |
 | `--dist-name` | Distribution name | `otelcol-custom` |
 | `--dist-module` | Go module path | `github.com/custom/otelcol-distribution` |

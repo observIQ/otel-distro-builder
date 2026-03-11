@@ -172,11 +172,6 @@ def _build_parser() -> argparse.ArgumentParser:
 
     # Config-to-manifest specific options
     parser.add_argument(
-        "--output-manifest",
-        type=str,
-        help="Path to write the generated manifest (only with --from-config)",
-    )
-    parser.add_argument(
         "--generate-only",
         action="store_true",
         help="Only generate the manifest, don't build (only with --from-config)",
@@ -286,9 +281,12 @@ def main() -> None:
     try:
         # Handle --from-config mode
         if args.from_config:
+            artifact_dir = args.artifacts or _default_artifacts_dir()
+            manifest_path = os.path.join(artifact_dir, "manifest.yaml")
+
             manifest_content = generate_from_config(
                 config_path=args.from_config,
-                output_manifest=args.output_manifest,
+                output_manifest=manifest_path,
                 otel_version=args.otel_version,
                 bindplane_version=args.bindplane_version,
                 dist_name=args.dist_name,
@@ -297,12 +295,9 @@ def main() -> None:
                 include_bindplane=not args.no_bindplane,
             )
 
-            # If generate-only, print manifest and exit
+            # If generate-only, log success and exit
             if args.generate_only:
-                if not args.output_manifest:
-                    print("\n# Generated Manifest:")
-                    print(manifest_content)
-                logger.success("Manifest generation complete")
+                logger.success(f"Manifest written to {manifest_path}")
                 sys.exit(0)
         else:
             # Read manifest file directly

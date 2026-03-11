@@ -1,5 +1,6 @@
 """Tests for the main module."""
 
+import os
 from unittest.mock import mock_open, patch
 
 import pytest
@@ -141,6 +142,62 @@ def test_version_flag(flag, capsys):
     # Should be a non-empty version string (e.g. "1.0.0")
     assert output
     assert "." in output
+
+
+@pytest.mark.unit
+def test_from_config_generate_only_writes_manifest_to_artifacts():
+    """--from-config --generate-only writes manifest to artifact_dir/manifest.yaml."""
+    fake_manifest = "dist:\n  name: test\n"
+
+    with (
+        patch(
+            "sys.argv",
+            [
+                "main.py",
+                "--from-config",
+                "config.yaml",
+                "--generate-only",
+                "--artifacts",
+                "/tmp/test-artifacts",
+            ],
+        ),
+        patch("src.main.generate_from_config", return_value=fake_manifest) as mock_gen,
+        patch("src.main.logger"),
+    ):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_gen.assert_called_once()
+        call_kwargs = mock_gen.call_args
+        assert call_kwargs.kwargs["output_manifest"] == os.path.join(
+            "/tmp/test-artifacts", "manifest.yaml"
+        )
+
+
+@pytest.mark.unit
+def test_from_config_generate_only_default_artifacts():
+    """--from-config --generate-only without --artifacts uses default artifacts dir."""
+    fake_manifest = "dist:\n  name: test\n"
+
+    with (
+        patch(
+            "sys.argv",
+            ["main.py", "--from-config", "config.yaml", "--generate-only"],
+        ),
+        patch("src.main.generate_from_config", return_value=fake_manifest) as mock_gen,
+        patch("src.main.logger"),
+        patch("os.getcwd", return_value="/home/user/project"),
+    ):
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+
+        mock_gen.assert_called_once()
+        call_kwargs = mock_gen.call_args
+        assert call_kwargs.kwargs["output_manifest"] == os.path.join(
+            "/home/user/project", "artifacts", "manifest.yaml"
+        )
 
 
 @pytest.mark.unit
