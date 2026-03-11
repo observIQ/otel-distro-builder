@@ -17,3 +17,5 @@ OpAMP Supervisor configs (for reference and future tests):
 
 - **minimal.yaml** – Minimal supervisor config (no remote server)
 - **sample.yaml** – Sample with OpAMP server and capabilities
+
+> **Note:** The packaged template at `builder/templates/supervisor_config.yaml` includes a commented Bindplane sample (endpoint, headers, TLS) for production use.

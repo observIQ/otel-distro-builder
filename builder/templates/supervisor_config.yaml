@@ -1,3 +1,17 @@
+# ─── Bindplane example ───────────────────────────────────────────────
+# To connect to Bindplane, replace the active `server` section below
+# with the following (set your endpoint and secret key):
+#
+#   server:
+#     endpoint: wss://app.bindplane.com/v1/opamp
+#     headers:
+#       Authorization: "Secret-Key YOUR_SECRET_KEY"
+#     tls:
+#       insecure: false
+#       insecure_skip_verify: false
+# ─────────────────────────────────────────────────────────────────────
+
+# Default: local OpAMP server (change to Bindplane per above).
 server:
   endpoint: wss://127.0.0.1:3001/v1/opamp
 
