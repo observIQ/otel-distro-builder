@@ -95,6 +95,7 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
 | `--dist-name` | Name of the distribution | `otelcol-custom` |
 | `--dist-module` | Go module path for the distribution | `github.com/custom/otelcol-distribution` |
 | `--dist-version` | Version of the distribution | `1.0.0` |
+| `--bindplane-version` | Target Bindplane version | Latest from `bindplane_components.yaml` |
 | `--no-bindplane` | Exclude Bindplane components from the manifest | `false` (components included) |
 
 ### Build Options

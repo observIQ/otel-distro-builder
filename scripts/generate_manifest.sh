@@ -4,6 +4,7 @@ set -e
 # Default values
 OUTPUT_MANIFEST=""
 OTEL_VERSION=""
+BINDPLANE_VERSION=""
 DIST_NAME="otelcol-custom"
 DIST_MODULE="github.com/custom/otelcol-distribution"
 DIST_VERSION="1.0.0"
@@ -26,6 +27,7 @@ usage() {
     echo "  -n <dist_name>              Distribution name (default: otelcol-custom)"
     echo "  -m <dist_module>            Go module path (default: github.com/custom/otelcol-distribution)"
     echo "  -V <dist_version>           Distribution version (default: 1.0.0)"
+    echo "  -b <bindplane_version>      Target Bindplane version (default: latest from bindplane_components.yaml)"
     echo "  -B                          Exclude Bindplane components (included by default)"
     echo "  -d                          Use Docker instead of local Python"
     echo "  -h                          Show this help message"
@@ -52,11 +54,12 @@ usage() {
 }
 
 # Parse command line arguments
-while getopts "c:o:v:n:m:V:Bdh" opt; do
+while getopts "c:o:v:b:n:m:V:Bdh" opt; do
     case $opt in
     c) CONFIG_PATH="$OPTARG" ;;
     o) OUTPUT_MANIFEST="$OPTARG" ;;
     v) OTEL_VERSION="$OPTARG" ;;
+    b) BINDPLANE_VERSION="$OPTARG" ;;
     n) DIST_NAME="$OPTARG" ;;
     m) DIST_MODULE="$OPTARG" ;;
     V) DIST_VERSION="$OPTARG" ;;
@@ -99,6 +102,7 @@ if [ "$USE_DOCKER" = true ]; then
     DOCKER_ARGS="$DOCKER_ARGS --dist-module $DIST_MODULE"
     DOCKER_ARGS="$DOCKER_ARGS --dist-version $DIST_VERSION"
     [ -n "$OTEL_VERSION" ] && DOCKER_ARGS="$DOCKER_ARGS --otel-version $OTEL_VERSION"
+    [ -n "$BINDPLANE_VERSION" ] && DOCKER_ARGS="$DOCKER_ARGS --bindplane-version $BINDPLANE_VERSION"
     [ "$NO_BINDPLANE" = true ] && DOCKER_ARGS="$DOCKER_ARGS --no-bindplane"
     
     if [ -n "$OUTPUT_MANIFEST" ]; then
@@ -145,6 +149,7 @@ else
     PYTHON_ARGS="$PYTHON_ARGS --dist-module $DIST_MODULE"
     PYTHON_ARGS="$PYTHON_ARGS --dist-version $DIST_VERSION"
     [ -n "$OTEL_VERSION" ] && PYTHON_ARGS="$PYTHON_ARGS --otel-version $OTEL_VERSION"
+    [ -n "$BINDPLANE_VERSION" ] && PYTHON_ARGS="$PYTHON_ARGS --bindplane-version $BINDPLANE_VERSION"
     [ -n "$OUTPUT_MANIFEST" ] && PYTHON_ARGS="$PYTHON_ARGS --output-manifest $OUTPUT_MANIFEST"
     [ "$NO_BINDPLANE" = true ] && PYTHON_ARGS="$PYTHON_ARGS --no-bindplane"
 
