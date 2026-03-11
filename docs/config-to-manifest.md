@@ -17,15 +17,17 @@ You get a smaller, more efficient collector binary that includes only the compon
 Generate a manifest only, or generate and build in one step:
 
 ```bash
-# Generate manifest only (prints to stdout)
+# Generate manifest only (writes to ./artifacts/manifest.yaml)
 otel-distro-builder --from-config config.yaml --generate-only
 
-# Generate manifest and save to a file
-otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only
+# Generate manifest to a custom directory
+otel-distro-builder --from-config config.yaml --generate-only --artifacts ./out
 
 # Generate manifest and build the distribution
 otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platforms linux/amd64,linux/arm64
 ```
+
+The generated manifest is always saved to `<artifacts>/manifest.yaml` (default `./artifacts/manifest.yaml`).
 
 ## Other Ways to Run
 
@@ -34,11 +36,11 @@ otel-distro-builder --from-config config.yaml --artifacts ./artifacts --platform
 Make targets wrap the CLI and are convenient for local development:
 
 ```bash
-# Generate manifest (writes to manifest.yaml if output= is set)
-make generate-manifest config=config.yaml output=manifest.yaml
-
-# Generate and print to stdout
+# Generate manifest (writes to ./artifacts/manifest.yaml by default)
 make generate-manifest config=config.yaml
+
+# Generate manifest to a custom directory
+make generate-manifest config=config.yaml artifacts=./out
 
 # Generate and build in one step
 make build-from-config config=config.yaml
@@ -49,17 +51,17 @@ make build-from-config config=config.yaml
 The script invokes the CLI with common options:
 
 ```bash
-# Generate and print to stdout
+# Generate manifest to default ./artifacts/manifest.yaml
 ./scripts/generate_manifest.sh -c config.yaml
 
-# Generate and write to manifest.yaml
-./scripts/generate_manifest.sh -c config.yaml -o manifest.yaml
+# Generate manifest to a custom artifacts directory
+./scripts/generate_manifest.sh -c config.yaml -a ./out
 
 # Custom OpenTelemetry version and distribution name
-./scripts/generate_manifest.sh -c config.yaml -v 0.144.0 -n my-collector -o manifest.yaml
+./scripts/generate_manifest.sh -c config.yaml -v 0.144.0 -n my-collector
 
 # Exclude Bindplane components
-./scripts/generate_manifest.sh -c config.yaml -B -o manifest.yaml
+./scripts/generate_manifest.sh -c config.yaml -B
 ```
 
 Run `./scripts/generate_manifest.sh -h` for all options.
@@ -69,11 +71,11 @@ Run `./scripts/generate_manifest.sh -h` for all options.
 Use Docker for an isolated environment (mount your workspace and artifacts):
 
 ```bash
-# Generate manifest and save to file
+# Generate manifest only (writes to /workspace/artifacts/manifest.yaml)
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
   --from-config /workspace/config.yaml \
-  --output-manifest /workspace/manifest.yaml \
-  --generate-only
+  --generate-only \
+  --artifacts /workspace/artifacts
 
 # Generate and build
 docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
@@ -89,8 +91,8 @@ docker run -v $(pwd):/workspace ghcr.io/observiq/otel-distro-builder:main \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `--from-config` | Path to your collector config.yaml file | Required |
-| `--output-manifest` | Path to write the generated manifest | None (prints to stdout if `--generate-only`) |
 | `--generate-only` | Only generate manifest, don't build | `false` |
+| `--artifacts` | Directory for generated manifest and build artifacts | `<cwd>/artifacts` |
 | `--otel-version` | Target OpenTelemetry version | Latest from `versions.yaml` |
 | `--dist-name` | Name of the distribution | `otelcol-custom` |
 | `--dist-module` | Go module path for the distribution | `github.com/custom/otelcol-distribution` |
@@ -227,10 +229,10 @@ To generate a manifest with only standard OpenTelemetry components, use `--no-bi
 
 ```bash
 # CLI: generate manifest without Bindplane components
-otel-distro-builder --from-config config.yaml --output-manifest manifest.yaml --generate-only --no-bindplane
+otel-distro-builder --from-config config.yaml --generate-only --no-bindplane
 
 # Or using the shell script
-./scripts/generate_manifest.sh -c config.yaml -o manifest.yaml -B
+./scripts/generate_manifest.sh -c config.yaml -B
 ```
 
 ## Supported Components
