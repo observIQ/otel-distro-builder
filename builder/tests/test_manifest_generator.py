@@ -315,12 +315,12 @@ class TestBindplaneComponents:
 
         manifest = yaml.safe_load(result.content)
 
-        # Should have more receivers than just otlp (Bindplane adds 10)
+        # Should have more receivers than just otlp (Bindplane adds 3)
         assert len(manifest["receivers"]) > 1
 
-        # Check for a Bindplane-specific gomod
+        # Check for Bindplane-required gomods (e.g. filelog, hostmetrics)
         gomods = [r["gomod"] for r in manifest["receivers"]]
-        assert any("observiq" in g for g in gomods)
+        assert any("filelogreceiver" in g for g in gomods)
 
     def test_bindplane_components_excluded_with_flag(self):
         """Test that Bindplane components can be excluded."""

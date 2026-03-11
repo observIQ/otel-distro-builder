@@ -62,14 +62,20 @@ class ComponentRegistry:
                     )
 
     def lookup(
-        self, component_type: str, name: str, version: str = DEFAULT_VERSION
+        self,
+        component_type: str,
+        name: str,
+        version: str = DEFAULT_VERSION,
+        core_version: Optional[str] = None,
     ) -> Optional[ComponentInfo]:
         """Look up a component by type and name.
 
         Args:
             component_type: Type of component (receivers, processors, etc.)
             name: Name of the component as used in config (e.g., "otlp", "batch")
-            version: Version to use for the gomod
+            version: Version to use for contrib gomod entries (__VERSION__)
+            core_version: Version to use for core gomod entries (__CORE_VERSION__).
+                         Defaults to version if not provided.
 
         Returns:
             ComponentInfo if found, None otherwise
@@ -85,7 +91,9 @@ class ComponentRegistry:
 
         if component:
             # Create a new ComponentInfo with the versioned gomod
-            versioned_gomod = self._apply_version(component.gomod, version)
+            versioned_gomod = self._apply_version(
+                component.gomod, version, core_version or version
+            )
             return ComponentInfo(
                 name=component.name,
                 gomod=versioned_gomod,
@@ -95,16 +103,19 @@ class ComponentRegistry:
 
         return None
 
-    def _apply_version(self, gomod: str, version: str) -> str:
+    def _apply_version(self, gomod: str, version: str, core_version: str) -> str:
         """Apply version to a gomod string.
 
         Args:
-            gomod: The gomod path (may contain __VERSION__ placeholder)
-            version: The version to apply
+            gomod: The gomod path (may contain __VERSION__ or __CORE_VERSION__)
+            version: The contrib version to apply
+            core_version: The core collector version to apply
 
         Returns:
             Gomod string with version applied
         """
+        if "__CORE_VERSION__" in gomod:
+            return gomod.replace("__CORE_VERSION__", core_version)
         if "__VERSION__" in gomod:
             return gomod.replace("__VERSION__", version)
         return gomod

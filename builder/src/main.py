@@ -13,6 +13,7 @@ from .logger import BuildLogger, get_logger
 from .platforms import resolve_platform_pairs, resolve_platforms
 from .resources import (get_bindplane_components_yaml_path,
                         get_versions_yaml_path)
+from .version import get_core_version
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -104,9 +105,12 @@ def generate_from_config(
     if otel_version is None:
         otel_version = DEFAULT_OTEL_VERSION
 
+    # Look up the core collector version for the given contrib version
+    core_ver = get_core_version(otel_version)
+
     logger.section("Config to Manifest Generation")
     logger.info(f"Reading config from: {config_path}")
-    logger.info(f"Target OTel version: {otel_version}")
+    logger.info(f"Target OTel version: {otel_version} (core: {core_ver})")
     logger.info(f"Include Bindplane collector components: {include_bindplane}")
     if include_bindplane:
         logger.info(
@@ -120,6 +124,7 @@ def generate_from_config(
         name=dist_name,
         version=dist_version,
         otel_version=otel_version,
+        core_version=core_ver,
         bindplane_version=bindplane_version,
         include_bindplane=include_bindplane,
     )

@@ -275,14 +275,17 @@ def resolve_components(
     parsed: ParsedComponents,
     version: str = DEFAULT_VERSION,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
+    core_version: Optional[str] = None,
 ) -> ResolvedComponents:
     """Resolve parsed component names to their Go module paths.
 
     Args:
         parsed: ParsedComponents from the config parser
-        version: Version to use for components
+        version: Version to use for contrib components
         custom_mappings: Optional custom component mappings to use
                         Format: {"receivers": {"name": "gomod"}, ...}
+        core_version: Version to use for core collector components.
+                     Defaults to version if not provided.
 
     Returns:
         ResolvedComponents with ComponentInfo for each resolved component
@@ -315,7 +318,9 @@ def resolve_components(
                 continue
 
             # Look up in registry
-            looked_up = registry.lookup(component_type, name, version)
+            looked_up = registry.lookup(
+                component_type, name, version, core_version=core_version
+            )
             if looked_up:
                 result.append(looked_up)
             else:
@@ -364,16 +369,20 @@ def parse_and_resolve(
     config_path: str,
     version: str = DEFAULT_VERSION,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
+    core_version: Optional[str] = None,
 ) -> ResolvedComponents:
     """Parse a config file and resolve components to Go modules.
 
     Args:
         config_path: Path to the config file
-        version: Version to use for components
+        version: Version to use for contrib components
         custom_mappings: Optional custom component mappings
+        core_version: Version to use for core collector components
 
     Returns:
         ResolvedComponents with all resolved components
     """
     parsed = parse_config_file(config_path)
-    return resolve_components(parsed, version, custom_mappings)
+    return resolve_components(
+        parsed, version, custom_mappings, core_version=core_version
+    )
