@@ -9,7 +9,7 @@ import yaml
 from .config_parser import ResolvedComponents
 from .logger import BuildLogger, get_logger
 from .resources import get_bindplane_components_yaml_path
-from .version import DEFAULT_VERSION
+from .version import DEFAULT_VERSION, get_core_version
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -63,9 +63,11 @@ class ManifestConfig:
     version: str = "1.0.0"
     output_path: str = DEFAULT_OUTPUT_PATH
     otel_version: str = DEFAULT_VERSION
+    core_version: Optional[str] = None
     include_providers: bool = True
     include_replaces: bool = True
     include_bindplane: bool = True
+    bindplane_version: Optional[str] = None
     conf_resolver_default_uri_scheme: str = "env"
 
 
@@ -111,8 +113,8 @@ class ManifestGenerator:
             with open(bindplane_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
 
-            # Get the version from the file (single source of truth; no hardcoded default)
-            version = data.get("version")
+            # Use CLI-provided version if set, otherwise use file's version
+            version = self._config.bindplane_version or data.get("version")
             if not version:
                 raise ValueError(
                     f"{bindplane_file} must specify a 'version' key at the top level"
@@ -122,27 +124,38 @@ class ManifestGenerator:
             # OTel version for contrib components
             otel_version_str = f"v{self._config.otel_version}"
 
+            # Core collector version for core modules
+            core_ver = self._config.core_version or get_core_version(
+                self._config.otel_version
+            )
+            core_version_str = f"v{core_ver}"
+
             # Process each component type
-            for comp_type in ["extensions", "receivers", "processors", "exporters"]:
+            for comp_type in [
+                "connectors",
+                "extensions",
+                "receivers",
+                "processors",
+                "exporters",
+            ]:
                 if comp_type in data:
                     for i, item in enumerate(data[comp_type]):
                         if "gomod" in item:
                             data[comp_type][i]["gomod"] = (
                                 item["gomod"]
                                 .replace("__BINDPLANE_VERSION__", version_str)
+                                .replace("__CORE_VERSION__", core_version_str)
                                 .replace("__OTEL_VERSION__", otel_version_str)
                             )
 
-            # Process replaces section
+            # Process replaces section (plain strings in "old => new" format)
             if "replaces" in data:
                 for i, item in enumerate(data["replaces"]):
-                    for key in ["old", "new"]:
-                        if key in item:
-                            data["replaces"][i][key] = (
-                                item[key]
-                                .replace("__BINDPLANE_VERSION__", version_str)
-                                .replace("__OTEL_VERSION__", otel_version_str)
-                            )
+                    data["replaces"][i] = (
+                        item.replace("__BINDPLANE_VERSION__", version_str)
+                        .replace("__CORE_VERSION__", core_version_str)
+                        .replace("__OTEL_VERSION__", otel_version_str)
+                    )
 
             logger.info(f"Loaded Bindplane components (version {version})")
             return data
@@ -193,11 +206,12 @@ class ManifestGenerator:
             self._resolved.exporters, "exporters"
         )
 
-        if self._resolved.connectors:
-            manifest["connectors"] = self._format_components(self._resolved.connectors)
+        manifest["connectors"] = self._format_components_with_bindplane(
+            self._resolved.connectors, "connectors"
+        )
 
         # Remove empty sections
-        for key in ["extensions", "receivers", "processors", "exporters"]:
+        for key in ["connectors", "extensions", "receivers", "processors", "exporters"]:
             if not manifest[key]:
                 del manifest[key]
 
@@ -254,23 +268,32 @@ class ManifestGenerator:
 
         # Add Bindplane components if enabled
         if self._bindplane_components and component_type in self._bindplane_components:
+            existing_paths = {self._gomod_path(r.get("gomod", "")) for r in result}
             bp_components = self._bindplane_components[component_type]
             for bp in bp_components:
                 if "gomod" in bp:
-                    # Avoid duplicates
-                    if not any(bp["gomod"] in r.get("gomod", "") for r in result):
+                    bp_path = self._gomod_path(bp["gomod"])
+                    if bp_path not in existing_paths:
                         result.append({"gomod": bp["gomod"]})
+                        existing_paths.add(bp_path)
 
         return result
+
+    @staticmethod
+    def _gomod_path(gomod: str) -> str:
+        """Extract module path from a gomod string (strip version suffix)."""
+        return gomod.split()[0] if gomod else ""
 
     def _format_providers(self) -> list[dict]:
         """Format providers for the manifest.
 
-        Providers (confmap/provider/*) are from the core collector and use the
-        same version as the target OpenTelemetry Collector (e.g. v0.144.0).
+        Providers (confmap/provider/*) are core collector modules and use the
+        core version (e.g. v1.50.0), not the contrib version.
         """
-        version = self._config.otel_version
-        return [{"gomod": f"{p} v{version}"} for p in DEFAULT_PROVIDERS]
+        core_ver = self._config.core_version or get_core_version(
+            self._config.otel_version
+        )
+        return [{"gomod": f"{p} v{core_ver}"} for p in DEFAULT_PROVIDERS]
 
     def _format_replaces(self) -> list[str]:
         """Format replaces for the manifest.
@@ -280,12 +303,11 @@ class ManifestGenerator:
         """
         replaces = [f"{r['old']} => {r['new']}" for r in DEFAULT_REPLACES]
 
-        # Add Bindplane replaces if enabled
+        # Add Bindplane replaces if enabled (already in "old => new" format)
         if self._bindplane_components and "replaces" in self._bindplane_components:
             for r in self._bindplane_components["replaces"]:
-                replace_str = f"{r['old']} => {r['new']}"
-                if replace_str not in replaces:
-                    replaces.append(replace_str)
+                if r not in replaces:
+                    replaces.append(r)
 
         return replaces
 
@@ -339,8 +361,10 @@ def generate_manifest(
     description: str = DEFAULT_DESCRIPTION,
     version: str = "1.0.0",
     otel_version: str = DEFAULT_VERSION,
+    core_version: Optional[str] = None,
     output_path: Optional[str] = None,
     include_bindplane: bool = True,
+    bindplane_version: Optional[str] = None,
 ) -> GeneratedManifest:
     """Generate an OCB manifest from resolved components.
 
@@ -350,9 +374,11 @@ def generate_manifest(
         name: Name of the distribution
         description: Description of the distribution
         version: Version of the distribution
-        otel_version: Target OpenTelemetry version
+        otel_version: Target OpenTelemetry contrib version
+        core_version: Target core collector version (looked up from otel_version if not provided)
         output_path: Output path for built artifacts
         include_bindplane: Whether to include Bindplane components (default: True)
+        bindplane_version: Target Bindplane version (defaults to version in bindplane_components.yaml)
 
     Returns:
         GeneratedManifest containing the YAML content
@@ -363,8 +389,10 @@ def generate_manifest(
         description=description,
         version=version,
         otel_version=otel_version,
+        core_version=core_version,
         output_path=output_path or DEFAULT_OUTPUT_PATH,
         include_bindplane=include_bindplane,
+        bindplane_version=bindplane_version,
     )
 
     generator = ManifestGenerator(resolved, config)
@@ -379,8 +407,10 @@ def generate_manifest_from_config(
     description: str = DEFAULT_DESCRIPTION,
     version: str = "1.0.0",
     otel_version: str = DEFAULT_VERSION,
+    core_version: Optional[str] = None,
     custom_mappings: Optional[dict[str, dict[str, str]]] = None,
     include_bindplane: bool = True,
+    bindplane_version: Optional[str] = None,
 ) -> GeneratedManifest:
     """Generate an OCB manifest directly from a config file.
 
@@ -391,9 +421,11 @@ def generate_manifest_from_config(
         name: Name of the distribution
         description: Description of the distribution
         version: Version of the distribution
-        otel_version: Target OpenTelemetry version
+        otel_version: Target OpenTelemetry contrib version
+        core_version: Target core collector version (looked up from otel_version if not provided)
         custom_mappings: Optional custom component mappings
         include_bindplane: Whether to include Bindplane components (default: True)
+        bindplane_version: Target Bindplane version (defaults to version in bindplane_components.yaml)
 
     Returns:
         GeneratedManifest containing the YAML content
@@ -402,7 +434,9 @@ def generate_manifest_from_config(
     from .config_parser import parse_and_resolve
 
     # Parse and resolve components
-    resolved = parse_and_resolve(config_path, otel_version, custom_mappings)
+    resolved = parse_and_resolve(
+        config_path, otel_version, custom_mappings, core_version=core_version
+    )
 
     # Generate manifest
     result = generate_manifest(
@@ -412,7 +446,9 @@ def generate_manifest_from_config(
         description=description,
         version=version,
         otel_version=otel_version,
+        core_version=core_version,
         include_bindplane=include_bindplane,
+        bindplane_version=bindplane_version,
     )
 
     # Write to file if output path specified

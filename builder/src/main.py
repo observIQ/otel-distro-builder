@@ -11,7 +11,9 @@ import yaml
 from . import build
 from .logger import BuildLogger, get_logger
 from .platforms import resolve_platform_pairs, resolve_platforms
-from .resources import get_versions_yaml_path
+from .resources import (get_bindplane_components_yaml_path,
+                        get_versions_yaml_path)
+from .version import get_core_version
 
 logger: BuildLogger = get_logger(__name__)
 
@@ -45,14 +47,37 @@ def get_latest_otel_version() -> str:
     return fallback_version
 
 
-# Get default version at module load time
+def get_default_bindplane_version() -> str:
+    """Get the default Bindplane version from bindplane_components.yaml.
+
+    Returns:
+        The version string from the file, or a fallback default if not found.
+    """
+    fallback_version = "1.93.0"
+
+    try:
+        bp_path = get_bindplane_components_yaml_path()
+        with open(bp_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+
+        if data and "version" in data:
+            return str(data["version"])
+    except (FileNotFoundError, yaml.YAMLError, KeyError):
+        pass
+
+    return fallback_version
+
+
+# Get default versions at module load time
 DEFAULT_OTEL_VERSION = get_latest_otel_version()
+DEFAULT_BINDPLANE_VERSION = get_default_bindplane_version()
 
 
 def generate_from_config(
     config_path: str,
     output_manifest: Optional[str] = None,
     otel_version: Optional[str] = None,
+    bindplane_version: Optional[str] = None,
     dist_name: str = "otelcol-custom",
     dist_module: str = "github.com/custom/otelcol-distribution",
     dist_version: str = "1.0.0",
@@ -64,6 +89,7 @@ def generate_from_config(
         config_path: Path to the collector config.yaml file
         output_manifest: Optional path to write the manifest to
         otel_version: Target OpenTelemetry version (defaults to latest)
+        bindplane_version: Target Bindplane version (defaults to latest from bindplane_components.yaml)
         dist_name: Name of the distribution
         dist_module: Go module path for the distribution
         dist_version: Version of the distribution
@@ -79,10 +105,17 @@ def generate_from_config(
     if otel_version is None:
         otel_version = DEFAULT_OTEL_VERSION
 
+    # Look up the core collector version for the given contrib version
+    core_ver = get_core_version(otel_version)
+
     logger.section("Config to Manifest Generation")
     logger.info(f"Reading config from: {config_path}")
-    logger.info(f"Target OTel version: {otel_version}")
+    logger.info(f"Target OTel version: {otel_version} (core: {core_ver})")
     logger.info(f"Include Bindplane collector components: {include_bindplane}")
+    if include_bindplane:
+        logger.info(
+            f"Bindplane version: {bindplane_version or DEFAULT_BINDPLANE_VERSION}"
+        )
 
     result = generate_manifest_from_config(
         config_path=config_path,
@@ -91,6 +124,8 @@ def generate_from_config(
         name=dist_name,
         version=dist_version,
         otel_version=otel_version,
+        core_version=core_ver,
+        bindplane_version=bindplane_version,
         include_bindplane=include_bindplane,
     )
 
@@ -164,6 +199,12 @@ def _build_parser() -> argparse.ArgumentParser:
         type=str,
         default="1.0.0",
         help="Version of the distribution (default: 1.0.0)",
+    )
+    parser.add_argument(
+        "--bindplane-version",
+        type=str,
+        default=DEFAULT_BINDPLANE_VERSION,
+        help=f"Target Bindplane version for generated manifest (default: {DEFAULT_BINDPLANE_VERSION})",
     )
     parser.add_argument(
         "--no-bindplane",
@@ -247,6 +288,7 @@ def main() -> None:
                 config_path=args.from_config,
                 output_manifest=manifest_path,
                 otel_version=args.otel_version,
+                bindplane_version=args.bindplane_version,
                 dist_name=args.dist_name,
                 dist_module=args.dist_module,
                 dist_version=args.dist_version,

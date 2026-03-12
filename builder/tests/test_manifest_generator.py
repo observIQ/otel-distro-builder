@@ -134,7 +134,8 @@ class TestManifestGenerator:
         )
         resolved = resolve_components(parsed, version="0.121.0")
 
-        generator = ManifestGenerator(resolved)
+        config = ManifestConfig(include_bindplane=False)
+        generator = ManifestGenerator(resolved, config)
         result = generator.generate()
 
         manifest = yaml.safe_load(result.content)
@@ -314,12 +315,12 @@ class TestBindplaneComponents:
 
         manifest = yaml.safe_load(result.content)
 
-        # Should have more receivers than just otlp (Bindplane adds 10)
+        # Should have more receivers than just otlp (Bindplane adds 3)
         assert len(manifest["receivers"]) > 1
 
-        # Check for a Bindplane-specific gomod
+        # Check for Bindplane-required gomods (e.g. filelog, hostmetrics)
         gomods = [r["gomod"] for r in manifest["receivers"]]
-        assert any("observiq" in g for g in gomods)
+        assert any("filelogreceiver" in g for g in gomods)
 
     def test_bindplane_components_excluded_with_flag(self):
         """Test that Bindplane components can be excluded."""
@@ -358,6 +359,208 @@ class TestBindplaneComponents:
         # Should have Bindplane replaces
         replaces_str = " ".join(manifest.get("replaces", []))
         assert "observiq" in replaces_str
+
+
+@pytest.mark.unit
+class TestBindplaneVersion:
+    """Tests for --bindplane-version override."""
+
+    def test_bindplane_version_override(self):
+        """Test that bindplane_version overrides the file's default."""
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["debug"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(
+            include_bindplane=True,
+            bindplane_version="1.90.0",
+        )
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+
+        manifest = yaml.safe_load(result.content)
+
+        # All Bindplane-owned gomods should use v1.90.0
+        all_gomods = []
+        for section in ["extensions", "receivers", "processors", "exporters"]:
+            for entry in manifest.get(section, []):
+                all_gomods.append(entry["gomod"])
+
+        bp_gomods = [g for g in all_gomods if "observiq" in g]
+        assert len(bp_gomods) > 0
+        for gomod in bp_gomods:
+            assert "v1.90.0" in gomod, f"Expected v1.90.0 in {gomod}"
+
+    def test_bindplane_version_default_uses_file(self):
+        """Test that without override, the file's version is used."""
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["debug"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(include_bindplane=True)
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+
+        manifest = yaml.safe_load(result.content)
+
+        # Check that Bindplane gomods use the version from the file (1.93.0)
+        all_gomods = []
+        for section in ["extensions", "receivers", "processors", "exporters"]:
+            for entry in manifest.get(section, []):
+                all_gomods.append(entry["gomod"])
+
+        bp_gomods = [g for g in all_gomods if "observiq" in g]
+        assert len(bp_gomods) > 0
+        for gomod in bp_gomods:
+            assert "v1.93.0" in gomod, f"Expected v1.93.0 in {gomod}"
+
+
+@pytest.mark.unit
+class TestRequiredBindplaneCompatibility:
+    """Tests for required Bindplane-compatible modules (BYOC minimal set)."""
+
+    # Module paths (without version) that must be present for Bindplane compatibility
+    REQUIRED_CONNECTORS = [
+        "go.opentelemetry.io/collector/connector/forwardconnector",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/connector/routingconnector",
+    ]
+    REQUIRED_EXPORTERS = [
+        "go.opentelemetry.io/collector/exporter/otlpexporter",
+        "go.opentelemetry.io/collector/exporter/otlphttpexporter",
+        "go.opentelemetry.io/collector/exporter/nopexporter",
+    ]
+    REQUIRED_EXTENSIONS = [
+        "github.com/observiq/bindplane-otel-collector/extension/bindplaneextension",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampextension",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/extension/storage/filestorage",
+    ]
+    REQUIRED_PROCESSORS = [
+        "github.com/observiq/bindplane-otel-collector/processor/snapshotprocessor",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/metricstransformprocessor",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor",
+        "github.com/observiq/bindplane-otel-collector/processor/throughputmeasurementprocessor",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/processor/resourcedetectionprocessor",
+    ]
+    REQUIRED_RECEIVERS = [
+        "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver",
+        "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver",
+        "go.opentelemetry.io/collector/receiver/nopreceiver",
+    ]
+
+    @staticmethod
+    def _gomod_paths(manifest: dict, section: str) -> set:
+        """Extract module paths (without version) from a manifest section."""
+        return {
+            entry["gomod"].split()[0]
+            for entry in manifest.get(section, [])
+            if "gomod" in entry
+        }
+
+    def test_minimal_config_includes_all_required_modules(self):
+        """With include_bindplane=True, even a minimal config produces all required modules."""
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["debug"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(include_bindplane=True)
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+        manifest = yaml.safe_load(result.content)
+
+        conn_paths = self._gomod_paths(manifest, "connectors")
+        for req in self.REQUIRED_CONNECTORS:
+            assert req in conn_paths, f"Missing required connector: {req}"
+
+        exp_paths = self._gomod_paths(manifest, "exporters")
+        for req in self.REQUIRED_EXPORTERS:
+            assert req in exp_paths, f"Missing required exporter: {req}"
+
+        ext_paths = self._gomod_paths(manifest, "extensions")
+        for req in self.REQUIRED_EXTENSIONS:
+            assert req in ext_paths, f"Missing required extension: {req}"
+
+        proc_paths = self._gomod_paths(manifest, "processors")
+        for req in self.REQUIRED_PROCESSORS:
+            assert req in proc_paths, f"Missing required processor: {req}"
+
+        recv_paths = self._gomod_paths(manifest, "receivers")
+        for req in self.REQUIRED_RECEIVERS:
+            assert req in recv_paths, f"Missing required receiver: {req}"
+
+    def test_required_modules_not_added_when_bindplane_disabled(self):
+        """With include_bindplane=False, no required modules are added."""
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["debug"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(include_bindplane=False)
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+        manifest = yaml.safe_load(result.content)
+
+        # Should NOT have connectors section at all (user didn't specify any)
+        assert "connectors" not in manifest
+
+        # Should NOT have any observiq modules
+        all_gomods = []
+        for section in ["extensions", "receivers", "processors", "exporters"]:
+            for entry in manifest.get(section, []):
+                all_gomods.append(entry["gomod"])
+        assert not any("observiq" in g for g in all_gomods)
+
+    def test_no_duplicates_when_user_already_has_required(self):
+        """Required modules that are already present via user config should not be duplicated."""
+        # User config already includes forward connector and otlp exporter
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["otlp", "debug"],
+            connectors=["forward"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(include_bindplane=True)
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+        manifest = yaml.safe_load(result.content)
+
+        # forwardconnector should appear exactly once
+        conn_gomods = [e["gomod"] for e in manifest.get("connectors", [])]
+        forward_count = sum(1 for g in conn_gomods if "forwardconnector" in g)
+        assert forward_count == 1, f"forwardconnector appeared {forward_count} times"
+
+        # otlpexporter should appear exactly once
+        exp_gomods = [e["gomod"] for e in manifest.get("exporters", [])]
+        otlp_count = sum(
+            1 for g in exp_gomods if "otlpexporter" in g and "otlphttp" not in g
+        )
+        assert otlp_count == 1, f"otlpexporter appeared {otlp_count} times"
+
+    def test_connectors_section_created_when_absent(self):
+        """When user config has no connectors, the required connectors still appear."""
+        parsed = ParsedComponents(
+            receivers=["otlp"],
+            exporters=["debug"],
+        )
+        resolved = resolve_components(parsed, version="0.121.0")
+
+        config = ManifestConfig(include_bindplane=True)
+        generator = ManifestGenerator(resolved, config)
+        result = generator.generate()
+        manifest = yaml.safe_load(result.content)
+
+        assert "connectors" in manifest
+        conn_paths = self._gomod_paths(manifest, "connectors")
+        for req in self.REQUIRED_CONNECTORS:
+            assert req in conn_paths, f"Missing required connector: {req}"
 
 
 @pytest.mark.unit

@@ -46,6 +46,7 @@ class BuildVersions:
     ocb: str
     supervisor: str
     go: str
+    core: str
 
 
 def load_version_mappings() -> dict:
@@ -71,21 +72,27 @@ def determine_build_versions(
     Returns:
         BuildVersions containing the determined versions
     """
-    # If both versions are provided, use them but look up Go from version mappings
+    # If both versions are provided, use them but look up Go/core from version mappings
     if ocb_version and supervisor_version:
         version_mappings = load_version_mappings()
-        # Find the Go version for this OCB (builder) version
-        final_go = None
-        for mapping in version_mappings.values():
+        # Find the Go and core versions for this OCB (builder) version
+        final_go: str = "1.24.0"
+        final_core: str = DEFAULT_VERSION
+        for ver_key, mapping in version_mappings.items():
             if mapping.get("builder") == ocb_version:
-                final_go = mapping.get("go")
+                final_go = mapping.get("go", "1.24.0")
+                final_core = mapping.get("core", ver_key)
                 break
-        if final_go is None:
-            # OCB version not in mappings; use default version's Go
+        else:
+            # OCB version not in mappings; use default version's values
             default_mapping = version_mappings.get(DEFAULT_VERSION, {})
             final_go = default_mapping.get("go", "1.24.0")
+            final_core = default_mapping.get("core", DEFAULT_VERSION)
         return BuildVersions(
-            ocb=ocb_version, supervisor=supervisor_version, go=final_go
+            ocb=ocb_version,
+            supervisor=supervisor_version,
+            go=final_go,
+            core=final_core,
         )
 
     # Try to detect version from manifest
@@ -109,10 +116,13 @@ def determine_build_versions(
     final_supervisor = supervisor_version or versions["supervisor"]
     final_go = versions["go"]
 
+    final_core = versions.get("core", contrib_version)
+
     return BuildVersions(
         ocb=final_ocb,
         supervisor=final_supervisor,
         go=final_go,
+        core=final_core,
     )
 
 
@@ -166,3 +176,21 @@ def get_contrib_version_from_manifest(manifest_content: str) -> str:
 
     # Return the highest version
     return str(max(version.parse(v) for v in versions))
+
+
+def get_core_version(contrib_version: str) -> str:
+    """Look up the core collector version for a given contrib version.
+
+    Args:
+        contrib_version: The contrib/OTel version (e.g. "0.144.0")
+
+    Returns:
+        The corresponding core version (e.g. "1.50.0"), or the contrib version
+        itself as a fallback if not found in mappings.
+    """
+    try:
+        mappings = load_version_mappings()
+        entry = mappings.get(contrib_version, {})
+        return entry.get("core", contrib_version)
+    except (FileNotFoundError, yaml.YAMLError, KeyError):
+        return contrib_version

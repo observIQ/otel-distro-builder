@@ -1,6 +1,7 @@
 # OpenTelemetry Collector Component Registry
 # Maps config names to Go module paths
-# __VERSION__ placeholder is replaced with the target version at runtime (without v prefix)
+# __VERSION__ placeholder is replaced with the contrib version at runtime (without v prefix)
+# __CORE_VERSION__ placeholder is replaced with the core collector version at runtime (without v prefix)
 
 receivers:
   # Core receivers
@@ -700,17 +701,17 @@ connectors:
 
 providers:
   env:
-    gomod: "go.opentelemetry.io/collector/confmap/provider/envprovider v__VERSION__"
+    gomod: "go.opentelemetry.io/collector/confmap/provider/envprovider v__CORE_VERSION__"
     source: core
   file:
-    gomod: "go.opentelemetry.io/collector/confmap/provider/fileprovider v__VERSION__"
+    gomod: "go.opentelemetry.io/collector/confmap/provider/fileprovider v__CORE_VERSION__"
     source: core
   http:
-    gomod: "go.opentelemetry.io/collector/confmap/provider/httpprovider v__VERSION__"
+    gomod: "go.opentelemetry.io/collector/confmap/provider/httpprovider v__CORE_VERSION__"
     source: core
   https:
-    gomod: "go.opentelemetry.io/collector/confmap/provider/httpsprovider v__VERSION__"
+    gomod: "go.opentelemetry.io/collector/confmap/provider/httpsprovider v__CORE_VERSION__"
     source: core
   yaml:
-    gomod: "go.opentelemetry.io/collector/confmap/provider/yamlprovider v__VERSION__"
+    gomod: "go.opentelemetry.io/collector/confmap/provider/yamlprovider v__CORE_VERSION__"
     source: core

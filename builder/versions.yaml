@@ -1,124 +1,158 @@
 versions:
   # Format:
   # contrib_version:
+  #   core: <version>       # Core collector module version (go.opentelemetry.io/collector/...)
   #   supervisor: <version>
   #   builder: <version>
   #   go: <version>
   #
+  # Core vs Contrib versioning:
+  # Since the 1.0 release, core modules (go.opentelemetry.io/collector/...) use v1.x
+  # while contrib modules (github.com/open-telemetry/opentelemetry-collector-contrib/...) use v0.x.
+  # Formula: core = 1.(contrib_minor - 94).patch
+  #
   # Go version requirements (from go.mod):
   # - 0.120.0 to 0.132.0: Go 1.23.0
-  # - 0.133.0 to 0.135.0: Go 1.24.0
-  # - 0.136.0+: Go 1.24.0
+  # - 0.133.0 to 0.139.0: Go 1.24.0
+  # - 0.140.0+: Go 1.24.11 (required by bindplane-otel-collector)
 
   "0.144.0":
+    core: "1.50.0"
     supervisor: "0.144.0"
     builder: "0.144.0"
-    go: "1.24.0"
+    go: "1.24.11"
   "0.143.0":
+    core: "1.49.0"
     supervisor: "0.143.0"
     builder: "0.143.0"
-    go: "1.24.0"
+    go: "1.24.11"
   "0.142.0":
+    core: "1.48.0"
     supervisor: "0.142.0"
     builder: "0.142.0"
-    go: "1.24.0"
+    go: "1.24.11"
   "0.141.0":
+    core: "1.47.0"
     supervisor: "0.141.0"
     builder: "0.141.0"
-    go: "1.24.0"
+    go: "1.24.11"
   "0.140.0":
+    core: "1.46.0"
     supervisor: "0.140.0"
     builder: "0.140.0"
-    go: "1.24.0"
+    go: "1.24.11"
   "0.139.0":
+    core: "1.45.0"
     supervisor: "0.139.0"
     builder: "0.139.0"
     go: "1.24.0"
   "0.138.0":
+    core: "1.44.0"
     supervisor: "0.138.0"
     builder: "0.138.0"
     go: "1.24.0"
   "0.137.0":
+    core: "1.43.0"
     supervisor: "0.137.0"
     builder: "0.137.0"
     go: "1.24.0"
   "0.136.0":
+    core: "1.42.0"
     supervisor: "0.136.0"
     builder: "0.136.0"
     go: "1.24.0"
   "0.135.0":
+    core: "1.41.0"
     supervisor: "0.135.0"
     builder: "0.135.0"
     go: "1.24.0"
   "0.134.0":
+    core: "1.40.0"
     supervisor: "0.134.0"
     builder: "0.134.0"
     go: "1.24.0"
   "0.133.0":
+    core: "1.39.0"
     supervisor: "0.133.0"
     builder: "0.133.0"
     go: "1.24.0"
   "0.132.0":
+    core: "1.38.0"
     supervisor: "0.132.0"
     builder: "0.132.0"
     go: "1.23.0"
   "0.131.0":
+    core: "1.37.0"
     supervisor: "0.131.0"
     builder: "0.131.0"
     go: "1.23.0"
   "0.130.1":
+    core: "1.36.1"
     supervisor: "0.130.0"  # Patch release, uses base version
     builder: "0.130.0"
     go: "1.23.0"
   "0.130.0":
+    core: "1.36.0"
     supervisor: "0.130.0"
     builder: "0.130.0"
     go: "1.23.0"
   "0.129.0":
+    core: "1.35.0"
     supervisor: "0.129.0"
     builder: "0.129.0"
     go: "1.23.0"
   "0.128.0":
+    core: "1.34.0"
     supervisor: "0.128.0"
     builder: "0.128.0"
     go: "1.23.0"
   "0.127.0":
+    core: "1.33.0"
     supervisor: "0.127.0"
     builder: "0.127.0"
     go: "1.23.0"
   "0.126.0":
+    core: "1.32.0"
     supervisor: "0.126.0"
     builder: "0.126.0"
     go: "1.23.0"
   "0.125.0":
+    core: "1.31.0"
     supervisor: "0.125.0"
     builder: "0.125.0"
     go: "1.23.0"
   "0.124.0":
+    core: "1.30.0"
     supervisor: "0.124.0"
     builder: "0.124.0"
     go: "1.23.0"
   "0.123.1":
+    core: "1.29.1"
     supervisor: "0.123.0"  # Patch release, uses base version
     builder: "0.123.0"
     go: "1.23.0"
   "0.123.0":
+    core: "1.29.0"
     supervisor: "0.123.0"
     builder: "0.123.0"
     go: "1.23.0"
   "0.122.1":
+    core: "1.28.1"
     supervisor: "0.122.0"  # Patch release, uses base version
     builder: "0.122.0"
     go: "1.23.0"
   "0.122.0":
+    core: "1.28.0"
     supervisor: "0.122.0"
     builder: "0.122.0"
     go: "1.23.0"
   "0.121.0":
+    core: "1.27.0"
     supervisor: "0.122.0"  # Uses 0.122.0 since supervisor started at 0.122.0
     builder: "0.121.0"
     go: "1.23.0"
   "0.120.0":
+    core: "1.26.0"
     supervisor: "0.122.0"  # Uses 0.122.0 since supervisor started at 0.122.0
     builder: "0.120.0"
     go: "1.23.0"

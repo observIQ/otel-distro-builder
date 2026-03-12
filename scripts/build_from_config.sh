@@ -8,6 +8,7 @@ source "${SCRIPT_DIR}/common.sh"
 # Default values
 OUTPUT_DIR="$(pwd)/artifacts"
 OTEL_VERSION=""
+BINDPLANE_VERSION=""
 DIST_NAME="otelcol-custom"
 DIST_MODULE="github.com/custom/otelcol-distribution"
 DIST_VERSION="1.0.0"
@@ -29,6 +30,7 @@ usage() {
     echo "  -n <dist_name>              Distribution name (default: otelcol-custom)"
     echo "  -m <dist_module>            Go module path (default: github.com/custom/otelcol-distribution)"
     echo "  -V <dist_version>           Distribution version (default: 1.0.0)"
+    echo "  -b <bindplane_version>      Target Bindplane version (default: latest from bindplane_components.yaml)"
     echo "  -B                          Exclude Bindplane components (included by default)"
     echo
     echo "Build options:"
@@ -67,11 +69,12 @@ usage() {
 KEEP_MANIFEST=false
 
 # Parse command line arguments
-while getopts "c:o:v:n:m:V:p:P:Bkh" opt; do
+while getopts "c:o:v:b:n:m:V:p:P:Bkh" opt; do
     case $opt in
     c) CONFIG_PATH="$OPTARG" ;;
     o) OUTPUT_DIR="$OPTARG" ;;
     v) OTEL_VERSION="$OPTARG" ;;
+    b) BINDPLANE_VERSION="$OPTARG" ;;
     n) DIST_NAME="$OPTARG" ;;
     m) DIST_MODULE="$OPTARG" ;;
     V) DIST_VERSION="$OPTARG" ;;
@@ -131,6 +134,7 @@ GENERATE_ARGS="$GENERATE_ARGS -n $DIST_NAME"
 GENERATE_ARGS="$GENERATE_ARGS -m $DIST_MODULE"
 GENERATE_ARGS="$GENERATE_ARGS -V $DIST_VERSION"
 [ -n "$OTEL_VERSION" ] && GENERATE_ARGS="$GENERATE_ARGS -v $OTEL_VERSION"
+[ -n "$BINDPLANE_VERSION" ] && GENERATE_ARGS="$GENERATE_ARGS -b $BINDPLANE_VERSION"
 [ "$NO_BINDPLANE" = true ] && GENERATE_ARGS="$GENERATE_ARGS -B"
 
 # shellcheck disable=SC2086
