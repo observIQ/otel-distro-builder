@@ -30,6 +30,7 @@ processors:
 receivers:
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/filelogreceiver __OTEL_VERSION__"
   - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/receiver/hostmetricsreceiver __OTEL_VERSION__"
+  - gomod: "github.com/observiq/bindplane-otel-collector/receiver/pluginreceiver __BINDPLANE_VERSION__"
   - gomod: "go.opentelemetry.io/collector/receiver/nopreceiver __OTEL_VERSION__"
 
 # Additional replaces needed for Bindplane components
