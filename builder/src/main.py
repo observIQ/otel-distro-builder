@@ -314,6 +314,11 @@ def main() -> None:
             platforms=args.platforms, goos=args.goos, goarch=args.goarch
         )
 
+        # Resolve manifest source directory for local module path resolution
+        manifest_source_dir = None
+        if args.manifest:
+            manifest_source_dir = os.path.dirname(os.path.abspath(args.manifest))
+
         # Build the collector
         success = build.build(
             manifest_content=manifest_content,
@@ -326,6 +331,7 @@ def main() -> None:
             go_version=args.go_version,
             parallelism=args.parallelism,
             keep_build_dir=args.debug,
+            manifest_source_dir=manifest_source_dir,
         )
 
         sys.exit(0 if success else 1)
