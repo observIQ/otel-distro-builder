@@ -10,9 +10,17 @@ from builder.src.config_parser import ParsedComponents, resolve_components
 from builder.src.manifest_generator import (ManifestConfig, ManifestGenerator,
                                             generate_manifest,
                                             generate_manifest_from_config)
+from builder.src.resources import get_bindplane_components_yaml_path
 
 # Get the path to test configs (collector configs live under otelcol/)
 TEST_CONFIGS_DIR = os.path.join(os.path.dirname(__file__), "configs")
+
+
+def _get_bindplane_version() -> str:
+    """Read the current Bindplane version from bindplane_components.yaml."""
+    with open(get_bindplane_components_yaml_path(), "r", encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+    return data["version"]
 TEST_OTELCOL_CONFIGS_DIR = os.path.join(TEST_CONFIGS_DIR, "otelcol")
 
 
@@ -407,7 +415,8 @@ class TestBindplaneVersion:
 
         manifest = yaml.safe_load(result.content)
 
-        # Check that Bindplane gomods use the version from the file (1.93.0)
+        # Check that Bindplane gomods use the version from the file
+        expected_version = _get_bindplane_version()
         all_gomods = []
         for section in ["extensions", "receivers", "processors", "exporters"]:
             for entry in manifest.get(section, []):
@@ -416,7 +425,7 @@ class TestBindplaneVersion:
         bp_gomods = [g for g in all_gomods if "observiq" in g]
         assert len(bp_gomods) > 0
         for gomod in bp_gomods:
-            assert "v1.93.0" in gomod, f"Expected v1.93.0 in {gomod}"
+            assert f"v{expected_version}" in gomod, f"Expected v{expected_version} in {gomod}"
 
 
 @pytest.mark.unit
