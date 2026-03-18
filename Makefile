@@ -187,7 +187,7 @@ build-local: ## Build distribution with specific versions
 		echo "$(RED)Error: manifest.yaml not found in current directory$(NC)"; \
 		exit 1; \
 	fi
-	./scripts/run_local_build.sh -m manifest.yaml -v 0.121.0 -s 0.122.0 -g 1.24.0 -n 4
+	./scripts/run_local_build.sh -m manifest.yaml -v 0.147.0 -s 0.147.0 -g 1.25.0 -n 4
 
 # Default platforms for multi-arch local build (linux/darwin x amd64/arm64)
 MULTIARCH_PLATFORMS ?= linux/amd64,darwin/amd64,linux/arm64,darwin/arm64

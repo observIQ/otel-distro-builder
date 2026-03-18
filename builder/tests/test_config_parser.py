@@ -268,7 +268,7 @@ class TestResolveComponents:
             exporters=["debug"],
         )
 
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         # Check receivers
         assert len(resolved.receivers) == 1
@@ -290,7 +290,7 @@ class TestResolveComponents:
             exporters=["elasticsearch", "kafka"],
         )
 
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         # All should be resolved
         assert not resolved.has_unresolved()
@@ -307,7 +307,7 @@ class TestResolveComponents:
             exporters=["debug", "nonexistent_exporter"],
         )
 
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         # Should have unresolved components
         assert resolved.has_unresolved()
@@ -332,7 +332,7 @@ class TestResolveComponents:
         }
 
         resolved = resolve_components(
-            parsed, version="0.121.0", custom_mappings=custom_mappings
+            parsed, version="0.147.0", custom_mappings=custom_mappings
         )
 
         # Custom receiver should be resolved
@@ -358,7 +358,7 @@ class TestParseAndResolve:
     def test_parse_and_resolve_simple(self):
         """Test parsing and resolving a simple config file."""
         config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "simple.yaml")
-        resolved = parse_and_resolve(config_path, version="0.121.0")
+        resolved = parse_and_resolve(config_path, version="0.147.0")
 
         assert len(resolved.receivers) > 0
         assert len(resolved.processors) > 0
@@ -368,7 +368,7 @@ class TestParseAndResolve:
     def test_parse_and_resolve_complex(self):
         """Test parsing and resolving a complex config file."""
         config_path = os.path.join(TEST_OTELCOL_CONFIGS_DIR, "complex.yaml")
-        resolved = parse_and_resolve(config_path, version="0.121.0")
+        resolved = parse_and_resolve(config_path, version="0.147.0")
 
         # Should resolve all known components
         assert len(resolved.receivers) >= 4  # otlp, prometheus, filelog, hostmetrics
@@ -390,7 +390,7 @@ class TestComponentRegistry:
     def test_lookup_core_component(self):
         """Test looking up a core component."""
         registry = get_registry()
-        info = registry.lookup("receivers", "otlp", "0.121.0")
+        info = registry.lookup("receivers", "otlp", "0.147.0")
 
         assert info is not None
         assert info.name == "otlp"
@@ -400,7 +400,7 @@ class TestComponentRegistry:
     def test_lookup_contrib_component(self):
         """Test looking up a contrib component."""
         registry = get_registry()
-        info = registry.lookup("receivers", "prometheus", "0.121.0")
+        info = registry.lookup("receivers", "prometheus", "0.147.0")
 
         assert info is not None
         assert info.name == "prometheus"
@@ -410,7 +410,7 @@ class TestComponentRegistry:
     def test_lookup_nonexistent(self):
         """Test looking up a nonexistent component."""
         registry = get_registry()
-        info = registry.lookup("receivers", "nonexistent", "0.121.0")
+        info = registry.lookup("receivers", "nonexistent", "0.147.0")
 
         assert info is None
 
@@ -427,7 +427,7 @@ class TestComponentRegistry:
         registry = get_registry()
 
         # Should extract base name from "otlp/traces"
-        info = registry.lookup("receivers", "otlp/traces", "0.121.0")
+        info = registry.lookup("receivers", "otlp/traces", "0.147.0")
 
         assert info is not None
         assert info.name == "otlp"

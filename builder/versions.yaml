@@ -15,7 +15,7 @@ versions:
     core: "1.53.0"
     supervisor: "0.147.0"
     builder: "0.147.0"
-    go: "1.25.0"
+    go: "1.25.8"  # 1.25.7+ required by observiq/bindplane-otel-collector@v1.95.0
   "0.146.1":
     core: "1.52.1"
     supervisor: "0.146.0"  # Patch release, uses base version

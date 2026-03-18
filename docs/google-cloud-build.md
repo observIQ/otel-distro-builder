@@ -51,11 +51,11 @@ steps:
       - '--artifacts'
       - '/workspace/artifacts'
       - '--ocb-version'
-      - '0.121.0'
+      - '0.147.0'
       - '--go-version'
-      - '1.24.0'
+      - '1.25.0'
       - '--supervisor-version'
-      - '0.122.0'
+      - '0.147.0'
 
   # Upload artifacts to GCS
   - name: 'gcr.io/cloud-builders/gsutil'
@@ -91,9 +91,9 @@ substitutions:
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `-i` | Build ID | Auto-generated |
-| `-v` | OCB version | 0.121.0 |
-| `-g` | Go version | 1.24.0 |
-| `-s` | Supervisor version | 0.122.0 |
+| `-v` | OCB version | 0.147.0 |
+| `-g` | Go version | 1.25.0 |
+| `-s` | Supervisor version | 0.147.0 |
 
 ## Artifact Storage
 
@@ -175,9 +175,9 @@ The following artifacts are generated and stored:
   -m manifest.yaml \
   -p my-project \
   -b my-bucket \
-  -v 0.121.0 \
-  -g 1.24.0 \
-  -s 0.122.0
+  -v 0.147.0 \
+  -g 1.25.0 \
+  -s 0.147.0
 ```
 
 ## Additional Resources

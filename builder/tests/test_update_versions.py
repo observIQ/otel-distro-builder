@@ -7,20 +7,12 @@ import textwrap
 import pytest
 import yaml
 
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "..", "scripts")
-)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "scripts"))
 
-from update_versions_yaml import (
-    MIN_SUPERVISOR_VERSION,
-    best_match,
-    compute_core_version,
-    extract_component_versions,
-    load_existing,
-    serialize_versions_yaml,
-    version_tuple,
-)
-
+from update_versions_yaml import (MIN_SUPERVISOR_VERSION, best_match,
+                                  compute_core_version,
+                                  extract_component_versions, load_existing,
+                                  serialize_versions_yaml, version_tuple)
 
 # ---------------------------------------------------------------------------
 # version_tuple
@@ -68,9 +60,7 @@ class TestComputeCoreVersion:
 
     def test_validates_against_existing_yaml(self):
         """Cross-check the formula against known entries in versions.yaml."""
-        versions_path = os.path.join(
-            os.path.dirname(__file__), "..", "versions.yaml"
-        )
+        versions_path = os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
         existing = load_existing(versions_path)
         for contrib_ver, entry in existing.items():
             expected_core = entry["core"]
@@ -120,18 +110,14 @@ class TestExtractComponentVersions:
             {
                 "tag_name": "v0.144.0",
                 "assets": [
-                    {
-                        "name": "otelcol-contrib_0.144.0_linux_amd64.tar.gz"
-                    },
+                    {"name": "otelcol-contrib_0.144.0_linux_amd64.tar.gz"},
                     {"name": "ocb_0.144.0_linux_amd64"},
                 ],
             },
             {
                 "tag_name": "cmd/opampsupervisor/v0.144.0",
                 "assets": [
-                    {
-                        "name": "opampsupervisor_0.144.0_linux_amd64.tar.gz"
-                    },
+                    {"name": "opampsupervisor_0.144.0_linux_amd64.tar.gz"},
                 ],
             },
         ]
@@ -145,9 +131,7 @@ class TestExtractComponentVersions:
             {
                 "tag_name": "v0.144.0",
                 "assets": [
-                    {
-                        "name": "opampsupervisor_0.144.0_linux_amd64.tar.gz"
-                    },
+                    {"name": "opampsupervisor_0.144.0_linux_amd64.tar.gz"},
                 ],
             },
         ]
@@ -159,18 +143,14 @@ class TestExtractComponentVersions:
             {
                 "tag_name": "v0.144.0",
                 "assets": [
-                    {
-                        "name": "otelcol-contrib_0.144.0_linux_amd64.tar.gz"
-                    },
+                    {"name": "otelcol-contrib_0.144.0_linux_amd64.tar.gz"},
                     {"name": "ocb_0.144.0_linux_amd64"},
                 ],
             },
             {
                 "tag_name": "v0.143.0",
                 "assets": [
-                    {
-                        "name": "otelcol-contrib_0.143.0_linux_amd64.tar.gz"
-                    },
+                    {"name": "otelcol-contrib_0.143.0_linux_amd64.tar.gz"},
                     {"name": "ocb_0.143.0_linux_amd64"},
                 ],
             },
@@ -306,14 +286,16 @@ class TestLoadExisting:
     def test_valid_file(self, tmp_path):
         f = tmp_path / "versions.yaml"
         f.write_text(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
             versions:
               "0.144.0":
                 core: "1.50.0"
                 supervisor: "0.144.0"
                 builder: "0.144.0"
                 go: "1.24.0"
-        """)
+        """
+            )
         )
         result = load_existing(str(f))
         assert "0.144.0" in result
@@ -336,18 +318,14 @@ class TestRealVersionsYaml:
 
     @pytest.fixture
     def real_versions_path(self):
-        return os.path.join(
-            os.path.dirname(__file__), "..", "versions.yaml"
-        )
+        return os.path.join(os.path.dirname(__file__), "..", "versions.yaml")
 
     def test_loads_real_file(self, real_versions_path):
         result = load_existing(real_versions_path)
         assert len(result) > 0
         first_key = list(result.keys())[0]
         for field in ("core", "supervisor", "builder", "go"):
-            assert field in result[first_key], (
-                f"Missing '{field}' in entry {first_key}"
-            )
+            assert field in result[first_key], f"Missing '{field}' in entry {first_key}"
 
     def test_first_entry_is_newest(self, real_versions_path):
         """The first key must be the highest version (DEFAULT_VERSION relies on this)."""

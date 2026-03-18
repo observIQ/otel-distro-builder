@@ -174,7 +174,7 @@ service:
 ```yaml
 # OpenTelemetry Collector Builder (OCB) Manifest
 # Generated from collector config.yaml
-# Target version: 0.121.0
+# Target version: 0.147.0
 
 dist:
   module: github.com/custom/otelcol-distribution
@@ -187,26 +187,26 @@ conf_resolver:
   default_uri_scheme: env
 
 extensions:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.121.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v0.147.0
 
 receivers:
-  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.121.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.121.0
+  - gomod: go.opentelemetry.io/collector/receiver/otlpreceiver v0.147.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/prometheusreceiver v0.147.0
 
 processors:
-  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.121.0
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.121.0
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.147.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/attributesprocessor v0.147.0
 
 exporters:
-  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.121.0
-  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.121.0
+  - gomod: go.opentelemetry.io/collector/exporter/otlpexporter v0.147.0
+  - gomod: go.opentelemetry.io/collector/exporter/debugexporter v0.147.0
 
 providers:
-  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.27.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.27.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/httpprovider v1.27.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.27.0
-  - gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.27.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.53.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.53.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/httpprovider v1.53.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/httpsprovider v1.53.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/yamlprovider v1.53.0
 
 replaces:
   - github.com/googleapis/gnostic v0.5.6 => github.com/googleapis/gnostic v0.5.5

@@ -87,16 +87,19 @@ def github_get(url, token=None, retries=3, backoff=2):
             last_exc = exc
             if resp.status_code < 500:
                 raise
-            wait = backoff ** attempt
+            wait = backoff**attempt
             print(
                 f"    Retrying ({attempt + 1}/{retries}) after HTTP {resp.status_code}, "
                 f"waiting {wait}s...",
                 file=sys.stderr,
             )
             time.sleep(wait)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+        ) as exc:
             last_exc = exc
-            wait = backoff ** attempt
+            wait = backoff**attempt
             print(
                 f"    Retrying ({attempt + 1}/{retries}) after {exc}, "
                 f"waiting {wait}s...",
@@ -115,7 +118,9 @@ def fetch_all_releases(token=None):
     all_releases = []
     page = 1
     while True:
-        url = f"{GITHUB_API_BASE}/repos/{RELEASES_REPO}/releases?per_page=30&page={page}"
+        url = (
+            f"{GITHUB_API_BASE}/repos/{RELEASES_REPO}/releases?per_page=30&page={page}"
+        )
         releases, headers = github_get(url, token)
         if not releases:
             break
@@ -160,9 +165,7 @@ def compute_core_version(contrib_version):
     parts = [int(x) for x in contrib_version.split(".")]
     core_minor = parts[1] - 94
     if core_minor < 0:
-        raise ValueError(
-            f"Contrib version {contrib_version}: minor ({parts[1]}) < 94"
-        )
+        raise ValueError(f"Contrib version {contrib_version}: minor ({parts[1]}) < 94")
     return f"1.{core_minor}.{parts[2]}"
 
 
@@ -182,16 +185,19 @@ def _fetch_gomod_text(version_tag, token=None):
             last_exc = exc
             if resp.status_code < 500:
                 raise
-            wait = 2 ** attempt
+            wait = 2**attempt
             print(
                 f"    Retrying go.mod fetch ({attempt + 1}/3) for v{version_tag}, "
                 f"waiting {wait}s...",
                 file=sys.stderr,
             )
             time.sleep(wait)
-        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as exc:
+        except (
+            requests.exceptions.ConnectionError,
+            requests.exceptions.Timeout,
+        ) as exc:
             last_exc = exc
-            wait = 2 ** attempt
+            wait = 2**attempt
             print(
                 f"    Retrying go.mod fetch ({attempt + 1}/3) for v{version_tag}, "
                 f"waiting {wait}s...",
@@ -316,8 +322,8 @@ def main():
     releases = fetch_all_releases(token)
 
     print("Extracting component versions...", file=sys.stderr)
-    contrib_versions, ocb_versions, supervisor_versions = (
-        extract_component_versions(releases)
+    contrib_versions, ocb_versions, supervisor_versions = extract_component_versions(
+        releases
     )
     print(
         f"Found {len(contrib_versions)} contrib, {len(ocb_versions)} OCB, "

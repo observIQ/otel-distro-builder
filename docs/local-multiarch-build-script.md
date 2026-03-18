@@ -99,9 +99,9 @@ Build for linux and darwin, both amd64 and arm64:
 
 ```bash
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 \
-  -v 0.121.0 \
-  -s 0.122.0 \
-  -g 1.24.0
+  -v 0.147.0 \
+  -s 0.147.0 \
+  -g 1.25.0
 ```
 
 ### Reduce Memory Use (Parallelism)
@@ -119,7 +119,7 @@ If the build runs out of memory, lower parallelism (e.g. `-n 1`):
   -o ./dist \
   -p linux/amd64,linux/arm64,darwin/arm64 \
   -n 4 \
-  -v 0.121.0 -s 0.122.0 -g 1.24.0
+  -v 0.147.0 -s 0.147.0 -g 1.25.0
 ```
 
 ## Using Make Commands
@@ -143,7 +143,7 @@ make multiarch-build
 Override as needed:
 
 ```bash
-make multiarch-build output_dir=./artifacts platforms=linux/amd64,linux/arm64 ocb_version=0.121.0
+make multiarch-build output_dir=./artifacts platforms=linux/amd64,linux/arm64 ocb_version=0.147.0
 ```
 
 ## Build Process
