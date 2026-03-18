@@ -1,0 +1,87 @@
+# Discover new upstream OpenTelemetry Collector releases and open a PR
+# to add the new version mappings to builder/versions.yaml.
+
+name: Update OTel Version Mappings
+
+on:
+  schedule:
+    # Every Monday at 02:00 UTC (offset from bindplane updater at 00:00)
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: update-otel-versions
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml requests
+
+      - name: Update versions.yaml
+        id: update
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          LATEST=$(python builder/scripts/update_versions_yaml.py --write)
+          if [ -n "$LATEST" ]; then
+            echo "latest_version=$LATEST" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for changes
+        id: changes
+        run: |
+          if git diff --quiet builder/versions.yaml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify updated versions.yaml
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          python -c "
+          import yaml
+          with open('builder/versions.yaml') as f:
+              data = yaml.safe_load(f)
+          versions = data['versions']
+          assert len(versions) > 0, 'No versions found'
+          first = list(versions.keys())[0]
+          entry = versions[first]
+          for key in ('core', 'supervisor', 'builder', 'go'):
+              assert key in entry, f'Missing key: {key}'
+          print(f'Verified: {len(versions)} versions, latest={first}')
+          "
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: deps/update-otel-versions-${{ steps.update.outputs.latest_version }}
+          commit-message: "chore: update OpenTelemetry version mappings (v${{ steps.update.outputs.latest_version }})"
+          title: "chore: update OpenTelemetry version mappings (v${{ steps.update.outputs.latest_version }})"
+          body: |
+            Updates `builder/versions.yaml` with the latest upstream OpenTelemetry version mappings up to **v${{ steps.update.outputs.latest_version }}**.
+
+            **Upstream release:** https://github.com/open-telemetry/opentelemetry-collector-releases/releases
+
+            This PR was automatically created by the [update-otel-versions](${{ github.server_url }}/${{ github.repository }}/actions/workflows/update-otel-versions.yml) workflow.
+          labels: dependencies
