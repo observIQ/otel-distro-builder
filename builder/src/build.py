@@ -143,6 +143,7 @@ class BuildContext:
         supervisor_version: Optional[str] = None,
         go_version: Optional[str] = None,
         parallelism: int = 4,
+        manifest_source_dir: Optional[str] = None,
     ):
         """Create a BuildContext from manifest content.
 
@@ -156,6 +157,8 @@ class BuildContext:
             supervisor_version: Supervisor version.
             go_version: Go version.
             parallelism: Parallelism.
+            manifest_source_dir: Directory containing the original manifest file,
+                used to resolve relative ``path`` entries for local Go modules.
         """
         # Import here to avoid circular dependency at module level
         from .platforms import \
@@ -208,8 +211,14 @@ class BuildContext:
         # Update manifest output_path to point to source_dir
         manifest["dist"]["output_path"] = "_build"
 
-        # Write prepared manifest
+        # Ensure build_dir exists before copying local modules
         os.makedirs(build_dir, exist_ok=True)
+
+        # Resolve and copy local Go modules referenced by `path` entries
+        if manifest_source_dir:
+            _resolve_local_modules(manifest, manifest_source_dir, build_dir)
+
+        # Write prepared manifest
         with open(manifest_path, "w", encoding="utf-8") as f:
             yaml.dump(manifest, f)
         logger.success("Manifest prepared successfully")
@@ -235,6 +244,70 @@ class BuildContext:
             manifest_path=manifest_path,
             release_version=release_version,
         )
+
+
+def _resolve_local_modules(
+    manifest: dict, manifest_source_dir: str, build_dir: str
+) -> None:
+    """Copy local Go modules into the build directory and update manifest paths.
+
+    OCB manifests support a ``path`` key on component entries that points to a
+    local Go module on disk.  Since the manifest is rewritten into a temporary
+    build directory, relative paths would break.  This function:
+
+    1. Scans every component section for entries that have a ``path`` key.
+    2. Resolves each path relative to *manifest_source_dir* (where the user's
+       manifest lives).
+    3. Copies the directory tree into *build_dir*.
+    4. Rewrites the ``path`` value so it is correct relative to *build_dir*.
+
+    Args:
+        manifest: Parsed manifest dictionary (modified in-place).
+        manifest_source_dir: Directory that contains the original manifest file.
+        build_dir: The build workspace directory where OCB will run.
+    """
+    component_sections = [
+        "extensions",
+        "receivers",
+        "processors",
+        "exporters",
+        "connectors",
+        "providers",
+    ]
+
+    for section in component_sections:
+        if section not in manifest:
+            continue
+        for entry in manifest[section]:
+            if not isinstance(entry, dict) or "path" not in entry:
+                continue
+
+            original_path = entry["path"]
+
+            # Resolve relative to the original manifest location
+            abs_source = os.path.normpath(
+                os.path.join(manifest_source_dir, original_path)
+            )
+
+            if not os.path.isdir(abs_source):
+                raise RuntimeError(
+                    f"Local module path does not exist: {abs_source} "
+                    f"(resolved from '{original_path}' relative to manifest directory)"
+                )
+
+            # Use the directory basename as destination name
+            dir_name = os.path.basename(abs_source)
+            dest = os.path.join(build_dir, dir_name)
+
+            # Copy the module tree (overwrite if already present)
+            if os.path.exists(dest):
+                shutil.rmtree(dest)
+            shutil.copytree(abs_source, dest)
+
+            # Rewrite path to be relative to build_dir
+            entry["path"] = f"./{dir_name}"
+
+            logger.info(f"Copied local module: {abs_source} → {dest}", indent=1)
 
 
 def validate_environment() -> bool:
@@ -624,6 +697,7 @@ def build(
     go_version: Optional[str] = None,
     parallelism: int = 4,
     keep_build_dir: bool = False,
+    manifest_source_dir: Optional[str] = None,
 ) -> bool:
     """Build an OpenTelemetry Collector distribution.
 
@@ -639,6 +713,8 @@ def build(
         parallelism: Number of parallel Goreleaser build tasks (default 4)
         keep_build_dir: If True, do not remove the intermediate .build directory
             under artifact_dir after a successful build (default False).
+        manifest_source_dir: Directory containing the original manifest file,
+            used to resolve relative ``path`` entries for local Go modules.
 
     Returns:
         bool: True if build succeeded, False otherwise
@@ -663,6 +739,7 @@ def build(
         supervisor_version=supervisor_version,
         go_version=go_version,
         parallelism=parallelism,
+        manifest_source_dir=manifest_source_dir,
     )
 
     # For internal use, rename to final_artifact_dir for clarity

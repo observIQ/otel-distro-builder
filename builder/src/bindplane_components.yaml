@@ -7,7 +7,7 @@
 # __BINDPLANE_VERSION__ is replaced at runtime with the appropriate version.
 # __OTEL_VERSION__ is replaced at runtime with the OTel collector version (v0.x).
 # Latest Bindplane collector version
-version: "1.93.0"
+version: "1.95.0"
 
 connectors:
   - gomod: "go.opentelemetry.io/collector/connector/forwardconnector __OTEL_VERSION__"

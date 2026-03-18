@@ -100,6 +100,7 @@ def test_main_argument_handling(args, expected_goos, expected_goarch, expected_p
             go_version=None,
             parallelism=4,
             keep_build_dir=False,
+            manifest_source_dir=os.path.dirname(os.path.abspath("test.yaml")),
         )
 
 
