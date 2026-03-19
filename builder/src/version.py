@@ -13,7 +13,7 @@ CONTRIB_PREFIX = "github.com/open-telemetry/opentelemetry-collector-contrib/"
 MIN_SUPERVISOR_VERSION = "0.122.0"
 
 # Fallback if versions.yaml cannot be read
-_FALLBACK_VERSION = "0.144.0"
+_FALLBACK_VERSION = "0.147.0"
 
 
 def _get_latest_version() -> str:

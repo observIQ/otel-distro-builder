@@ -211,7 +211,7 @@ docker run --rm \
   --platforms linux/amd64,linux/arm64,darwin/amd64,darwin/arm64 \
   --ocb-version 0.123.0 \
   --supervisor-version 0.123.0 \
-  --go-version 1.24.0 \
+  --go-version 1.25.0 \
   --parallelism 4
 ```
 
@@ -322,7 +322,7 @@ Build a custom OpenTelemetry Collector distribution using a local Docker contain
 ./scripts/run_local_build.sh -m manifest.yaml
 
 # Custom output directory and versions
-./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
+./scripts/run_local_build.sh -m manifest.yaml -o ./dist -v 0.147.0 -s 0.147.0 -g 1.25.0
 
 # Build Docker image for a specific platform (e.g. Apple Silicon / arm64)
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/arm64
@@ -333,7 +333,7 @@ Build a custom OpenTelemetry Collector distribution using a local Docker contain
 
 Options: `-m` (required), `-o` (output dir), `-p` (platforms), `-v` (OCB version), `-g` (Go version), `-s` (Supervisor version). When running the container directly, you can also pass `--parallelism N` to the builder (default 4; lower for less memory use).
 
-Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.121.0`, `make build platforms=linux/arm64,linux/amd64`.
+Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts ocb_version=0.147.0`, `make build platforms=linux/arm64,linux/amd64`.
 
 **Multi-arch builds** use the same script with `-p` (omit `-p` for single-arch; defaults to the host platform):
 
@@ -342,7 +342,7 @@ Via Make: `make build`, `make build-local`, `make build output_dir=./artifacts o
 ./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64,darwin/amd64,darwin/arm64
 
 # Or a subset of platforms
-./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -o ./dist -v 0.121.0 -s 0.122.0 -g 1.24.0
+./scripts/run_local_build.sh -m manifest.yaml -p linux/amd64,linux/arm64 -o ./dist -v 0.147.0 -s 0.147.0 -g 1.25.0
 ```
 
 Via Make: `make multiarch-build` (default platforms), `make multiarch-build-local`, or `make build platforms=linux/amd64,linux/arm64`.

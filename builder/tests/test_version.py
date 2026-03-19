@@ -44,15 +44,15 @@ extensions:
 
 @pytest.mark.unit
 def test_determine_build_versions_with_minimum():
-    """Test version determination respects minimum supervisor version."""
-    manifest = """
+    """Test that MIN_SUPERVISOR_VERSION is the supervisor for its own entry."""
+    manifest = f"""
 dist:
   name: test
 extensions:
-  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v0.121.0
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/basicauthextension v{MIN_SUPERVISOR_VERSION}
 """
     versions = determine_build_versions(manifest)
-    assert versions.ocb == "0.121.0"
+    assert versions.ocb == MIN_SUPERVISOR_VERSION
     assert versions.supervisor == MIN_SUPERVISOR_VERSION
 
 

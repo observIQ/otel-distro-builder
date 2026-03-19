@@ -44,9 +44,9 @@ providers:
 | `-o` | Output directory for artifacts | `./artifacts` | No |
 | `-p` | Docker build platform(s), comma-delimited (e.g. linux/arm64,linux/amd64) | None | No |
 | `-n` | Number of parallel Goreleaser build tasks (use 1 to reduce memory) | Builder default (4) | No |
-| `-v` | OpenTelemetry Collector Builder version | `0.121.0` | No |
-| `-g` | Go version to use | `1.24.0` | No |
-| `-s` | Supervisor version | `0.122.0` | No |
+| `-v` | OpenTelemetry Collector Builder version | `0.147.0` | No |
+| `-g` | Go version to use | `1.25.0` | No |
+| `-s` | Supervisor version | `0.147.0` | No |
 | `-h` | Show help message | N/A | No |
 
 The `-n` (parallelism) option is passed to the builder as `--parallelism` and controls how many build targets Goreleaser runs in parallel. See [Docker documentation](./docker.md) for the full list of builder options.
@@ -81,9 +81,9 @@ Build for `linux/amd64` or `darwin/arm64`:
 ```bash
 ./scripts/run_local_build.sh \
   -m manifest.yaml \
-  -v 0.121.0 \
-  -g 1.24.0 \
-  -s 0.122.0
+  -v 0.147.0 \
+  -g 1.25.0 \
+  -s 0.147.0
 ```
 
 ## Using Make Commands
@@ -101,7 +101,7 @@ This will use the latest versions of otelcol and ocb.
 ### Custom Versions
 
 ```bash
-make build output_dir=./artifacts ocb_version=0.121.0 go_version=1.22.1 supervisor_version=0.122.0
+make build output_dir=./artifacts ocb_version=0.147.0 go_version=1.22.1 supervisor_version=0.147.0
 ```
 
 This allows you to specify custom versions for:

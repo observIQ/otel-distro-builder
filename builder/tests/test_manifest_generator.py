@@ -35,7 +35,7 @@ class TestManifestGenerator:
             processors=["batch"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=False)
         generator = ManifestGenerator(resolved, config)
@@ -63,14 +63,14 @@ class TestManifestGenerator:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(
             module="github.com/myorg/mycollector",
             name="mycollector",
             description="My custom collector",
             version="2.0.0",
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         generator = ManifestGenerator(resolved, config)
@@ -89,7 +89,7 @@ class TestManifestGenerator:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         generator = ManifestGenerator(resolved)
         result = generator.generate()
@@ -105,7 +105,7 @@ class TestManifestGenerator:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         generator = ManifestGenerator(resolved)
         result = generator.generate()
@@ -122,7 +122,7 @@ class TestManifestGenerator:
             exporters=["debug"],
             extensions=["health_check", "pprof", "zpages"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=False)
         generator = ManifestGenerator(resolved, config)
@@ -140,7 +140,7 @@ class TestManifestGenerator:
             exporters=["debug"],
             connectors=["spanmetrics", "forward"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=False)
         generator = ManifestGenerator(resolved, config)
@@ -157,7 +157,7 @@ class TestManifestGenerator:
             receivers=["otlp", "unknown_receiver"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         generator = ManifestGenerator(resolved)
         result = generator.generate()
@@ -171,7 +171,7 @@ class TestManifestGenerator:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_providers=False)
 
@@ -188,7 +188,7 @@ class TestManifestGenerator:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_replaces=False)
 
@@ -211,13 +211,13 @@ class TestGenerateManifest:
             processors=["batch", "attributes"],
             exporters=["debug", "otlp"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         result = generate_manifest(
             resolved=resolved,
             name="test-collector",
             module="github.com/test/collector",
-            otel_version="0.121.0",
+            otel_version="0.147.0",
             include_bindplane=False,
         )
 
@@ -240,7 +240,7 @@ class TestGenerateManifestFromConfig:
         result = generate_manifest_from_config(
             config_path=config_path,
             name="simple-collector",
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         manifest = yaml.safe_load(result.content)
@@ -257,7 +257,7 @@ class TestGenerateManifestFromConfig:
         result = generate_manifest_from_config(
             config_path=config_path,
             name="complex-collector",
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         manifest = yaml.safe_load(result.content)
@@ -278,7 +278,7 @@ class TestGenerateManifestFromConfig:
                 config_path=config_path,
                 output_path=output_path,
                 name="test-collector",
-                otel_version="0.121.0",
+                otel_version="0.147.0",
             )
 
             # Check file was written
@@ -296,13 +296,13 @@ class TestGenerateManifestFromConfig:
 
         result = generate_manifest_from_config(
             config_path=config_path,
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         # Should have header comments
         assert result.content.startswith("#")
         assert "Generated from collector config.yaml" in result.content
-        assert "0.121.0" in result.content
+        assert "0.147.0" in result.content
 
 
 @pytest.mark.unit
@@ -315,7 +315,7 @@ class TestBindplaneComponents:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         # Default config includes Bindplane
         generator = ManifestGenerator(resolved)
@@ -336,7 +336,7 @@ class TestBindplaneComponents:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=False)
         generator = ManifestGenerator(resolved, config)
@@ -357,7 +357,7 @@ class TestBindplaneComponents:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         generator = ManifestGenerator(resolved)
         result = generator.generate()
@@ -379,7 +379,7 @@ class TestBindplaneVersion:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(
             include_bindplane=True,
@@ -407,7 +407,7 @@ class TestBindplaneVersion:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=True)
         generator = ManifestGenerator(resolved, config)
@@ -476,7 +476,7 @@ class TestRequiredBindplaneCompatibility:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=True)
         generator = ManifestGenerator(resolved, config)
@@ -509,7 +509,7 @@ class TestRequiredBindplaneCompatibility:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=False)
         generator = ManifestGenerator(resolved, config)
@@ -534,7 +534,7 @@ class TestRequiredBindplaneCompatibility:
             exporters=["otlp", "debug"],
             connectors=["forward"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=True)
         generator = ManifestGenerator(resolved, config)
@@ -559,7 +559,7 @@ class TestRequiredBindplaneCompatibility:
             receivers=["otlp"],
             exporters=["debug"],
         )
-        resolved = resolve_components(parsed, version="0.121.0")
+        resolved = resolve_components(parsed, version="0.147.0")
 
         config = ManifestConfig(include_bindplane=True)
         generator = ManifestGenerator(resolved, config)
@@ -582,7 +582,7 @@ class TestManifestValidity:
 
         result = generate_manifest_from_config(
             config_path=config_path,
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         manifest = yaml.safe_load(result.content)
@@ -609,7 +609,7 @@ class TestManifestValidity:
 
         result = generate_manifest_from_config(
             config_path=config_path,
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         manifest = yaml.safe_load(result.content)
@@ -627,7 +627,7 @@ class TestManifestValidity:
 
         result = generate_manifest_from_config(
             config_path=config_path,
-            otel_version="0.121.0",
+            otel_version="0.147.0",
         )
 
         manifest = yaml.safe_load(result.content)
