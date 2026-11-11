@@ -306,8 +306,12 @@ def main():
     parser.add_argument(
         "--max-entries",
         type=int,
-        default=40,
-        help="Maximum number of version entries to keep (default: 40)",
+        default=0,
+        help=(
+            "Maximum number of version entries to keep; 0 keeps all (default: 0). "
+            "Pruning drops mappings that older manifests rely on, which makes "
+            "them silently fall back to the latest version."
+        ),
     )
     parser.add_argument(
         "--versions-file",
@@ -396,7 +400,7 @@ def main():
         }
 
     all_sorted = sorted(merged.keys(), key=version_tuple, reverse=True)
-    if len(all_sorted) > args.max_entries:
+    if args.max_entries > 0 and len(all_sorted) > args.max_entries:
         for old in all_sorted[args.max_entries :]:
             del merged[old]
 
