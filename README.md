@@ -278,7 +278,7 @@ When building for multiple architectures or large manifests, the number of paral
 ### Prerequisites
 
 - **Using the CLI (binary or pip):** For full builds, no other dependencies are required; the CLI downloads OCB and Go automatically. For manifest generation only, no dependencies.
-- **Development (editing this repo):** Python 3, Make. Docker is optional (for running the builder in a container).
+- **Development (editing this repo):** Python 3.10+, Make. Docker is optional (for running the builder in a container).
 
 ### Available Commands
 

@@ -14,6 +14,13 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
+# Require Python 3.10+ (pinned dependencies no longer support 3.9)
+if ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 10))'; then
+    echo "❌ Python 3.10+ is required, but python3 is $(python3 --version 2>&1)."
+    echo "   Install a newer Python, or create the venv manually, e.g.: make deps PYTHON=python3.12"
+    exit 1
+fi
+
 # Create virtual environment if it doesn't exist
 if [ ! -d "$VENV_DIR" ]; then
     echo "Creating virtual environment..."
