@@ -13,6 +13,7 @@ disable=
     R0902,  # too many instance attributes - complex objects need many attributes
     C0301,  # line too long - we use black for formatting
     R0913,  # too many arguments - some functions need many parameters
+    R0917,  # too many positional arguments - same rationale as R0913 (new in pylint 3.3)
     R0914,  # too many local variables - complex functions need many variables
     E0401,  # import error - false positives for installed packages
     R0912   # too many branches - complex validation needs many branches
