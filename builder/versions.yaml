@@ -311,3 +311,13 @@ versions:
     supervisor: "0.122.0"
     builder: "0.122.0"
     go: "1.23.0"
+  "0.121.0":
+    core: "1.27.0"
+    supervisor: "0.122.0"  # Uses 0.122.0 since supervisor started at 0.122.0
+    builder: "0.121.0"
+    go: "1.23.0"
+  "0.120.0":
+    core: "1.26.0"
+    supervisor: "0.122.0"  # Uses 0.122.0 since supervisor started at 0.122.0
+    builder: "0.120.0"
+    go: "1.23.0"
